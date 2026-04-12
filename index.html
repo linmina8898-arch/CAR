@@ -25,7 +25,6 @@
             border-top: 5px solid var(--brand-primary);
         }
         
-        /* 針對除了 Checkbox 以外的輸入框移除預設樣式 */
         input:not([type="checkbox"]), select, textarea {
             background-color: #ffffff !important;
             border: 1px solid rgba(87, 66, 102, 0.2) !important;
@@ -38,7 +37,6 @@
             box-shadow: 0 0 0 2px rgba(87, 66, 102, 0.1);
         }
 
-        /* 確保 Checkbox 能正常顯示打勾符號 */
         input[type="checkbox"] {
             appearance: auto !important;
             -webkit-appearance: checkbox !important;
@@ -56,7 +54,6 @@
             opacity: 0.9;
             transform: scale(0.98);
         }
-        /* 類型選取按鈕樣式 */
         .type-btn {
             border: 2px solid var(--brand-primary);
             color: var(--brand-primary);
@@ -78,25 +75,13 @@
             background-color: #f3f4f6 !important;
             cursor: not-allowed;
         }
-        /* 美化滾動條 */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: rgba(87, 66, 102, 0.05);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--brand-primary);
-            border-radius: 10px;
-        }
         .calc-detail-box {
             background-color: rgba(87, 66, 102, 0.05);
             border: 1px solid rgba(87, 66, 102, 0.1);
         }
-        /* 統一提示文字樣式 */
         .info-text-unified {
             font-size: 11px;
-            color: #6b7280; /* text-gray-500 */
+            color: #6b7280;
             line-height: 1.5;
             font-weight: 500;
             padding-left: 4px;
@@ -105,18 +90,16 @@
 </head>
 <body class="p-4 md:p-8">
     <div class="max-w-md mx-auto pb-10">
-        <!-- 表頭 (圖片版 - 已更新為預約單表頭.jpg) -->
+        <!-- 表頭 -->
         <div class="text-center mb-6 flex justify-center">
             <img src="預約單表頭.jpg" alt="安興專車接送" class="w-full h-auto object-contain rounded-xl shadow-sm" onerror="this.style.display='none'; document.getElementById('text-header').style.display='block';">
         </div>
         
-        <!-- 備用文字表頭 (圖片載入失敗時自動顯示) -->
         <div id="text-header" class="text-center mb-8" style="display: none;">
             <h1 class="text-3xl font-bold tracking-wider" style="color: var(--brand-primary);">安興專車接送</h1>
             <p class="text-gray-600 mt-2 text-sm font-medium">專業、準時、安心的機場接送服務</p>
         </div>
 
-        <!-- 詢價表單 -->
         <form id="inquiryForm" class="form-card rounded-2xl shadow-xl p-6 space-y-6" onsubmit="return false;">
             
             <!-- 乘車人資訊 -->
@@ -152,7 +135,6 @@
                         <input type="hidden" id="district" value="">
                     </div>
                     <input type="text" id="addressDetail" placeholder="詳細地址 (如：街道、門牌、社區名字)" class="w-full rounded-xl p-3">
-                    <div class="info-text-unified mt-2">● 多點接送：請直接詢問客服報價內容。</div>
                 </div>
             </div>
 
@@ -266,8 +248,8 @@
                     <span id="baseFareDisplay" class="font-bold text-[#574266]">$0</span>
                 </div>
                 <div class="flex justify-between text-xs text-gray-500"><span>接機服務費 (+$200)</span><span id="pickupFeeDisplay">+$0</span></div>
-                <div class="flex justify-between text-xs text-gray-500"><span>急單處理費 (12~24小時內) (+$300)</span><span id="urgentFeeDisplay">+$0</span></div>
-                <div class="flex justify-between text-xs text-gray-500"><span>夜間加成費 (23:00~04:59) (+$100)</span><span id="nightFeeDisplay">+$0</span></div>
+                <div class="flex justify-between text-xs text-gray-500"><span>急單處理費 (+$300)</span><span id="urgentFeeDisplay">+$0</span></div>
+                <div class="flex justify-between text-xs text-gray-500"><span>夜間加成費 (+$100)</span><span id="nightFeeDisplay">+$0</span></div>
                 <div class="flex justify-between text-xs text-gray-500"><span>安全座椅費 (+$200/張)</span><span id="seatFeeDisplay">+$0</span></div>
                 <div class="flex justify-between text-xs text-gray-500"><span>舉牌服務費 (+$200)</span><span id="signFeeDisplay">+$0</span></div>
                 <div class="flex justify-between text-xs text-gray-500"><span>付款手續費 (+$30)</span><span id="paymentFeeDisplay">+$0</span></div>
@@ -487,7 +469,6 @@
             const districtVal = document.getElementById('district').value;
             if (agreed && !districtVal) { showModal('錯誤', '請選擇接送地區'); return; }
 
-            // ★ 新增：發票欄位強制檢查 ★
             const receiptType = document.getElementById('receiptType').value;
             const companyName = document.getElementById('companyName').value.trim();
             const taxId = document.getElementById('taxId').value.trim();
@@ -500,6 +481,7 @@
 
             if (agreed && !form.reportValidity()) return;
 
+            // 成功送出時的提示文字 (將作為獨立訊息發送)
             const successNotice = "您的訂單已成功送出！請您耐心稍候，待客服人員為您確認訂單內容無誤後，將回傳轉帳帳號或提供刷卡 QR Code 以利完成付款程序，感謝您的配合。";
             
             let bookingNumber = '';
@@ -513,30 +495,40 @@
             const fullName = document.getElementById('userName').value + " " + document.getElementById('userTitle').value;
             const time = document.getElementById('travelTime').value;
 
-            let msg = `【安興專車接送 預約單】\n${agreed ? "⭕我同意此初估報價，請安排車子" : "❌我不同意此報價"}\n\n`;
+            // 預約單訊息主體 (不再包含最後一段溫馨提醒)
+            let msg = `【安興專車接送 預約單】\n${agreed ? "⭕我同意此初估報價，請安排車子" : "❌我不同意此報價，不用安排車子"}\n\n`;
             if (agreed) msg += `預約編號：${bookingNumber}\n`;
             msg += `乘車人姓名：${fullName}\n乘車人電話：${formattedPhone}\n接送地址：${route}\n━━━━━━━━━━\n`;
             msg += `搭乘日期：${document.getElementById('travelDate').value}\n搭乘時間：${time}\n預約類型：${document.getElementById('airportSelect').value} ${document.getElementById('serviceType').value}\n班機編號：${document.getElementById('flightNumber').value}\n━━━━━━━━━━\n`;
             msg += `車型：${document.getElementById('carTypeSelect').value}\n\n人數\n　　．大人            ${document.getElementById('adults').value}\n　　．4-12歲        ${document.getElementById('kids').value}\n　　．4歲以下      ${document.getElementById('infants').value}\n安全座椅：需求 ${document.getElementById('infants').value} 張\n\n行李\n　　．登機箱       ${document.getElementById('cabinLuggage').value}\n　　．託運           ${document.getElementById('checkedLuggage').value}\n━━━━━━━━━━\n`;
             msg += `付款方式：${document.getElementById('paymentMethod').value}\n憑證需求：${receiptType}`;
             if (receiptType !== '不需要') msg += `\n抬頭：${companyName}\n統編：${taxId}`;
-            msg += `\n舉牌服務：${document.getElementById('addonSign').value === 'true' ? '需要' : '不需要'}\n其他備註：${document.getElementById('remarks').value || '無'}\n━━━━━━━━━━\n\n預計總費用：${document.getElementById('totalAmount').innerText}\n‼️付款提醒：請於收到預約單後 24 小時內完成付款。\n━━━━━━━━━━\n【24小時客服專線】\n➤ ᴘʜᴏɴᴇ 電話：0955311306\n➤ 或可以直接 ʟɪɪɴＥ 通話`;
-            if (agreed) msg += `\n\n${successNotice}`;
+            msg += `\n舉牌服務：${document.getElementById('addonSign').value === 'true' ? '需要' : '不需要'}\n其他備註：${document.getElementById('remarks').value || '無'}\n━━━━━━━━━━\n\n預計總費用：${document.getElementById('totalAmount').innerText}\n‼️付款提醒：請於收到預約單後 24 小時內完成付款。\n━━━━━━━━━━\n【24小時客服專線】\n➤ ᴘʜᴏɴᴇ 電話：0955311306\n➤ 或可以直接 ʟɪɴᴇ 通話`;
 
             if (agreed && GOOGLE_APP_SCRIPT_URL) {
                 const postData = {
-                    bookingNumber, date: new Date().toLocaleString('zh-TW'), status: "同意報價", userName: document.getElementById('userName').value, userTitle: document.getElementById('userTitle').value, userPhone: formattedPhone, travelDate: document.getElementById('travelDate').value, travelTime: time, airport: document.getElementById('airportSelect').value, serviceType: document.getElementById('serviceType').value, district: districtVal.replace(/^\[\d+\]\s*/, ''), addressDetail: document.getElementById('addressDetail').value, flightNumber: document.getElementById('flightNumber').value, carType: document.getElementById('carTypeSelect').value, adults: document.getElementById('adults').value, kids: document.getElementById('kids').value, infants: document.getElementById('infants').value, cabinLuggage: document.getElementById('cabinLuggage').value, checkedLuggage: document.getElementById('checkedLuggage').value, addonSign: document.getElementById('addonSign').value === 'true' ? '需要' : '不需要', paymentMethod: document.getElementById('paymentMethod').value, receiptType: receiptType, companyName: companyName, taxId: taxId, totalAmount: document.getElementById('totalAmount').innerText, remarks: document.getElementById('remarks').value || '無'
+                    bookingNumber, date: new Date().toLocaleString('zh-TW'), status: "同意報價", userName: document.getElementById('userName').value, userTitle: document.getElementById('userTitle').value, userPhone: formattedPhone, travelDate: document.getElementById('travelDate').value, travelTime: time, airport: document.getElementById('airportSelect').value, serviceType: document.getElementById('serviceType').value, district: districtVal.replace(/^\[\d+\]\s*/, ''), addressDetail: document.getElementById('addressDetail').value, flightNumber: document.getElementById('flightNumber').value, carType: document.getElementById('carTypeSelect').value, adults: document.getElementById('adults').value, kids: document.getElementById('kids').value, infants: document.getElementById('infants').value, cabinLuggage: document.getElementById('cabinLuggage').value, checkedLuggage: document.getElementById('checkedLuggage').value, addonSign: document.getElementById('addonSign').value === 'true' ? '興需要' : '不需要', paymentMethod: document.getElementById('paymentMethod').value, receiptType: receiptType, companyName: companyName, taxId: taxId, totalAmount: document.getElementById('totalAmount').innerText, remarks: document.getElementById('remarks').value || '無'
                 };
                 fetch(GOOGLE_APP_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(postData) });
             }
 
             if (window.liff && liff.isInClient()) {
                 try {
-                    await liff.sendMessages([{ type: 'text', text: msg }]);
+                    // ★ 關鍵修正：將訊息拆分為兩則發送 ★
+                    const messagesToSend = [{ type: 'text', text: msg }];
+                    if (agreed) {
+                        messagesToSend.push({ type: 'text', text: successNotice });
+                    }
+                    await liff.sendMessages(messagesToSend);
+                    
+                    // 顯示網頁彈窗，客人點擊「我知道了」後才會 closeWindow
                     showModal('預約已成功送出', successNotice, true);
-                } catch (e) { showModal('傳送失敗', '請手動截圖給客服：\n\n' + msg); }
+                } catch (e) { 
+                    showModal('傳送失敗', '請手動截圖給客服：\n\n' + msg); 
+                }
             } else {
-                showModal('預約已成功送出', (agreed ? successNotice + '\n\n' : '') + '實際內容如下：\n\n' + msg, true);
+                // 測試模式
+                showModal('預約已成功送出', (agreed ? successNotice + '\n\n' : '') + '實際回傳內容如下：\n\n' + msg, true);
             }
         }
 
