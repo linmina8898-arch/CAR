@@ -793,6 +793,9 @@
             const flightNumber = document.getElementById('flightNumber').value;
             const statusLabel = agreed ? "⭕我同意此初估報價，請安排車子" : "❌我不同意此報價，請不用安排車子";
             
+            // 成功送出時的提示文字
+            const successNotice = "您的訂單已成功送出！請您耐心稍候，待客服人員為您確認訂單內容無誤後，將回傳轉帳帳號或提供刷卡 QR Code 以利完成付款程序，感謝您的配合。";
+            
             let bookingNumber = '';
             if (agreed) {
                 const d = new Date();
@@ -835,30 +838,31 @@
             currentReservationMsg += `預約類型：${document.getElementById('airportSelect').value} ${type}\n`;
             currentReservationMsg += `班機編號：${flightNumber}\n`;
             currentReservationMsg += `━━━━━━━━━━\n`;
-            currentReservationMsg += `車型：${document.getElementById('carTypeSelect').value}\n`;
+            currentReservationMsg += `車型：${document.getElementById('carTypeSelect').value}\n\n`;
             currentReservationMsg += `人數\n`;
-            currentReservationMsg += `．大人            ${document.getElementById('adults').value}\n`;
-            currentReservationMsg += `．4-12歲        ${document.getElementById('kids').value}\n`;
-            currentReservationMsg += `．4歲以下      ${document.getElementById('infants').value}\n`;
-            currentReservationMsg += `安全座椅：${safetySeatsText}\n`;
+            currentReservationMsg += `　　．大人            ${document.getElementById('adults').value}\n`;
+            currentReservationMsg += `　　．4-12歲        ${document.getElementById('kids').value}\n`;
+            currentReservationMsg += `　　．4歲以下      ${document.getElementById('infants').value}\n`;
+            currentReservationMsg += `安全座椅：${safetySeatsText}\n\n`;
             currentReservationMsg += `行李\n`;
-            currentReservationMsg += `．登機箱       ${document.getElementById('cabinLuggage').value}\n`;
-            currentReservationMsg += `．託運           ${document.getElementById('checkedLuggage').value}\n`;
+            currentReservationMsg += `　　．登機箱       ${document.getElementById('cabinLuggage').value}\n`;
+            currentReservationMsg += `　　．託運           ${document.getElementById('checkedLuggage').value}\n`;
             currentReservationMsg += `━━━━━━━━━━\n`;
             currentReservationMsg += `付款方式：${document.getElementById('paymentMethod').value}\n`;
             currentReservationMsg += `憑證需求：${receiptLineMsg}\n`;
             currentReservationMsg += `舉牌服務：${document.getElementById('addonSign').value === 'true' ? '需要' : '不需要'}\n`;
             currentReservationMsg += `其他備註：${document.getElementById('remarks').value || '無'}\n`;
-            currentReservationMsg += `預計總費用：${document.getElementById('totalAmount').innerText}\n`;
             currentReservationMsg += `━━━━━━━━━━\n\n`;
+            currentReservationMsg += `預計總費用：${document.getElementById('totalAmount').innerText}\n`;
             currentReservationMsg += `‼️付款提醒：\n\n`;
-            currentReservationMsg += `請於收到預約單後 24 小時內完成付款以保留車輛。逾期未匯款將自動取消預約，恕不另行通知。\n\n`;
+            currentReservationMsg += ` 請於收到預約單後 24 小時內完成付款以保留車輛。逾期未匯款將自動取消預約，恕不另行通知。\n\n`;
             currentReservationMsg += `━━━━━━━━━━\n`;
             currentReservationMsg += `【24小時客服專線】\n`;
             currentReservationMsg += `➤ ᴘʜᴏɴᴇ 電話：0955311306\n`;
             currentReservationMsg += `➤ 或可以直接 ʟɪɪɴＥ 通話`;
 
-            const finalMsg = `【安興專車接送 預約單】\n${statusLabel}\n\n${currentReservationMsg}`;
+            // 最終組合訊息 (若同意則加上成功通知)
+            const finalMsg = `【安興專車接送 預約單】\n${statusLabel}\n\n${currentReservationMsg}${agreed ? '\n' + successNotice : ''}`;
 
             // 同步資料到 Google 試算表
             if (agreed && GOOGLE_APP_SCRIPT_URL !== '') {
@@ -913,7 +917,8 @@
                     showModal('傳送失敗', '請手動截圖給客服：\n\n' + finalMsg);
                 }
             } else {
-                showModal('預約已送出', '(測試模式) 實際預約單內容如下：\n\n' + finalMsg, true);
+                // 測試模式下顯示自訂的成功訊息
+                showModal('預約已成功送出', (agreed ? successNotice + '\n\n' : '') + '實際預約單內容如下：\n\n' + finalMsg, true);
             }
         }
 
