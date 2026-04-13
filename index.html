@@ -25,23 +25,27 @@
             border-top: 5px solid var(--brand-primary);
         }
         
-        /* 針對除了 Checkbox 以外的輸入框移除預設樣式 */
-        input:not([type="checkbox"]), select, textarea {
+        /* 針對除了 Checkbox/Radio 以外的輸入框移除預設樣式 */
+        input:not([type="checkbox"]):not([type="radio"]), select, textarea {
             background-color: #ffffff !important;
             border: 1px solid rgba(87, 66, 102, 0.2) !important;
             color: var(--brand-primary) !important;
             appearance: none;
         }
-        input:not([type="checkbox"]):focus, select:focus, textarea:focus {
+        input:not([type="checkbox"]):not([type="radio"]):focus, select:focus, textarea:focus {
             border-color: var(--brand-primary) !important;
             outline: none;
             box-shadow: 0 0 0 2px rgba(87, 66, 102, 0.1);
         }
 
-        /* 確保 Checkbox 能正常顯示打勾符號 */
+        /* 確保 Checkbox/Radio 能正常顯示 */
         input[type="checkbox"] {
             appearance: auto !important;
             -webkit-appearance: checkbox !important;
+        }
+        input[type="radio"] {
+            appearance: auto !important;
+            -webkit-appearance: radio !important;
         }
 
         .label-accent {
@@ -183,7 +187,16 @@
                 </div>
                 <div>
                     <label class="block text-sm mb-2 label-accent">搭乘時間</label>
-                    <input type="time" id="travelTime" class="w-full rounded-xl p-3" onchange="updateTotal()" required>
+                    <div class="flex gap-2">
+                        <select id="travelTimeHour" class="w-full rounded-xl p-3 text-center" style="padding-right: 1.5rem; background-position: right 0.2rem center; background-size: 1em 1em;" onchange="updateTotal()" required>
+                            <option value="" disabled selected>時</option>
+                            <option value="00">00</option><option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option><option value="05">05</option><option value="06">06</option><option value="07">07</option><option value="08">08</option><option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option>
+                        </select>
+                        <select id="travelTimeMinute" class="w-full rounded-xl p-3 text-center" style="padding-right: 1.5rem; background-position: right 0.2rem center; background-size: 1em 1em;" onchange="updateTotal()" required>
+                            <option value="" disabled selected>分</option>
+                            <option value="00">00</option><option value="05">05</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -204,7 +217,7 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm mb-2 label-accent">接送車型 (行李以標準29吋為基準)</label>
+                    <label class="block text-sm mb-2 label-accent">接送車型</label>
                     <select id="carTypeSelect" class="w-full rounded-xl p-3" onchange="updateTotal()">
                         <option value="小車">小車 (3人2件)</option>
                         <option value="7-9人座大車">7-9人座大車 (最多7人7件)</option>
@@ -269,7 +282,7 @@
 
             <!-- 行理件數 -->
             <div>
-                <label class="block text-sm mb-2 label-accent">行李件數 (託運最大29吋非胖胖箱)</label>
+                <label class="block text-sm mb-2 label-accent">行李件數</label>
                 <div class="grid grid-cols-2 gap-4">
                     <div class="text-center">
                         <span class="text-[11px] text-gray-500 mb-1 block">登機箱</span>
@@ -285,7 +298,7 @@
                         </select>
                     </div>
                     <div class="text-center">
-                        <span class="text-[11px] text-gray-500 mb-1 block">託運行李</span>
+                        <span class="text-[11px] text-gray-500 mb-1 block">託運行李（21吋~29吋）</span>
                         <select id="checkedLuggage" class="w-full rounded-xl p-2 text-center" style="padding-right: 1.5rem; background-position: right 0.2rem center; background-size: 1em 1em;" onchange="checkConstraintsAndUpdate()">
                             <option value="0">0</option>
                             <option value="1">1</option>
@@ -386,10 +399,10 @@
             <!-- 其他備註 -->
             <div>
                 <label class="block text-sm mb-2 label-accent">● 其他備註</label>
-                <textarea id="remarks" rows="3" class="w-full rounded-xl p-3 text-sm placeholder:text-[11px] placeholder:leading-relaxed" placeholder="如攜帶紙箱、胖胖箱、高爾夫球具、雪板、輪椅、腳踏車箱、大型樂器...等，請務必告知。其他需要我們注意的事項也可在這說明。"></textarea>
+                <textarea id="remarks" rows="3" class="w-full rounded-xl p-3 text-sm placeholder:text-[10px] placeholder:leading-relaxed" placeholder="如攜帶紙箱、運動版行李箱(胖胖箱)、高爾夫球具、雪板、輪椅、腳踏車箱、大型樂器...等，請務必告知。其他需要我們注意的事項也可在這說明。"></textarea>
             </div>
 
-            <!-- 總額預估 -->
+            <!-- 總額預估與同意條款 -->
             <div class="border-t border-gray-200 pt-4">
                 <div class="flex justify-between items-center">
                     <span class="text-lg font-bold">預計總費用:</span>
@@ -397,12 +410,26 @@
                 </div>
                 <p class="text-[10px] text-gray-400 text-right mt-1">* 實際價格可能因偏遠地段或山區而有所異動，最終報價請依客服回覆為準。</p>
 
-                <!-- 強制同意條款 (需打勾才能送出) -->
-                <div class="mt-4 flex items-start gap-3 bg-red-50 p-3 rounded-xl border border-red-200">
-                    <input type="checkbox" id="agreeTerms" class="mt-1 w-5 h-5 accent-[#574266] cursor-pointer shrink-0" required>
-                    <label for="agreeTerms" class="text-[11px] text-red-700 leading-relaxed font-bold cursor-pointer">
-                        *為維護行車安全與乘車品質，若實際人數或行李超出預約數量導致車輛無法安全乘載，駕駛有權拒絕服務，且該趟行程將視同已使用，恕不予退款或接受臨時更改車型。
-                    </label>
+                <!-- 強制同意條款 (改為是否同意選項) -->
+                <div class="mt-4 bg-red-50 p-4 rounded-xl border border-red-200">
+                    <div class="text-[11px] text-red-700 leading-relaxed font-bold mb-3 space-y-2">
+                        <p class="text-[13px]">【注意事項】</p>
+                        <p>1、如預約時無加點行程、當天服務司機無法多停上下車點(車輛均有 GPS )請體諒司機無法私自增加停靠點若臨時多加上下車點，可以告知司機請司機回報公司後方可執行「時加點服務」。</p>
+                        <p>2、依實際人數及行李件數尺寸預約車款。</p>
+                        <p>3、為了行車安全及法規，乘車時請繫上安全帶，車內座位區、腳踏墊區不得放置行李(隨身行李背包除外)。預約時請評估行李箱大小決定車種，司機現場服務時遇實際件數與預約資料不符時，本公司有權利終止租用車輛拒絕服務且該趟行程將視同已使用。</p>
+                        <p>4、為維護乘車品質，顧及每位貴賓權益，車內勿飲食。</p>
+                        <p>5、因應政府「小型車附載幼童安全乘坐實施及宣導辦法」規範：2 歲以下兒童乘坐小客車，需繫安全帶或使用安全座椅(增高墊)乘坐。嬰幼兒若在 0~4 歲且體重 18 公斤內，強制使用安全座椅。(此項目受法令規範，如未依實際需求數量加購與安裝安全椅/增高墊：所有一切責任(罰款)將由乘車人承擔。)</p>
+                    </div>
+                    <div class="flex flex-col gap-3 border-t border-red-200 pt-3">
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            <input type="radio" name="agreeChoice" value="yes" class="w-5 h-5 accent-[#574266]">
+                            <span class="text-sm font-bold text-gray-800">是，以上皆確認並同意，請送出預約單</span>
+                        </label>
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            <input type="radio" name="agreeChoice" value="no" class="w-5 h-5 accent-[#574266]">
+                            <span class="text-sm font-bold text-gray-800">否，以上不同意。</span>
+                        </label>
+                    </div>
                 </div>
             </div>
 
@@ -411,11 +438,8 @@
                 <p id="timeWarningMsg" class="text-sm text-red-600 font-bold hidden text-center bg-red-50 p-3 rounded-xl border border-red-200">
                     ⚠️ 預約時間小於12小時無法線上預約<br>請直接來電 0955311306
                 </p>
-                <button type="button" id="btnSubmitAgree" onclick="handleFinalSubmit(true)" class="btn-primary w-full font-bold py-5 rounded-2xl shadow-lg text-base transition active:scale-95 text-center">
-                    我同意此初估報價，請安排車子
-                </button>
-                <button type="button" onclick="handleFinalSubmit(false)" class="w-full bg-gray-200 text-gray-500 font-bold py-4 rounded-2xl text-sm transition active:scale-95 text-center hover:bg-gray-300">
-                    我不同意此報價，請不用安排車子
+                <button type="button" id="btnSubmitForm" onclick="processFinalSubmit()" class="btn-primary w-full font-bold py-5 rounded-2xl shadow-lg text-base transition active:scale-95 text-center">
+                    確認送出
                 </button>
             </div>
         </form>
@@ -661,7 +685,11 @@
             if (carFullText.includes("7-9人座大車")) carKey = "7-9人座大車";
             if (carFullText.includes("BENZ")) carKey = "豪華車";
             const type = document.getElementById('serviceType').value;
-            const time = document.getElementById('travelTime').value;
+            
+            const hourInput = document.getElementById('travelTimeHour').value;
+            const minInput = document.getElementById('travelTimeMinute').value;
+            const time = (hourInput && minInput) ? `${hourInput}:${minInput}` : '';
+            
             const dateVal = document.getElementById('travelDate').value;
             const infants = parseInt(document.getElementById('infants').value) || 0;
             const pay = document.getElementById('paymentMethod').value;
@@ -679,7 +707,6 @@
 
             // 2. 急單處理費 (+$300) 與 預約時間限制檢查
             let urgentFee = 0;
-            const btnAgree = document.getElementById('btnSubmitAgree');
             if (dateVal && time) {
                 const selectedDateTime = new Date(`${dateVal}T${time}`);
                 const now = new Date();
@@ -690,7 +717,6 @@
                 }
                 
                 document.getElementById('timeWarningMsg').classList.toggle('hidden', diffHours >= 12);
-                if (btnAgree) btnAgree.disabled = (diffHours < 12);
             }
             document.getElementById('urgentFeeDisplay').innerText = `+$${urgentFee}`;
 
@@ -762,6 +788,17 @@
             }
         }
 
+        // 處理最終按鈕點擊 (檢查單選框狀態)
+        function processFinalSubmit() {
+            const choice = document.querySelector('input[name="agreeChoice"]:checked');
+            if (!choice) {
+                showModal('提示', '請於最下方勾選「是否同意」免責聲明與報價。');
+                return;
+            }
+            const isAgreed = choice.value === 'yes';
+            handleFinalSubmit(isAgreed);
+        }
+
         async function handleFinalSubmit(agreed) {
             const form = document.getElementById('inquiryForm');
             
@@ -799,9 +836,28 @@
             }
 
             const type = document.getElementById('serviceType').value;
-            const time = document.getElementById('travelTime').value;
+            
+            const hourInput = document.getElementById('travelTimeHour').value;
+            const minInput = document.getElementById('travelTimeMinute').value;
+            if (agreed && (!hourInput || !minInput)) {
+                showModal('錯誤訊息通知', '請完整選擇搭乘時間 (時與分)');
+                return;
+            }
+            const time = (hourInput && minInput) ? `${hourInput}:${minInput}` : '';
+            
             const dateVal = document.getElementById('travelDate').value;
             
+            // ★ 12小時阻擋防呆機制 ★
+            if (agreed && dateVal && time) {
+                const selectedDateTime = new Date(`${dateVal}T${time}`);
+                const now = new Date();
+                const diffHours = (selectedDateTime - now) / (1000 * 60 * 60);
+                if (diffHours < 12) {
+                    showModal('錯誤訊息通知', '預約時間小於12小時無法線上預約，請直接來電 0955311306');
+                    return;
+                }
+            }
+
             const district = districtVal || '尚未選擇';
             const addressDetail = document.getElementById('addressDetail').value;
             const route = district !== '尚未選擇' ? district + (addressDetail ? ' ' + addressDetail : '') : district;
@@ -856,13 +912,13 @@
             currentReservationMsg += `━━━━━━━━━━\n`;
             currentReservationMsg += `車型：${document.getElementById('carTypeSelect').value}\n\n`;
             currentReservationMsg += `人數\n`;
-            currentReservationMsg += `▐　大人            ${document.getElementById('adults').value}\n`;
-            currentReservationMsg += `▐　4-12歲        ${document.getElementById('kids').value}\n`;
-            currentReservationMsg += `▐　4歲以下      ${document.getElementById('infants').value}\n`;
+            currentReservationMsg += `｜大人：${document.getElementById('adults').value}\n`;
+            currentReservationMsg += `｜4-12歲：${document.getElementById('kids').value}\n`;
+            currentReservationMsg += `｜4歲以下：${document.getElementById('infants').value}\n`;
             currentReservationMsg += `安全座椅：${safetySeatsText}\n\n`;
             currentReservationMsg += `行李\n`;
-            currentReservationMsg += `▐　登機箱       ${document.getElementById('cabinLuggage').value}\n`;
-            currentReservationMsg += `▐　託運           ${document.getElementById('checkedLuggage').value}\n`;
+            currentReservationMsg += `｜登機箱：${document.getElementById('cabinLuggage').value}\n`;
+            currentReservationMsg += `｜託運：${document.getElementById('checkedLuggage').value}\n`;
             currentReservationMsg += `━━━━━━━━━━\n`;
             currentReservationMsg += `付款方式：${document.getElementById('paymentMethod').value}\n`;
             currentReservationMsg += `憑證需求：${receiptLineMsg}\n`;
@@ -891,7 +947,7 @@
                         userTitle: userTitleInput, 
                         userPhone: formattedPhone,
                         travelDate: document.getElementById('travelDate').value,
-                        travelTime: time,
+                        travelTime: "'" + time,
                         airport: document.getElementById('airportSelect').value,
                         serviceType: type,
                         district: cleanDistrict, 
@@ -940,14 +996,14 @@
                     if (agreed) {
                         showModal('預約已成功送出', successNotice, true);
                     } else {
-                        showModal('通知', '您已取消此報價，即將關閉視窗。', true);
+                        showModal('通知', '您已送出不同意報價，即將關閉視窗。', true);
                     }
                 } catch (err) {
                     showModal('傳送失敗', '請手動截圖給客服：\n\n' + orderMsg + (agreed ? '\n\n' + successNotice : ''));
                 }
             } else {
                 // 測試模式下顯示自訂的成功訊息
-                showModal('預約已送出', (agreed ? successNotice + '\n\n' : '') + '實際預約單內容如下：\n\n' + orderMsg, true);
+                showModal(agreed ? '預約已送出' : '已送出不同意報價', (agreed ? successNotice + '\n\n' : '') + '實際預約單內容如下：\n\n' + orderMsg, true);
             }
         }
 
