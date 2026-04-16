@@ -123,301 +123,327 @@
         <!-- 詢價表單 -->
         <form id="inquiryForm" class="form-card rounded-2xl shadow-xl p-6 space-y-6" onsubmit="return false;">
             
-            <!-- 乘車人姓名、電話、接送地區 (前3欄群組) -->
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm mb-2 label-accent">乘車人姓名</label>
-                    <div class="flex gap-2">
-                        <input type="text" id="userName" placeholder="完整全名" class="w-full rounded-xl p-3 flex-1 min-w-0" required>
-                        <select id="userTitle" class="rounded-xl py-3 pl-1 pr-5 w-[4.5rem] shrink-0 text-center text-sm" style="background-position: right 0.2rem center; background-size: 0.8em 0.8em;">
-                            <option value="先生">先生</option>
-                            <option value="小姐">小姐</option>
-                        </select>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-sm mb-2 label-accent">乘車人電話</label>
-                    <input type="tel" id="userPhone" placeholder="0900-000000" class="w-full rounded-xl p-3" required>
-                </div>
-
-                <div>
-                    <label class="block text-sm mb-2 label-accent">接送地區 (可輸入郵遞區號搜尋)</label>
-                    
-                    <!-- 可搜尋下拉選單 (自訂) -->
-                    <div class="relative w-full mb-2" id="custom-district-wrapper">
-                        <button type="button" id="district-display-btn" class="w-full rounded-xl p-3 bg-white border border-[rgba(87,66,102,0.2)] text-left flex justify-between items-center focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[rgba(87,66,102,0.1)] transition" onclick="toggleDistrict()">
-                            <span id="district-display" class="text-gray-400 truncate">請選擇地區</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20" class="w-5 h-5 text-[var(--brand-primary)] shrink-0"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 8l4 4 4-4"/></svg>
-                        </button>
-                        
-                        <div id="district-dropdown" class="absolute z-50 w-full mt-2 bg-white border border-[rgba(87,66,102,0.2)] rounded-xl shadow-xl hidden flex-col max-h-64 overflow-hidden">
-                            <div class="p-2 border-b border-gray-100 bg-gray-50">
-                                <input type="text" id="district-search" class="w-full rounded-lg p-2 text-sm border border-gray-200 focus:border-[var(--brand-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(87,66,102,0.1)]" placeholder="🔍 輸入郵遞區號或地區名稱..." onkeyup="filterDistrict()">
-                            </div>
-                            <ul id="district-list" class="overflow-y-auto flex-1 p-2 space-y-1">
-                                <!-- JS 動態生成選項 -->
-                            </ul>
+            <!-- 1. 乘車人資訊 -->
+            <fieldset class="border border-[rgba(87,66,102,0.2)] rounded-2xl p-4 pt-3 bg-white/40 shadow-sm">
+                <legend class="text-[var(--brand-primary)] font-bold px-3 py-1 bg-white rounded-lg border border-[rgba(87,66,102,0.2)] text-sm tracking-wide shadow-sm">👤 乘車人資訊</legend>
+                <div class="space-y-4 mt-1">
+                    <div>
+                        <label class="block text-sm mb-2 label-accent">乘車人姓名</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="userName" placeholder="完整全名" class="w-full rounded-xl p-3 flex-1 min-w-0" required>
+                            <select id="userTitle" class="rounded-xl py-3 pl-1 pr-5 w-[4.5rem] shrink-0 text-center text-sm" style="background-position: right 0.2rem center; background-size: 0.8em 0.8em;">
+                                <option value="先生">先生</option>
+                                <option value="小姐">小姐</option>
+                            </select>
                         </div>
-                        <!-- 隱藏的實際輸入值 -->
-                        <input type="hidden" id="district" value="">
-                    </div>
-
-                    <input type="text" id="addressDetail" placeholder="詳細地址 (如：街道、門牌、社區名字)" class="w-full rounded-xl p-3">
-                    <div class="info-text-unified mt-2">
-                        ● 多點接送：請直接詢問客服報價內容。
-                    </div>
-                </div>
-            </div>
-
-            <!-- 詢價類型 -->
-            <div>
-                <label class="block text-sm mb-2 label-accent">詢價類型</label>
-                <div class="grid grid-cols-2 gap-4">
-                    <button type="button" id="btn-dropoff" onclick="setServiceType('送機')" class="type-btn active py-3 rounded-xl font-bold transition">送機</button>
-                    <button type="button" id="btn-pickup" onclick="setServiceType('接機')" class="type-btn py-3 rounded-xl font-bold transition">接機</button>
-                </div>
-                <input type="hidden" id="serviceType" value="送機">
-            </div>
-
-            <!-- 搭乘時間 -->
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm mb-2 label-accent">搭乘日期</label>
-                    <input type="date" id="travelDate" class="w-full rounded-xl p-3" onchange="updateTotal()" required>
-                </div>
-                <div>
-                    <label class="block text-sm mb-2 label-accent">搭乘時間</label>
-                    <div class="flex gap-2">
-                        <select id="travelTimeHour" class="w-full rounded-xl p-3 text-center" style="padding-right: 1.5rem; background-position: right 0.2rem center; background-size: 1em 1em;" onchange="updateTotal()" required>
-                            <option value="" disabled selected>時</option>
-                            <option value="00">00</option><option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option><option value="05">05</option><option value="06">06</option><option value="07">07</option><option value="08">08</option><option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option>
-                        </select>
-                        <select id="travelTimeMinute" class="w-full rounded-xl p-3 text-center" style="padding-right: 1.5rem; background-position: right 0.2rem center; background-size: 1em 1em;" onchange="updateTotal()" required>
-                            <option value="" disabled selected>分</option>
-                            <option value="00">00</option><option value="05">05</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 接送機場與車型 -->
-            <div class="space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm mb-2 label-accent">接送機場</label>
-                        <select id="airportSelect" class="w-full rounded-xl p-3" onchange="initData(); checkConstraintsAndUpdate();">
-                            <option value="桃園機場">桃園機場</option>
-                            <option value="松山機場">松山機場</option>
-                            <option value="台中機場">台中機場</option>
-                        </select>
                     </div>
                     <div>
-                        <label class="block text-sm mb-2 label-accent">班機編號</label>
-                        <input type="text" id="flightNumber" placeholder="如: BR212" class="w-full rounded-xl p-3" oninput="this.value = this.value.toUpperCase()" required>
+                        <label class="block text-sm mb-2 label-accent">乘車人電話</label>
+                        <input type="tel" id="userPhone" placeholder="0900-000000" class="w-full rounded-xl p-3" required>
                     </div>
-                </div>
-                <div>
-                    <label class="block text-sm mb-2 label-accent">接送車型</label>
-                    <select id="carTypeSelect" class="w-full rounded-xl p-3" onchange="updateTotal()">
-                        <option value="小車">小車 (3人2件)</option>
-                        <option value="7-9人座大車">7-9人座大車 (最多7人7件)</option>
-                        <option value="BENZ V & SIENNA">BENZ V & SIENNA (豪華首選)</option>
-                    </select>
-                    <p id="carWarningMsg" class="text-[11px] text-orange-500 mt-2 font-bold hidden leading-relaxed">
-                        ⚠️ 因人數或行李超過小車限制，已為您自動切換適用車型。
-                    </p>
-                    <p class="text-[10px] text-red-600 mt-2 leading-relaxed font-bold">
-                        *行李限制：行李必須放置於後車廂，車內空間僅限乘坐乘客，貴重物品小肩包除外。
-                    </p>
-                </div>
-            </div>
 
-            <!-- 乘車人數分級 -->
-            <div>
-                <label class="block text-sm mb-2 label-accent">乘車人數</label>
-                <div class="grid grid-cols-3 gap-2">
-                    <div class="text-center">
-                        <span class="text-[11px] text-gray-500 mb-1 block">大人</span>
-                        <select id="adults" class="w-full rounded-xl p-2 text-center" style="padding-right: 1.5rem; background-position: right 0.2rem center; background-size: 1em 1em;" onchange="checkConstraintsAndUpdate()">
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5</option>
-                            <option value="6">6</option>
-                            <option value="7">7</option>
-                        </select>
-                    </div>
-                    <div class="text-center">
-                        <span class="text-[11px] text-gray-500 mb-1 block">4-12歲</span>
-                        <select id="kids" class="w-full rounded-xl p-2 text-center" style="padding-right: 1.5rem; background-position: right 0.2rem center; background-size: 1em 1em;" onchange="checkConstraintsAndUpdate()">
-                            <option value="0">0</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5</option>
-                            <option value="6">6</option>
-                            <option value="7">7</option>
-                        </select>
-                    </div>
-                    <div class="text-center">
-                        <span class="text-[11px] text-gray-500 mb-1 block">4歲以下</span>
-                        <select id="infants" class="w-full rounded-xl p-2 text-center" style="padding-right: 1.5rem; background-position: right 0.2rem center; background-size: 1em 1em;" onchange="checkConstraintsAndUpdate()">
-                            <option value="0">0</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5</option>
-                            <option value="6">6</option>
-                            <option value="7">7</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="info-text-unified mt-2">
-                    ● 法規規定4歲以下小孩應使用安全座椅
-                </div>
-            </div>
-
-            <!-- 行理件數 -->
-            <div>
-                <label class="block text-sm mb-2 label-accent">行李件數</label>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="text-center">
-                        <span class="text-[11px] text-gray-500 mb-1 block">登機箱</span>
-                        <select id="cabinLuggage" class="w-full rounded-xl p-2 text-center" style="padding-right: 1.5rem; background-position: right 0.2rem center; background-size: 1em 1em;" onchange="checkConstraintsAndUpdate()">
-                            <option value="0">0</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5</option>
-                            <option value="6">6</option>
-                            <option value="7">7</option>
-                        </select>
-                    </div>
-                    <div class="text-center">
-                        <span class="text-[11px] text-gray-500 mb-1 block">託運行李（21吋~29吋）</span>
-                        <select id="checkedLuggage" class="w-full rounded-xl p-2 text-center" style="padding-right: 1.5rem; background-position: right 0.2rem center; background-size: 1em 1em;" onchange="checkConstraintsAndUpdate()">
-                            <option value="0">0</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5</option>
-                            <option value="6">6</option>
-                            <option value="7">7</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="info-text-unified mt-2">
-                    ● 登機箱也算行李，請依實際攜帶件數填寫
-                </div>
-            </div>
-
-            <!-- 加價項目 (舉牌) -->
-            <div>
-                <label class="block text-sm mb-1 label-accent">舉牌服務</label>
-                <div class="info-text-unified mb-2">
-                    ● 於入境大廳專人持牌接機，協助行李搬運及引導至上車處
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <button type="button" id="btn-sign-no" onclick="setSignAddon(false)" class="type-btn active py-3 rounded-xl font-bold transition text-sm">不需要</button>
-                    <button type="button" id="btn-sign-yes" onclick="setSignAddon(true)" class="type-btn py-3 rounded-xl font-bold transition text-sm">需要 (+$200)</button>
-                </div>
-                <input type="hidden" id="addonSign" value="false">
-            </div>
-
-            <!-- 憑證需求 (收據/發票) -->
-            <div>
-                <label class="block text-sm mb-2 label-accent">憑證需求</label>
-                <div class="grid grid-cols-3 gap-2">
-                    <button type="button" id="btn-receipt-none" onclick="setReceipt('不需要')" class="type-btn active py-2 rounded-xl font-bold transition text-sm">不需要</button>
-                    <button type="button" id="btn-receipt-normal" onclick="setReceipt('需要收據')" class="type-btn py-2 rounded-xl font-bold transition text-[11px] px-1">需要收據</button>
-                    <button type="button" id="btn-receipt-tax" onclick="setReceipt('發票(+5%)')" class="type-btn py-2 rounded-xl font-bold transition text-[11px] px-1">發票(+5%)</button>
-                </div>
-                <input type="hidden" id="receiptType" value="不需要">
-
-                <!-- 隱藏的抬頭與統編輸入框 -->
-                <div id="invoiceInfo" class="mt-3 hidden grid grid-cols-2 gap-3">
                     <div>
-                        <input type="text" id="companyName" placeholder="抬頭" class="w-full rounded-xl p-3 text-sm">
+                        <label class="block text-sm mb-2 label-accent">接送地區 (可輸入郵遞區號搜尋)</label>
+                        
+                        <!-- 可搜尋下拉選單 (自訂) -->
+                        <div class="relative w-full mb-2" id="custom-district-wrapper">
+                            <button type="button" id="district-display-btn" class="w-full rounded-xl p-3 bg-white border border-[rgba(87,66,102,0.2)] text-left flex justify-between items-center focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[rgba(87,66,102,0.1)] transition" onclick="toggleDistrict()">
+                                <span id="district-display" class="text-gray-400 truncate">請選擇地區</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20" class="w-5 h-5 text-[var(--brand-primary)] shrink-0"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 8l4 4 4-4"/></svg>
+                            </button>
+                            
+                            <div id="district-dropdown" class="absolute z-50 w-full mt-2 bg-white border border-[rgba(87,66,102,0.2)] rounded-xl shadow-xl hidden flex-col max-h-64 overflow-hidden">
+                                <div class="p-2 border-b border-gray-100 bg-gray-50">
+                                    <input type="text" id="district-search" class="w-full rounded-lg p-2 text-sm border border-gray-200 focus:border-[var(--brand-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(87,66,102,0.1)]" placeholder="🔍 輸入郵遞區號或地區名稱..." onkeyup="filterDistrict()">
+                                </div>
+                                <ul id="district-list" class="overflow-y-auto flex-1 p-2 space-y-1">
+                                    <!-- JS 動態生成選項 -->
+                                </ul>
+                            </div>
+                            <!-- 隱藏的實際輸入值 -->
+                            <input type="hidden" id="district" value="">
+                        </div>
+
+                        <input type="text" id="addressDetail" placeholder="詳細地址 (如：街道、門牌、社區名字)" class="w-full rounded-xl p-3">
+                        <div class="info-text-unified mt-2">
+                            ● 多點接送：請直接詢問客服報價內容。
+                        </div>
                     </div>
+                </div>
+            </fieldset>
+
+            <!-- 2. 行程資訊 -->
+            <fieldset class="border border-[rgba(87,66,102,0.2)] rounded-2xl p-4 pt-3 bg-white/40 shadow-sm">
+                <legend class="text-[var(--brand-primary)] font-bold px-3 py-1 bg-white rounded-lg border border-[rgba(87,66,102,0.2)] text-sm tracking-wide shadow-sm">✈️ 行程資訊</legend>
+                <div class="space-y-4 mt-1">
+                    <!-- 詢價類型 -->
                     <div>
-                        <input type="text" id="taxId" placeholder="統一編號" class="w-full rounded-xl p-3 text-sm">
+                        <label class="block text-sm mb-2 label-accent">詢價類型</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <button type="button" id="btn-dropoff" onclick="setServiceType('送機')" class="type-btn active py-3 rounded-xl font-bold transition">送機</button>
+                            <button type="button" id="btn-pickup" onclick="setServiceType('接機')" class="type-btn py-3 rounded-xl font-bold transition">接機</button>
+                        </div>
+                        <input type="hidden" id="serviceType" value="送機">
+                    </div>
+
+                    <!-- 搭乘時間 -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm mb-2 label-accent">搭乘日期</label>
+                            <input type="date" id="travelDate" class="w-full rounded-xl p-3" onchange="updateTotal()" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm mb-2 label-accent">搭乘時間</label>
+                            <div class="flex gap-2">
+                                <select id="travelTimeHour" class="w-full rounded-xl p-3 text-center" style="padding-right: 1.5rem; background-position: right 0.2rem center; background-size: 1em 1em;" onchange="updateTotal()" required>
+                                    <option value="" disabled selected>時</option>
+                                    <option value="00">00</option><option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option><option value="05">05</option><option value="06">06</option><option value="07">07</option><option value="08">08</option><option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option>
+                                </select>
+                                <select id="travelTimeMinute" class="w-full rounded-xl p-3 text-center" style="padding-right: 1.5rem; background-position: right 0.2rem center; background-size: 1em 1em;" onchange="updateTotal()" required>
+                                    <option value="" disabled selected>分</option>
+                                    <option value="00">00</option><option value="05">05</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 接送機場與車型 -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm mb-2 label-accent">接送機場</label>
+                            <select id="airportSelect" class="w-full rounded-xl p-3" onchange="initData(); checkConstraintsAndUpdate();">
+                                <option value="桃園機場">桃園機場</option>
+                                <option value="松山機場">松山機場</option>
+                                <option value="台中機場">台中機場</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm mb-2 label-accent">班機編號</label>
+                            <input type="text" id="flightNumber" placeholder="如: BR212" class="w-full rounded-xl p-3" oninput="this.value = this.value.toUpperCase()" required>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </fieldset>
 
-            <!-- 付款方式 -->
-            <div>
-                <label class="block text-sm mb-2 label-accent">付款方式</label>
-                <div class="grid grid-cols-2 gap-4">
-                    <button type="button" id="btn-pay-transfer" onclick="setPaymentMethod('轉帳')" class="type-btn active py-3 rounded-xl font-bold transition text-sm">轉帳</button>
-                    <button type="button" id="btn-pay-card" onclick="setPaymentMethod('街口/全支付刷卡')" class="type-btn py-3 rounded-xl font-bold transition text-[11px] px-1">街口/全支付刷卡 (+$30)</button>
-                </div>
-                <input type="hidden" id="paymentMethod" value="轉帳">
-            </div>
+            <!-- 3. 車型與乘載 -->
+            <fieldset class="border border-[rgba(87,66,102,0.2)] rounded-2xl p-4 pt-3 bg-white/40 shadow-sm">
+                <legend class="text-[var(--brand-primary)] font-bold px-3 py-1 bg-white rounded-lg border border-[rgba(87,66,102,0.2)] text-sm tracking-wide shadow-sm">🚘 車型與乘載</legend>
+                <div class="space-y-4 mt-1">
+                    <div>
+                        <label class="block text-sm mb-2 label-accent">接送車型</label>
+                        <select id="carTypeSelect" class="w-full rounded-xl p-3" onchange="updateTotal()">
+                            <option value="小車">小車 (3人2件)</option>
+                            <option value="7-9人座大車">7-9人座大車 (最多7人7件)</option>
+                            <option value="BENZ V & SIENNA">BENZ V & SIENNA (豪華首選)</option>
+                        </select>
+                        <p id="carWarningMsg" class="text-[11px] text-orange-500 mt-2 font-bold hidden leading-relaxed">
+                            ⚠️ 因人數或行李超過小車限制，已為您自動切換適用車型。
+                        </p>
+                        <p class="text-[10px] text-red-600 mt-2 leading-relaxed font-bold">
+                            *行李限制：行李必須放置於後車廂，車內空間僅限乘坐乘客，貴重物品小肩包除外。
+                        </p>
+                    </div>
 
-            <!-- 自動計算明細 -->
-            <div class="calc-detail-box rounded-xl p-4 space-y-2 text-sm">
-                <div class="flex justify-between border-b border-gray-200 pb-2 mb-2">
-                    <span class="text-gray-600 font-bold">基本車資</span>
-                    <span id="baseFareDisplay" class="font-bold" style="color: var(--brand-primary);">$0</span>
-                </div>
-                <div class="flex justify-between text-xs text-gray-500">
-                    <span>接機服務費 (+$200)</span>
-                    <span id="pickupFeeDisplay">+$0</span>
-                </div>
-                <div class="flex justify-between text-xs text-gray-500">
-                    <span>急單處理費 (12~24小時內) (+$300)</span>
-                    <span id="urgentFeeDisplay">+$0</span>
-                </div>
-                <div class="flex justify-between text-xs text-gray-500">
-                    <span>夜間加成費 (23:00~04:59) (+$100)</span>
-                    <span id="nightFeeDisplay">+$0</span>
-                </div>
-                <div class="flex justify-between text-xs text-gray-500">
-                    <span>安全座椅費 (+$200/張)</span>
-                    <span id="seatFeeDisplay">+$0</span>
-                </div>
-                <div class="flex justify-between text-xs text-gray-500">
-                    <span>舉牌服務費 (+$200)</span>
-                    <span id="signFeeDisplay">+$0</span>
-                </div>
-                <div class="flex justify-between text-xs text-gray-500">
-                    <span>付款手續費 (+$30)</span>
-                    <span id="paymentFeeDisplay">+$0</span>
-                </div>
-                <div id="taxFeeRow" class="flex justify-between text-xs text-gray-500 hidden">
-                    <span>發票稅金 (5%)</span>
-                    <span id="taxFeeDisplay">+$0</span>
-                </div>
-            </div>
+                    <!-- 乘車人數分級 -->
+                    <div>
+                        <label class="block text-sm mb-2 label-accent">乘車人數</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="text-center">
+                                <span class="text-[11px] text-gray-500 mb-1 block">大人</span>
+                                <select id="adults" class="w-full rounded-xl p-2 text-center" style="padding-right: 1.5rem; background-position: right 0.2rem center; background-size: 1em 1em;" onchange="checkConstraintsAndUpdate()">
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                </select>
+                            </div>
+                            <div class="text-center">
+                                <span class="text-[11px] text-gray-500 mb-1 block">4-12歲</span>
+                                <select id="kids" class="w-full rounded-xl p-2 text-center" style="padding-right: 1.5rem; background-position: right 0.2rem center; background-size: 1em 1em;" onchange="checkConstraintsAndUpdate()">
+                                    <option value="0">0</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                </select>
+                            </div>
+                            <div class="text-center">
+                                <span class="text-[11px] text-gray-500 mb-1 block">4歲以下</span>
+                                <select id="infants" class="w-full rounded-xl p-2 text-center" style="padding-right: 1.5rem; background-position: right 0.2rem center; background-size: 1em 1em;" onchange="checkConstraintsAndUpdate()">
+                                    <option value="0">0</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="info-text-unified mt-2">
+                            ● 法規規定4歲以下小孩應使用安全座椅
+                        </div>
+                    </div>
 
-            <!-- 其他備註 -->
-            <div>
-                <label class="block text-sm mb-2 label-accent">● 其他備註</label>
-                <textarea id="remarks" rows="3" class="w-full rounded-xl p-3 text-sm placeholder:text-[10px] placeholder:leading-relaxed" placeholder="如攜帶紙箱、運動版行李箱(胖胖箱)、高爾夫球具、雪板、輪椅、腳踏車箱、大型樂器...等，請務必告知。其他需要我們注意的事項也可在這說明。"></textarea>
-            </div>
+                    <!-- 行理件數 -->
+                    <div>
+                        <label class="block text-sm mb-2 label-accent">行李件數</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="text-center">
+                                <span class="text-[11px] text-gray-500 mb-1 block">登機箱</span>
+                                <select id="cabinLuggage" class="w-full rounded-xl p-2 text-center" style="padding-right: 1.5rem; background-position: right 0.2rem center; background-size: 1em 1em;" onchange="checkConstraintsAndUpdate()">
+                                    <option value="0">0</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                </select>
+                            </div>
+                            <div class="text-center">
+                                <span class="text-[11px] text-gray-500 mb-1 block">託運行李（21吋~29吋）</span>
+                                <select id="checkedLuggage" class="w-full rounded-xl p-2 text-center" style="padding-right: 1.5rem; background-position: right 0.2rem center; background-size: 1em 1em;" onchange="checkConstraintsAndUpdate()">
+                                    <option value="0">0</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="info-text-unified mt-2">
+                            ● 登機箱也算行李，請依實際攜帶件數填寫
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- 4. 附加服務與付款 -->
+            <fieldset class="border border-[rgba(87,66,102,0.2)] rounded-2xl p-4 pt-3 bg-white/40 shadow-sm">
+                <legend class="text-[var(--brand-primary)] font-bold px-3 py-1 bg-white rounded-lg border border-[rgba(87,66,102,0.2)] text-sm tracking-wide shadow-sm">🛠️ 附加服務與付款</legend>
+                <div class="space-y-4 mt-1">
+                    <!-- 加價項目 (舉牌) -->
+                    <div>
+                        <label class="block text-sm mb-1 label-accent">舉牌服務</label>
+                        <div class="info-text-unified mb-2">
+                            ● 於入境大廳專人持牌接機，協助行李搬運及引導至上車處
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <button type="button" id="btn-sign-no" onclick="setSignAddon(false)" class="type-btn active py-3 rounded-xl font-bold transition text-sm">不需要</button>
+                            <button type="button" id="btn-sign-yes" onclick="setSignAddon(true)" class="type-btn py-3 rounded-xl font-bold transition text-sm">需要 (+$200)</button>
+                        </div>
+                        <input type="hidden" id="addonSign" value="false">
+                    </div>
+
+                    <!-- 憑證需求 (收據/發票) -->
+                    <div>
+                        <label class="block text-sm mb-2 label-accent">憑證需求</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button type="button" id="btn-receipt-none" onclick="setReceipt('不需要')" class="type-btn active py-2 rounded-xl font-bold transition text-sm">不需要</button>
+                            <button type="button" id="btn-receipt-normal" onclick="setReceipt('需要收據')" class="type-btn py-2 rounded-xl font-bold transition text-[11px] px-1">需要收據</button>
+                            <button type="button" id="btn-receipt-tax" onclick="setReceipt('發票(+5%)')" class="type-btn py-2 rounded-xl font-bold transition text-[11px] px-1">發票(+5%)</button>
+                        </div>
+                        <input type="hidden" id="receiptType" value="不需要">
+
+                        <!-- 隱藏的抬頭與統編輸入框 -->
+                        <div id="invoiceInfo" class="mt-3 hidden grid grid-cols-2 gap-3">
+                            <div>
+                                <input type="text" id="companyName" placeholder="抬頭" class="w-full rounded-xl p-3 text-sm">
+                            </div>
+                            <div>
+                                <input type="text" id="taxId" placeholder="統一編號" class="w-full rounded-xl p-3 text-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 付款方式 -->
+                    <div>
+                        <label class="block text-sm mb-2 label-accent">付款方式</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <button type="button" id="btn-pay-transfer" onclick="setPaymentMethod('轉帳')" class="type-btn active py-3 rounded-xl font-bold transition text-sm">轉帳</button>
+                            <button type="button" id="btn-pay-card" onclick="setPaymentMethod('街口/全支付刷卡')" class="type-btn py-3 rounded-xl font-bold transition text-[11px] px-1">街口/全支付刷卡 (+$30)</button>
+                        </div>
+                        <input type="hidden" id="paymentMethod" value="轉帳">
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- 5. 費用明細與備註 -->
+            <fieldset class="border border-[rgba(87,66,102,0.2)] rounded-2xl p-4 pt-3 bg-white/40 shadow-sm">
+                <legend class="text-[var(--brand-primary)] font-bold px-3 py-1 bg-white rounded-lg border border-[rgba(87,66,102,0.2)] text-sm tracking-wide shadow-sm">📝 費用明細與備註</legend>
+                <div class="space-y-4 mt-1">
+                    <!-- 自動計算明細 -->
+                    <div class="calc-detail-box rounded-xl p-4 space-y-2 text-sm bg-white/60">
+                        <div class="flex justify-between border-b border-gray-200 pb-2 mb-2">
+                            <span class="text-gray-600 font-bold">基本車資</span>
+                            <span id="baseFareDisplay" class="font-bold" style="color: var(--brand-primary);">$0</span>
+                        </div>
+                        <div class="flex justify-between text-xs text-gray-500">
+                            <span>接機服務費 (+$200)</span>
+                            <span id="pickupFeeDisplay">+$0</span>
+                        </div>
+                        <div class="flex justify-between text-xs text-gray-500">
+                            <span>急單處理費 (12~24小時內) (+$300)</span>
+                            <span id="urgentFeeDisplay">+$0</span>
+                        </div>
+                        <div class="flex justify-between text-xs text-gray-500">
+                            <span>夜間加成費 (23:00~04:59) (+$100)</span>
+                            <span id="nightFeeDisplay">+$0</span>
+                        </div>
+                        <div class="flex justify-between text-xs text-gray-500">
+                            <span>安全座椅費 (+$200/張)</span>
+                            <span id="seatFeeDisplay">+$0</span>
+                        </div>
+                        <div class="flex justify-between text-xs text-gray-500">
+                            <span>舉牌服務費 (+$200)</span>
+                            <span id="signFeeDisplay">+$0</span>
+                        </div>
+                        <div class="flex justify-between text-xs text-gray-500">
+                            <span>付款手續費 (+$30)</span>
+                            <span id="paymentFeeDisplay">+$0</span>
+                        </div>
+                        <div id="taxFeeRow" class="flex justify-between text-xs text-gray-500 hidden">
+                            <span>發票稅金 (5%)</span>
+                            <span id="taxFeeDisplay">+$0</span>
+                        </div>
+                    </div>
+
+                    <!-- 其他備註 -->
+                    <div>
+                        <label class="block text-sm mb-2 label-accent">● 其他備註</label>
+                        <textarea id="remarks" rows="3" class="w-full rounded-xl p-3 text-sm placeholder:text-[10px] placeholder:leading-relaxed" placeholder="如攜帶紙箱、運動版行李箱(胖胖箱)、高爾夫球具、雪板、輪椅、腳踏車箱、大型樂器...等，請務必告知。其他需要我們注意的事項也可在這說明。"></textarea>
+                    </div>
+                </div>
+            </fieldset>
 
             <!-- 總額預估與同意條款 -->
-            <div class="border-t border-gray-200 pt-4">
-                <div class="flex justify-between items-center">
+            <div class="border-t border-[rgba(87,66,102,0.2)] pt-6 mt-2">
+                <div class="flex justify-between items-center bg-white/50 p-4 rounded-xl border border-[rgba(87,66,102,0.1)]">
                     <span class="text-lg font-bold">預計總費用:</span>
                     <span id="totalAmount" class="font-bold text-4xl" style="color: var(--brand-primary);">$0</span>
                 </div>
-                <p class="text-[10px] text-gray-400 text-right mt-1">* 實際價格可能因偏遠地段或山區而有所異動，最終報價請依客服回覆為準。</p>
+                <p class="text-[10px] text-gray-500 text-right mt-2">* 實際價格可能因偏遠地段或山區而有所異動，最終報價請依客服回覆為準。</p>
 
                 <!-- 強制同意條款 (改為是否同意選項) -->
-                <div class="mt-4 bg-red-50 p-4 rounded-xl border border-red-200">
+                <div class="mt-5 bg-red-50 p-4 rounded-xl border border-red-200">
                     <div class="text-[11px] text-red-700 leading-relaxed font-bold mb-3 space-y-2 text-justify">
                         <p class="text-[13px] text-left">【注意事項】</p>
-                        <p>1、如預約時無加點行程、當天服務司機無法多停上下車點(車輛均有 GPS )請體諒司機無法私自增加停靠點若臨時多加上下車點，可以告知司機請司機回報公司後方可執行「時加點服務」。</p>
+                        <p>1、如預約時無加點行程、當天服務司機無法多停上下車點(車輛均有 GPS )請體諒司機無法私自增加停靠點若臨時多加上下車點，可以告知司機請司機回報公司後方可執行「臨時加點服務」。</p>
                         <p>2、依實際人數及行李件數尺寸預約車款。</p>
                         <p>3、為了行車安全及法規，乘車時請繫上安全帶，車內座位區、腳踏墊區不得放置行李(隨身行李背包除外)。預約時請評估行李箱大小決定車種，司機現場服務時遇實際件數與預約資料不符時，本公司有權利終止租用車輛拒絕服務且該趟行程將視同已使用。</p>
-                        <p>4、為維護乘車品質，顧及每位貴賓權益，車內勿飲食。</p>
+                        <p>4、為維護乘車品質，顧及每位貴賓權益，車內請勿飲食。</p>
                         <p>5、因應政府「小型車附載幼童安全乘坐實施及宣導辦法」規範：2 歲以下兒童乘坐小客車，需繫安全帶或使用安全座椅(增高墊)乘坐。嬰幼兒若在 0~4 歲且體重 18 公斤內，強制使用安全座椅。(此項目受法令規範，如未依實際需求數量加購與安裝安全椅/增高墊：所有一切責任(罰款)將由乘車人承擔。)</p>
                     </div>
                     <div class="flex flex-col gap-3 border-t border-red-200 pt-3">
@@ -434,7 +460,7 @@
             </div>
 
             <!-- 最終意願按鈕區 -->
-            <div class="flex flex-col space-y-4 pt-4">
+            <div class="flex flex-col space-y-4 pt-2">
                 <p id="timeWarningMsg" class="text-sm text-red-600 font-bold hidden text-center bg-red-50 p-3 rounded-xl border border-red-200">
                     ⚠️ 預約時間小於12小時無法線上預約<br>請直接來電 0955311306
                 </p>
