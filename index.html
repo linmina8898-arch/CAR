@@ -125,7 +125,14 @@
             
             <!-- 1. 乘車人資訊 -->
             <fieldset class="border border-[rgba(87,66,102,0.2)] rounded-2xl p-4 pt-3 bg-white/40 shadow-sm">
-                <legend class="text-[var(--brand-primary)] font-bold px-3 py-1 bg-white rounded-lg border border-[rgba(87,66,102,0.2)] text-sm tracking-wide shadow-sm">👤 乘車人資訊</legend>
+                <legend class="text-[var(--brand-primary)] font-bold px-3 py-1.5 bg-white rounded-xl border border-[rgba(87,66,102,0.2)] text-base tracking-wide shadow-sm">
+                    <span class="flex items-center gap-2">
+                        <span class="bg-[var(--brand-bg)] p-1.5 rounded-lg text-[var(--brand-primary)]">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        </span>
+                        <span>乘車人資訊</span>
+                    </span>
+                </legend>
                 <div class="space-y-4 mt-1">
                     <div>
                         <label class="block text-sm mb-2 label-accent">乘車人姓名</label>
@@ -139,7 +146,7 @@
                     </div>
                     <div>
                         <label class="block text-sm mb-2 label-accent">乘車人電話</label>
-                        <input type="tel" id="userPhone" placeholder="0900-000000" class="w-full rounded-xl p-3" required>
+                        <input type="tel" id="userPhone" placeholder="0900-000000" class="w-full rounded-xl p-3" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '');" required>
                     </div>
 
                     <div>
@@ -174,7 +181,14 @@
 
             <!-- 2. 行程資訊 -->
             <fieldset class="border border-[rgba(87,66,102,0.2)] rounded-2xl p-4 pt-3 bg-white/40 shadow-sm">
-                <legend class="text-[var(--brand-primary)] font-bold px-3 py-1 bg-white rounded-lg border border-[rgba(87,66,102,0.2)] text-sm tracking-wide shadow-sm">✈️ 行程資訊</legend>
+                <legend class="text-[var(--brand-primary)] font-bold px-3 py-1.5 bg-white rounded-xl border border-[rgba(87,66,102,0.2)] text-base tracking-wide shadow-sm">
+                    <span class="flex items-center gap-2">
+                        <span class="bg-[var(--brand-bg)] p-1.5 rounded-lg text-[var(--brand-primary)]">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.2-1.1.6L3 8l6 5-3 3-3-1-2 2 4 4 2-2-1-3 3-3 5 6 1.2-.7c.4-.2.7-.6.6-1.1z"/></svg>
+                        </span>
+                        <span>行程資訊</span>
+                    </span>
+                </legend>
                 <div class="space-y-4 mt-1">
                     <!-- 詢價類型 -->
                     <div>
@@ -186,28 +200,29 @@
                         <input type="hidden" id="serviceType" value="送機">
                     </div>
 
-                    <!-- 搭乘時間 -->
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm mb-2 label-accent">搭乘日期</label>
-                            <input type="date" id="travelDate" class="w-full rounded-xl p-3" onchange="updateTotal()" required>
+                    <!-- 搭乘日期與時間 (分拆兩行) -->
+                    <div>
+                        <label class="block text-sm mb-2 label-accent">搭乘日期</label>
+                        <input type="date" id="travelDate" class="w-full rounded-xl p-3 text-gray-500 focus:text-[var(--brand-primary)]" onchange="this.classList.remove('text-gray-500'); this.classList.add('text-[var(--brand-primary)]'); updateTotal()" required>
+                        <div class="info-text-unified mt-2">
+                            ● 請點擊展開下拉式選單選擇日期
                         </div>
-                        <div>
-                            <label class="block text-sm mb-2 label-accent">搭乘時間</label>
-                            <div class="flex gap-2">
-                                <select id="travelTimeHour" class="w-full rounded-xl p-3 text-center" style="padding-right: 1.5rem; background-position: right 0.2rem center; background-size: 1em 1em;" onchange="updateTotal()" required>
-                                    <option value="" disabled selected>時</option>
-                                    <option value="00">00</option><option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option><option value="05">05</option><option value="06">06</option><option value="07">07</option><option value="08">08</option><option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option>
-                                </select>
-                                <select id="travelTimeMinute" class="w-full rounded-xl p-3 text-center" style="padding-right: 1.5rem; background-position: right 0.2rem center; background-size: 1em 1em;" onchange="updateTotal()" required>
-                                    <option value="" disabled selected>分</option>
-                                    <option value="00">00</option><option value="05">05</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option>
-                                </select>
-                            </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-2 label-accent">搭乘時間</label>
+                        <div class="flex gap-2">
+                            <select id="travelTimeHour" class="w-full rounded-xl p-3 text-center" style="padding-right: 1.5rem; background-position: right 0.2rem center; background-size: 1em 1em;" onchange="updateTotal()" required>
+                                <option value="" disabled selected>時</option>
+                                <option value="00">00</option><option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option><option value="05">05</option><option value="06">06</option><option value="07">07</option><option value="08">08</option><option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option>
+                            </select>
+                            <select id="travelTimeMinute" class="w-full rounded-xl p-3 text-center" style="padding-right: 1.5rem; background-position: right 0.2rem center; background-size: 1em 1em;" onchange="updateTotal()" required>
+                                <option value="" disabled selected>分</option>
+                                <option value="00">00</option><option value="05">05</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option>
+                            </select>
                         </div>
                     </div>
 
-                    <!-- 接送機場與車型 -->
+                    <!-- 接送機場與班機編號 -->
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm mb-2 label-accent">接送機場</label>
@@ -227,7 +242,14 @@
 
             <!-- 3. 車型與乘載 -->
             <fieldset class="border border-[rgba(87,66,102,0.2)] rounded-2xl p-4 pt-3 bg-white/40 shadow-sm">
-                <legend class="text-[var(--brand-primary)] font-bold px-3 py-1 bg-white rounded-lg border border-[rgba(87,66,102,0.2)] text-sm tracking-wide shadow-sm">🚘 車型與乘載</legend>
+                <legend class="text-[var(--brand-primary)] font-bold px-3 py-1.5 bg-white rounded-xl border border-[rgba(87,66,102,0.2)] text-base tracking-wide shadow-sm">
+                    <span class="flex items-center gap-2">
+                        <span class="bg-[var(--brand-bg)] p-1.5 rounded-lg text-[var(--brand-primary)]">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>
+                        </span>
+                        <span>車型與乘載</span>
+                    </span>
+                </legend>
                 <div class="space-y-4 mt-1">
                     <div>
                         <label class="block text-sm mb-2 label-accent">接送車型</label>
@@ -332,7 +354,14 @@
 
             <!-- 4. 附加服務與付款 -->
             <fieldset class="border border-[rgba(87,66,102,0.2)] rounded-2xl p-4 pt-3 bg-white/40 shadow-sm">
-                <legend class="text-[var(--brand-primary)] font-bold px-3 py-1 bg-white rounded-lg border border-[rgba(87,66,102,0.2)] text-sm tracking-wide shadow-sm">🛠️ 附加服務與付款</legend>
+                <legend class="text-[var(--brand-primary)] font-bold px-3 py-1.5 bg-white rounded-xl border border-[rgba(87,66,102,0.2)] text-base tracking-wide shadow-sm">
+                    <span class="flex items-center gap-2">
+                        <span class="bg-[var(--brand-bg)] p-1.5 rounded-lg text-[var(--brand-primary)]">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+                        </span>
+                        <span>附加服務與付款</span>
+                    </span>
+                </legend>
                 <div class="space-y-4 mt-1">
                     <!-- 加價項目 (舉牌) -->
                     <div>
@@ -382,7 +411,14 @@
 
             <!-- 5. 費用明細與備註 -->
             <fieldset class="border border-[rgba(87,66,102,0.2)] rounded-2xl p-4 pt-3 bg-white/40 shadow-sm">
-                <legend class="text-[var(--brand-primary)] font-bold px-3 py-1 bg-white rounded-lg border border-[rgba(87,66,102,0.2)] text-sm tracking-wide shadow-sm">📝 費用明細與備註</legend>
+                <legend class="text-[var(--brand-primary)] font-bold px-3 py-1.5 bg-white rounded-xl border border-[rgba(87,66,102,0.2)] text-base tracking-wide shadow-sm">
+                    <span class="flex items-center gap-2">
+                        <span class="bg-[var(--brand-bg)] p-1.5 rounded-lg text-[var(--brand-primary)]">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></svg>
+                        </span>
+                        <span>費用明細與備註</span>
+                    </span>
+                </legend>
                 <div class="space-y-4 mt-1">
                     <!-- 自動計算明細 -->
                     <div class="calc-detail-box rounded-xl p-4 space-y-2 text-sm bg-white/60">
