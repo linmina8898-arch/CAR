@@ -125,8 +125,8 @@
           <div class="space-y-4">
             <div class="flex gap-3">
               <input type="text" id="name" class="flex-1 px-4 py-3.5 bg-gray-50 border-2 border-transparent rounded-2xl outline-none focus:border-[#574266] focus:bg-white transition-all text-[15px] font-bold text-gray-800 placeholder:text-gray-400" placeholder="乘車人姓名">
-              <div class="relative w-28">
-                <select id="title" class="w-full h-full px-4 py-3.5 bg-gray-50 border-2 border-transparent rounded-2xl outline-none focus:border-[#574266] focus:bg-white transition-all text-[15px] font-bold text-gray-800 appearance-none hover:bg-gray-100 cursor-pointer">
+              <div class="relative w-[110px] shrink-0">
+                <select id="title" class="w-full h-full pl-4 pr-10 py-3.5 bg-gray-50 border-2 border-transparent rounded-2xl outline-none focus:border-[#574266] focus:bg-white transition-all text-[15px] font-bold text-gray-800 appearance-none hover:bg-gray-100 cursor-pointer">
                   <option value="先生">先生</option>
                   <option value="小姐">小姐</option>
                 </select>
@@ -141,7 +141,7 @@
             <div class="pt-3">
               <label class="block text-[13px] font-bold text-[#574266] mb-2 pl-1">接送地址</label>
               <input type="text" id="district" class="w-full px-4 py-3.5 bg-gray-100 border-2 border-transparent rounded-2xl outline-none text-[15px] font-bold text-gray-500 mb-3 cursor-not-allowed" readonly placeholder="郵遞區號 縣市 區域 (自動帶入)">
-              <input type="text" id="address" class="w-full px-4 py-3.5 bg-gray-50 border-2 border-transparent rounded-2xl outline-none focus:border-[#574266] focus:bg-white transition-all text-[15px] font-bold text-gray-800 placeholder:text-gray-400" placeholder="※ 輸入完整地址後請點選 Google 搜尋結果">
+              <input type="text" id="address" class="w-full px-4 py-3.5 bg-gray-50 border-2 border-transparent rounded-2xl outline-none focus:border-[#574266] focus:bg-white transition-all text-[15px] font-bold text-gray-800 placeholder:text-[13px] placeholder:text-gray-400" placeholder="※ 輸入完整地址後請點選 Google 搜尋結果">
             </div>
 
             <!-- 加點區塊 -->
@@ -167,7 +167,7 @@
               </div>
               <div id="extra-point-block" class="hidden-block mt-4 space-y-3">
                 <input type="text" id="extraDistrict" class="w-full px-4 py-3.5 bg-gray-100 border-2 border-transparent rounded-2xl outline-none text-[15px] font-bold text-gray-500 cursor-not-allowed" readonly placeholder="加點區域 (自動帶入)">
-                <input type="text" id="extraAddress" class="w-full px-4 py-3.5 bg-gray-50 border-2 border-transparent rounded-2xl outline-none focus:border-[#574266] focus:bg-white transition-all text-[15px] font-bold text-gray-800 placeholder:text-gray-400" placeholder="請輸入加點詳細地址">
+                <input type="text" id="extraAddress" class="w-full px-4 py-3.5 bg-gray-50 border-2 border-transparent rounded-2xl outline-none focus:border-[#574266] focus:bg-white transition-all text-[15px] font-bold text-gray-800 placeholder:text-[13px] placeholder:text-gray-400" placeholder="請輸入加點詳細地址">
               </div>
             </div>
           </div>
@@ -250,7 +250,7 @@
               </span>
               車型與人數行李
             </h2>
-            <span class="text-[11px] font-bold text-[#574266] bg-[#E9E7EF] px-2.5 py-1 rounded-md">上限 6人 6件</span>
+            <span class="text-[11px] font-bold text-[#574266] bg-[#E9E7EF] px-2.5 py-1 rounded-md">上限 7人 7件</span>
           </div>
 
           <div class="space-y-5">
@@ -403,9 +403,9 @@
               </div>
 
               <div>
-                <label class="block text-[13px] font-bold text-[#574266] mb-2 pl-1">回程日期</label>
+                <label class="block text-[13px] font-bold text-[#574266] mb-2 pl-1">回程日期 <span class="text-[11px] text-gray-400 font-medium">(請務必點擊選取)</span></label>
                 <div class="relative">
-                  <input type="date" id="returnDate" class="w-full px-4 py-3.5 bg-gray-50 border-2 border-transparent rounded-2xl outline-none focus:border-[#574266] focus:bg-white transition-all text-[15px] font-bold text-gray-800 hover:bg-gray-100 cursor-pointer">
+                  <input type="text" onfocus="(this.type='date')" onblur="(this.type= this.value ? 'date' : 'text')" id="returnDate" class="w-full px-4 py-3.5 bg-gray-50 border-2 border-transparent rounded-2xl outline-none focus:border-[#574266] focus:bg-white transition-all text-[15px] font-bold text-gray-800 hover:bg-gray-100 cursor-pointer placeholder:text-[#574266]/60 placeholder:font-bold" placeholder="👉 請點擊選擇回程日期">
                   <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#574266]">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>
                   </div>
@@ -434,7 +434,7 @@
               <div class="pt-2">
                 <label class="block text-[13px] font-bold text-[#574266] mb-2 pl-1">回程地址</label>
                 <input type="text" id="returnDistrict" class="w-full px-4 py-3.5 bg-gray-100 border-2 border-transparent rounded-2xl outline-none text-[15px] font-bold text-gray-500 mb-3 cursor-not-allowed" readonly>
-                <input type="text" id="returnAddress" class="w-full px-4 py-3.5 bg-gray-50 border-2 border-transparent rounded-2xl outline-none focus:border-[#574266] focus:bg-white transition-all text-[15px] font-bold text-gray-800 placeholder:text-gray-400" placeholder="回程詳細地址">
+                <input type="text" id="returnAddress" class="w-full px-4 py-3.5 bg-gray-50 border-2 border-transparent rounded-2xl outline-none focus:border-[#574266] focus:bg-white transition-all text-[15px] font-bold text-gray-800 placeholder:text-[13px] placeholder:text-gray-400" placeholder="回程詳細地址">
               </div>
               
               <!-- 回程加點 -->
@@ -460,7 +460,7 @@
                 </div>
                 <div id="return-extra-point-block" class="hidden-block mt-4 space-y-3">
                   <input type="text" id="returnExtraDistrict" class="w-full px-4 py-3.5 bg-gray-100 border-2 border-transparent rounded-2xl outline-none text-[15px] font-bold text-gray-500 cursor-not-allowed" readonly>
-                  <input type="text" id="returnExtraAddress" class="w-full px-4 py-3.5 bg-gray-50 border-2 border-transparent rounded-2xl outline-none focus:border-[#574266] focus:bg-white transition-all text-[15px] font-bold text-gray-800 placeholder:text-gray-400" placeholder="回程加點地址">
+                  <input type="text" id="returnExtraAddress" class="w-full px-4 py-3.5 bg-gray-50 border-2 border-transparent rounded-2xl outline-none focus:border-[#574266] focus:bg-white transition-all text-[15px] font-bold text-gray-800 placeholder:text-[13px] placeholder:text-gray-400" placeholder="回程加點地址">
                 </div>
               </div>
 
@@ -680,7 +680,7 @@
   </div>
 
   <script>
-    const GOOGLE_APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx20KSiCXxHlVkvbyIp4joE76M0M5er77ZlLaDMyGqzW9kfTwqMbrrwZ40cP0kyoCzi/exec';
+    const GOOGLE_APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw9p0qIiOnzxKLSmW4GR1I_1JYj5SJwCbnEYeXaNkzzSvvS_XyeCbQy7T1zieQTMMNd/exec';
     const GOOGLE_MAPS_API_KEY = 'AIzaSyAxYym5ZR8puPb0iiycHdwzTJTKH0Aears';
     const LIFF_ID = '2009753964-JHY89jrV';
 
@@ -836,7 +836,7 @@
       const a = parseInt(DOM.adults.value)||0, c = parseInt(DOM.children.value)||0, i = parseInt(DOM.infants.value)||0;
       const coVal = DOM.carryOn.value, cbVal = DOM.checkedBag.value, co = parseInt(coVal)||0, cb = parseInt(cbVal)||0;
       const r = (el, os, maxTotal) => { if(!el) return; const v = el.value, av = maxTotal - os; el.innerHTML = ''; for(let j=0; j<=av; j++) el.add(new Option(j, j)); el.value = (v !== "" && v<=av) ? v : '0'; };
-      r(DOM.adults, c+i, 6); r(DOM.children, a+i, 6); r(DOM.infants, a+c, 6);
+      r(DOM.adults, c+i, 7); r(DOM.children, a+i, 7); r(DOM.infants, a+c, 7);
       state.adults = parseInt(DOM.adults.value); state.children = parseInt(DOM.children.value); state.infants = parseInt(DOM.infants.value);
       if (state.noLuggage) { 
           DOM.carryOn.value = "0"; DOM.checkedBag.value = "0"; 
@@ -846,7 +846,7 @@
           DOM.carryOn.disabled = false; DOM.checkedBag.disabled = false; 
           DOM.carryOn.parentElement.classList.remove('opacity-40'); DOM.checkedBag.parentElement.classList.remove('opacity-40'); 
       }
-      r(DOM.carryOn, cb, 6); r(DOM.checkedBag, co, 6);
+      r(DOM.carryOn, cb, 7); r(DOM.checkedBag, co, 7);
       state.carryOn = parseInt(DOM.carryOn.value); state.checkedBag = parseInt(DOM.checkedBag.value);
       const tp = state.adults + state.children + state.infants;
       const tl = state.carryOn + state.checkedBag;
@@ -862,7 +862,7 @@
     function updateReturnPeopleLuggageOptions() {
       const a = parseInt(document.getElementById('returnAdults').value)||0, c = parseInt(document.getElementById('returnChildren').value)||0, i = parseInt(document.getElementById('returnInfants').value)||0, co = parseInt(document.getElementById('returnCarryOn').value)||0, cb = parseInt(document.getElementById('returnCheckedBag').value)||0;
       const r = (el, os, maxTotal) => { if(!el) return; const v = el.value, av = maxTotal - os; el.innerHTML = ''; for(let j=0; j<=av; j++) el.add(new Option(j, j)); el.value = (v !== "" && v<=av) ? v : '0'; };
-      r(document.getElementById('returnAdults'), c+i, 6); r(document.getElementById('returnChildren'), a+i, 6); r(document.getElementById('returnInfants'), a+c, 6); 
+      r(document.getElementById('returnAdults'), c+i, 7); r(document.getElementById('returnChildren'), a+i, 7); r(document.getElementById('returnInfants'), a+c, 7); 
       
       if (state.returnNoLuggage) {
           document.getElementById('returnCarryOn').value = "0"; document.getElementById('returnCheckedBag').value = "0";
@@ -872,8 +872,30 @@
           document.getElementById('returnCarryOn').disabled = false; document.getElementById('returnCheckedBag').disabled = false;
           document.getElementById('returnCarryOn').parentElement.classList.remove('opacity-40'); document.getElementById('returnCheckedBag').parentElement.classList.remove('opacity-40');
       }
-      r(document.getElementById('returnCarryOn'), cb, 6); r(document.getElementById('returnCheckedBag'), co, 6);
+      r(document.getElementById('returnCarryOn'), cb, 7); r(document.getElementById('returnCheckedBag'), co, 7);
       state.returnAdults = parseInt(document.getElementById('returnAdults').value); state.returnChildren = parseInt(document.getElementById('returnChildren').value); state.returnInfants = parseInt(document.getElementById('returnInfants').value); state.returnCarryOn = parseInt(document.getElementById('returnCarryOn').value); state.returnCheckedBag = parseInt(document.getElementById('returnCheckedBag').value);
+    }
+
+    async function loadPrices() { 
+      try { 
+        console.log('正在載入報價資料...');
+        const res = await fetch(`${GOOGLE_APP_SCRIPT_URL}?action=getPrices&t=${Date.now()}`); 
+        const text = await res.text();
+        try {
+          const d = JSON.parse(text);
+          if (d.status === 'success') { 
+            state.priceMap = d.prices; 
+            console.log('報價資料載入成功！共', Object.keys(state.priceMap).length, '筆');
+            calculatePrice(); 
+          } else {
+            console.warn('報價載入失敗(後端回傳):', d.message);
+          }
+        } catch(jsonErr) {
+          console.error('JSON解析失敗，請確認 GAS 網頁應用程式權限是否設為「所有人」', text.substring(0, 100));
+        }
+      } catch(e) { 
+        console.error('報價 API 請求失敗，請確認網路連線或 GAS URL 是否正確', e); 
+      } 
     }
 
     function syncReturnInfo() {
@@ -960,9 +982,25 @@
       const aptPrefix = airport.replace('機場','');
       const cleanLoc = locString.replace(/\s+/g, '').replace('台灣', '');
       const userZip = locString.match(/^(\d{3})/)?.[1] || "";
-      const availableKeys = Object.keys(state.priceMap).filter(k => k.split('_')[0].includes(aptPrefix));
-      let match = availableKeys.find(k => { const val = state.priceMap[k]; if (val && val.region) { const cleanRegion = val.region.toString().replace(/\s+/g, ''); if (cleanRegion !== '' && cleanLoc.includes(cleanRegion)) return true; } const keyContext = k.split('_').slice(1).join('').replace(/\s+/g, '').replace('台灣', ''); if (keyContext !== '' && (cleanLoc.includes(keyContext) || keyContext.includes(cleanLoc))) return true; return false; });
-      if (!match && userZip) { match = availableKeys.find(k => { const val = state.priceMap[k]; if (val && val.zip && val.zip.toString() === userZip) return true; const keyContext = k.split('_').slice(1).join('').replace(/\s+/g, '').replace('台灣', ''); const keyZip = keyContext.match(/^(\d{3})/)?.[1]; if (keyZip && keyZip === userZip) return true; return false; }); }
+      
+      const availableKeys = Object.keys(state.priceMap).filter(k => k.includes(aptPrefix));
+      
+      let match = availableKeys.find(k => {
+        const val = state.priceMap[k];
+        // 1. 郵遞區號最準，優先比對
+        if (userZip && val.zip && val.zip.toString() === userZip) return true;
+        // 2. 區域比對
+        if (val.region) {
+          const cleanRegion = val.region.toString().replace(/\s+/g, '');
+          if (cleanRegion !== '' && cleanLoc.includes(cleanRegion)) return true;
+        }
+        // 3. 鍵值比對
+        const cleanKey = k.replace(/\s+/g, '').replace('台灣', '').replace(aptPrefix, '').replace(/[_-\s]+/g, '');
+        if (cleanKey !== '' && (cleanLoc.includes(cleanKey) || cleanKey.includes(cleanLoc))) return true;
+        return false;
+      });
+      
+      console.log(`[報價匹配] 機場: ${airport}, 地址: ${locString}, 匹配結果:`, match ? state.priceMap[match] : '找不到匹配');
       return match ? state.priceMap[match] : null;
     }
 
@@ -1025,6 +1063,8 @@
         } else state.returnTotal = 0;
       } else state.returnTotal = 0;
 
+      console.log("【報價系統】基本車資計算: 車型=", state.carType, "金額=", p1, "總計=", total);
+
       DOM.displayCarTypeName.innerText = `基本車資 (${state.carType})`;
       DOM.displayRoute.innerText = state.serviceType === '接機' ? `${state.airport} → ${baseInfo.n || '未選'}` : `${baseInfo.n || '未選'} → ${state.airport}`;
       DOM.displayBasePrice.innerText = baseInfo.p ? `$${baseInfo.p}` : '待報價';
@@ -1079,7 +1119,6 @@
       if (!window.google) { const s = document.createElement('script'); s.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&language=zh-TW`; s.onload = () => { initAC('address','district'); initAC('returnAddress','returnDistrict'); initAC('extraAddress','extraDistrict'); initAC('returnExtraAddress','returnExtraDistrict'); }; document.head.appendChild(s); } else { initAC('address','district'); initAC('returnAddress','returnDistrict'); initAC('extraAddress','extraDistrict'); initAC('returnExtraAddress','returnExtraDistrict'); }
     }
 
-    async function loadPrices() { try { const res = await fetch(`${GOOGLE_APP_SCRIPT_URL}?action=getPrices&t=${Date.now()}`); const d = await res.json(); if (d.status === 'success') { state.priceMap = d.prices; calculatePrice(); } } catch(e) { console.warn('報價載入失敗'); } }
     function initLiff() { const s = document.createElement('script'); s.src = 'https://static.line-scdn.net/liff/edge/2/sdk.js'; s.onload = () => window.liff.init({ liffId: LIFF_ID }); document.head.appendChild(s); }
     function showAlert(msg) { DOM.modalMessage.innerText = msg; DOM.modal.classList.remove('hidden-block'); }
     function closeModal() { DOM.modal.classList.add('hidden-block'); }
@@ -1105,7 +1144,7 @@
         const rtl = state.returnCarryOn + state.returnCheckedBag;
         if (rtl === 0 && !state.returnNoLuggage && !state.returnHasSportLuggage) errs.push('回程行李總數為 0 時，請務必勾選「回程無行李」');
         if (state.returnHasSportLuggage && !state.returnSportLuggageSize.trim()) errs.push('請輸入回程特殊行李的尺寸');
-        if (state.returnDate && state.date && state.returnDate <= state.date) errs.push('回程日期必須晚於去程日期');
+        if (state.returnDate && state.date && state.returnDate < state.date) errs.push('回程日期不得早於去程日期');
       }
       if (!document.getElementById('agreed').checked) errs.push('請先點擊閱讀免責聲明並同意條款');
       const needsYes = document.getElementById('needsYes'), needsNo = document.getElementById('needsNo');
@@ -1137,8 +1176,12 @@
                   `4歲以下：${state.infants}位\n`;
       if (state.infants > 0) lineText += `安全座椅：${state.infants}張\n`;
       
-      const currentLuggage = state.noLuggage ? '無行李' : `登機${state.carryOn},托運${state.checkedBag}`;
-      lineText += `行李：${currentLuggage}\n`;
+      if (state.noLuggage) {
+          lineText += `行李：無行李\n`;
+      } else {
+          lineText += `登機箱：${state.carryOn}件\n` +
+                      `託運箱：${state.checkedBag}件\n`;
+      }
       if (state.hasSportLuggage) lineText += `胖胖箱：${state.sportLuggageQty}件 (${state.sportLuggageSize})\n`;
       lineText += `去程費用：$${state.goingTotal}\n`;
       
@@ -1187,13 +1230,13 @@
         mainAddressFull: (state.district || "") + " " + (state.address || ""),
         extraAddressFull: state.hasExtraPoint ? ((state.extraDistrict || "") + " " + (state.extraAddress || "")) : "",
         passengers: `大${state.adults},小${state.children},幼${state.infants}`, 
-        luggage: currentLuggage, 
+        luggage: (state.noLuggage ? "無行李" : `登機${state.carryOn},托運${state.checkedBag}`), 
         safetySeat: state.infants,
         returnTime: state.needReturnTrip ? ("'" + state.returnTimeHour + ":" + state.returnTimeMinute) : "",
         returnAddressFull: state.needReturnTrip ? ((state.returnDistrict || "") + " " + (state.returnAddress || "")) : "",
         returnExtraAddressFull: (state.needReturnTrip && state.returnHasExtraPoint) ? ((state.returnExtraDistrict || "") + " " + (state.returnExtraAddress || "")) : "",
         returnPassengers: state.needReturnTrip ? `大${state.returnAdults},小${state.returnChildren},幼${state.returnInfants}` : "",
-        returnLuggage: state.needReturnTrip ? `登機${state.returnCarryOn},託運${state.returnCheckedBag}` : "",
+        returnLuggage: state.needReturnTrip ? (state.returnNoLuggage ? "無行李" : `登機${state.returnCarryOn},託運${state.returnCheckedBag}`) : "",
         sportLuggage: state.hasSportLuggage ? `${state.sportLuggageQty}件, ${state.sportLuggageSize}` : "無",
         returnSportLuggage: (state.needReturnTrip && state.returnHasSportLuggage) ? `${state.returnSportLuggageQty}件, ${state.returnSportLuggageSize}` : (state.needReturnTrip ? "無" : ""),
         remarks: finalRemarks,
@@ -1223,6 +1266,17 @@
     document.getElementById('phone').oninput = (e) => { let v = e.target.value.replace(/\D/g, '').slice(0, 10); let formatted = v; if (v.length > 7) formatted = v.slice(0, 4) + '-' + v.slice(4, 7) + '-' + v.slice(7); else if (v.length > 4) formatted = v.slice(0, 4) + '-' + v.slice(4); e.target.value = formatted; state.phone = formatted; };
     document.querySelectorAll('input, select, textarea').forEach(el => { if (el.id === 'phone') return; el.addEventListener('change', (e) => { const id = e.target.id; if(id in state) { state[id] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; if(id === 'date' || id === 'returnDate' || id === 'timeHour' || id === 'returnTimeHour') restrictTimeOptions();
           
+          if(id === 'date') {
+              const returnDateEl = document.getElementById('returnDate');
+              if (returnDateEl && state.date) {
+                  returnDateEl.min = state.date;
+                  if (state.returnDate && state.returnDate < state.date) {
+                      returnDateEl.value = state.date;
+                      state.returnDate = state.date;
+                  }
+              }
+          }
+
           if(id === 'serviceType' || id === 'airport') {
             if(state.needReturnTrip) syncReturnInfo();
           }
