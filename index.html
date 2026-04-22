@@ -1009,6 +1009,8 @@
       const extra = state.hasExtraPoint ? findPriceData(state.airport, state.extraDistrict) : null;
       const extract = (d, ct) => (ct === '大車' ? (d?.large || 0) : (d?.small || 0));
       const p1 = extract(main, state.carType), p2 = extract(extra, state.carType);
+      
+      // 有加點時，以價高者為基本車資，並記錄以哪個地點為主
       const baseInfo = (state.hasExtraPoint && p2 > p1) ? { p: p2, n: state.extraDistrict } : { p: p1, n: state.district };
       const h = parseInt(state.timeHour);
       
@@ -1039,6 +1041,8 @@
         const rData = findPriceData(state.returnAirport, state.returnDistrict);
         const rExData = state.returnHasExtraPoint ? findPriceData(state.returnAirport, state.returnExtraDistrict) : null;
         const rp1 = extract(rData, rCarType), rp2 = extract(rExData, rCarType);
+        
+        // 有加點時，以價高者為基本車資
         const rBaseInfo = (state.returnHasExtraPoint && rp2 > rp1) ? { p: rp2, n: state.returnExtraDistrict } : { p: rp1, n: state.returnDistrict };
         rBaseP = rBaseInfo.p;
         
