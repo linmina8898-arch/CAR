@@ -584,7 +584,7 @@
         // --- 設定常數 ---
         const LIFF_ID = "2009827083-SPSbrR9a";
         const LINE_OA_LINK = "https://line.me/R/ti/p/@220ewdah";
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzzuyJuFtLh6O-7RSuxYTGlpM2jcu2jfhVUSj5hXZDIahCs9i_obEUSqvDEkW3kdsPT/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyND19Qbxt3o09f54Y-bc24dk82GqvNPF2vYcpR5k7jx3mQwo6elfPihqWFC2swCgHq/exec"; 
 
         let extraStopFee = 0;
         let extraStopDist = 0;
@@ -1396,18 +1396,34 @@
                         headers: { 'Content-Type': 'text/plain;charset=utf-8' } 
                     });
                 }
+            } catch (err) {
+                // 如果 fetch 拋出網路錯誤
+                Swal.fire('錯誤', '網路傳送失敗，請檢查網路連線或電洽客服。\n\n【24小時客服專線】\n➤ ᴘʜᴏɴᴇ 電話：0955311306', 'error'); 
+                btn.disabled = false; btn.innerText = '確認送出預約'; 
+                return;
+            }
 
-                if (liff.isInClient()) { 
-                    const msg2 = `您的預約資料已成功送出！\n為確保您的行程細節與權益，客服專員正在為您進行訂單核對。\n\n📍 預約注意事項：\n• 訂單確認：\n須收到本公司的『預約確認回覆』後，才算正式完成預約。\n\n• 付款資訊：\n若您選擇轉帳或刷卡結帳，客服將於確認訂單時，一併提供專屬付款連結或帳號。\n\n感謝您的耐心等候，我們將盡快與您聯繫。\n\n【24小時客服專線】\n➤ ᴘʜᴏɴᴇ 電話：0955311306`;
+            // LINE 訊息回傳
+            if (liff.isInClient()) { 
+                const msg2 = `您的預約資料已成功送出！\n為確保您的行程細節與權益，客服專員正在為您進行訂單核對。\n\n📍 預約注意事項：\n• 訂單確認：\n須收到本公司的『預約確認回覆』後，才算正式完成預約。\n\n• 付款資訊：\n若您選擇轉帳或刷卡結帳，客服將於確認訂單時，一併提供專屬付款連結或帳號。\n\n感謝您的耐心等候，我們將盡快與您聯繫。\n\n【24小時客服專線】\n➤ ᴘʜᴏɴᴇ 電話：0955311306`;
+                try {
                     await liff.sendMessages([{ type: 'text', text: msg1.replace(/\n\s*\n/g, '\n') }, { type: 'text', text: msg2 }]); 
                     liff.closeWindow(); // 傳送完訊息後立即關閉 LIFF 視窗
-                } else {
-                    // 若不在 LINE 裡面（例如瀏覽器測試），則跳出成功提示並重新整理
-                    Swal.fire({ title: '已成功送出', text: '請等候客服確認。', icon: 'success' }).then(() => { window.location.reload(); });
+                } catch (lineErr) {
+                    // 如果 LINE 傳送失敗，由於表單已送出給 Google，仍顯示成功提示
+                    console.error("LINE SendMessage Error:", lineErr);
+                    Swal.fire({ 
+                        title: '預約單已送出', 
+                        html: '系統已成功收到您的預約！<br><br><span style="color:red; font-size:12px;">(註：無法自動回傳明細至 LINE 聊天室，請截圖保留畫面，或等候客服主動聯繫。)</span>', 
+                        icon: 'success',
+                        confirmButtonColor: '#553f62'
+                    }).then(() => { 
+                        liff.closeWindow(); 
+                    });
                 }
-            } catch (err) { 
-                Swal.fire('錯誤', '傳送失敗，請電洽客服。\n\n【24小時客服專線】\n➤ ᴘʜᴏɴᴇ 電話：0955311306', 'error'); 
-                btn.disabled = false; btn.innerText = '確認送出預約'; 
+            } else {
+                // 若不在 LINE 裡面（例如瀏覽器測試），則跳出成功提示並重新整理
+                Swal.fire({ title: '已成功送出', text: '請等候客服確認。', icon: 'success' }).then(() => { window.location.reload(); });
             }
         });
         window.onload = () => { initFormOptions(); initializeLiff(); };
