@@ -1358,6 +1358,7 @@
                 // 發送第一筆 (去程)
                 await fetch(GAS_URL, { 
                     method: 'POST', 
+                    mode: 'no-cors',
                     body: JSON.stringify({
                         action: 'addReservation',
                         data: {
@@ -1378,6 +1379,7 @@
                 if (hasReturn) {
                     await fetch(GAS_URL, { 
                         method: 'POST', 
+                        mode: 'no-cors',
                         body: JSON.stringify({
                             action: 'addReservation',
                             data: {
