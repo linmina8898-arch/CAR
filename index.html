@@ -1513,22 +1513,9 @@
             const retTotalAmt = parseInt(qtEl.getAttribute('data-ret'), 10) || 0;
             const grandTotalAmt = parseInt(qtEl.getAttribute('data-grand'), 10) || 0;
 
-            let discountStrLine = currentDiscountAmt > 0 ? `\n  ├ 折扣折抵：-$${currentDiscountAmt.toLocaleString('en-US')} (${currentDiscountCode})` : '';
-            let lineTotalStr = hasReturn ? 
-                `\n  ├ 去程：$${outTotalAmt.toLocaleString('en-US')}\n  ├ 回程：$${retTotalAmt.toLocaleString('en-US')}${discountStrLine}\n  └ 最終總計：$${grandTotalAmt.toLocaleString('en-US')}` : 
-                (currentDiscountAmt > 0 ? `\n  ├ 原價：$${outTotalAmt.toLocaleString('en-US')}${discountStrLine}\n  └ 最終總計：$${grandTotalAmt.toLocaleString('en-US')}` : `$${grandTotalAmt.toLocaleString('en-US')}`);
-
             let discountStrGas = currentDiscountAmt > 0 ? ` (折抵 -$${currentDiscountAmt.toLocaleString('en-US')})` : '';
             let outGoogleTotal = hasReturn ? `去程 $${outTotalAmt.toLocaleString('en-US')} (總計 $${grandTotalAmt.toLocaleString('en-US')})${discountStrGas}` : `$${grandTotalAmt.toLocaleString('en-US')}${discountStrGas}`;
             let retGoogleTotal = hasReturn ? `回程 $${retTotalAmt.toLocaleString('en-US')} (總計 $${grandTotalAmt.toLocaleString('en-US')})${discountStrGas}` : `$0`;
-
-            // 組織 LINE 訊息
-            let msgOut = `--- 【去程資訊】 ---\n乘車日期：${outT.rideDate}\n乘車時間：${outT.rideTime}\n預約類型：${outT.rideType}\n接送機場：${outT.airport}\n航班編號：${outT.flightNo}\n預約車型：${outT.carType}\n接送地址：${outT.address}\n${outT.extraStop ? '加點地址：' + outT.extraStop + '\n' : ''}乘車人數：大人:${outT.paxAdult}, 小孩:${outT.paxChild}, 幼兒:${outT.paxInfant}\n行李件數：登機箱:${outT.lugCarry}, 託運:${outT.lugChecked}\n${outT.sportLuggage !== '無' ? '胖胖箱：' + outT.sportLuggage + '\n' : ''}安全座椅：${outT.safetySeat}\n加價項目：${outT.surcharge}`;
-            
-            let msgRet = '';
-            if (hasReturn) {
-                msgRet = `\n\n--- 【回程資訊】 ---\n乘車日期：${retT.rideDate}\n乘車時間：${retT.rideTime}\n預約類型：${retT.rideType}\n接送機場：${retT.airport}\n航班編號：${retT.flightNo}\n預約車型：${retT.carType}\n接送地址：${retT.address}\n${retT.extraStop ? '加點地址：' + retT.extraStop + '\n' : ''}乘車人數：大人:${retT.paxAdult}, 小孩:${retT.paxChild}, 幼兒:${retT.paxInfant}\n行李件數：登機箱:${retT.lugCarry}, 託運:${retT.lugChecked}\n${retT.sportLuggage !== '無' ? '胖胖箱：' + retT.sportLuggage + '\n' : ''}安全座椅：${retT.safetySeat}\n加價項目：${retT.surcharge}`;
-            }
 
             const signStr = document.getElementById('optSign').checked ? document.getElementById('signContent').value : '無';
             const payStr = document.getElementById('payment').value;
@@ -1541,7 +1528,53 @@
             const paxPhone = document.getElementById('paxPhone').value;
             const email = document.getElementById('email').value;
 
-            const msg1 = `【安興租車 預約單明細】\n預約編號：${baseOrderId}\n乘車人姓名：${paxFullName}\n乘車人電話：${paxPhone}\n\n${msgOut}${msgRet}\n\n===================\n${signStr !== '無' ? '舉牌服務：' + signStr + '\n' : ''}預估車資：${lineTotalStr}\n付款方式：${payStr}\n備註：${remarkStr}`;
+            // 組織 LINE 訊息 (完全比照行事曆格式)
+            let msgOut = `【去程預約明細】\n` +
+                         `預約編號：${hasReturn ? baseOrderId + '-去程' : baseOrderId}\n` +
+                         `乘車人姓名：${paxFullName}\n` +
+                         `乘車日期：${outT.rideDate}\n` +
+                         `乘車時間：${outT.rideTime}\n` +
+                         `接送機場：${outT.airport}\n` +
+                         `聯絡電話：${paxPhone}\n` +
+                         `主要接送地址：${outT.address}\n` +
+                         (outT.extraStop ? `加點地址：${outT.extraStop}\n` : "") +
+                         `航班編號：${outT.flightNo}\n` +
+                         `車型：${outT.carType}\n` +
+                         `人數：大${outT.paxAdult} 中${outT.paxChild} 小${outT.paxInfant}\n` +
+                         `行李：登機${outT.lugCarry} 托運${outT.lugChecked}\n` +
+                         `胖胖箱：${outT.sportLuggage}\n` +
+                         `安全座椅：${outT.safetySeat}\n` +
+                         `舉牌服務：${signStr}\n` +
+                         `加價項目：${outT.surcharge}\n` +
+                         (currentDiscountAmt > 0 ? `折扣折抵：-$${currentDiscountAmt.toLocaleString('en-US')} (${currentDiscountCode})\n` : "") +
+                         `總車資估算：${outGoogleTotal}\n` +
+                         `付款方式：${payStr}\n` +
+                         `備註：${remarkStr}`;
+            
+            let msgRet = '';
+            if (hasReturn) {
+                msgRet = `【回程預約明細】\n` +
+                         `預約編號：${baseOrderId + '-回程'}\n` +
+                         `乘車人姓名：${paxFullName}\n` +
+                         `乘車日期：${retT.rideDate}\n` +
+                         `乘車時間：${retT.rideTime}\n` +
+                         `接送機場：${retT.airport}\n` +
+                         `聯絡電話：${paxPhone}\n` +
+                         `主要接送地址：${retT.address}\n` +
+                         (retT.extraStop ? `加點地址：${retT.extraStop}\n` : "") +
+                         `航班編號：${retT.flightNo}\n` +
+                         `車型：${retT.carType}\n` +
+                         `人數：大${retT.paxAdult} 中${retT.paxChild} 小${retT.paxInfant}\n` +
+                         `行李：登機${retT.lugCarry} 托運${retT.lugChecked}\n` +
+                         `胖胖箱：${retT.sportLuggage}\n` +
+                         `安全座椅：${retT.safetySeat}\n` +
+                         `舉牌服務：${signStr}\n` +
+                         `加價項目：${retT.surcharge}\n` +
+                         (currentDiscountAmt > 0 ? `折扣折抵：-$${currentDiscountAmt.toLocaleString('en-US')} (${currentDiscountCode})\n` : "") +
+                         `總車資估算：${retGoogleTotal}\n` +
+                         `付款方式：${payStr}\n` +
+                         `備註：${remarkStr}`;
+            }
 
             try {
                 // 發送第一筆 (去程)
@@ -1596,9 +1629,23 @@
 
             // LINE 訊息回傳
             if (liff.isInClient()) { 
-                const msg2 = `您的預約資料已成功送出！\n為確保您的行程細節與權益，客服專員正在為您進行訂單核對。\n\n📍 預約注意事項：\n• 訂單確認：\n須收到本公司的『預約確認回覆』後，才算正式完成預約。\n\n• 付款資訊：\n若您選擇轉帳或刷卡結帳，客服將於確認訂單時，一併提供專屬付款連結或帳號。\n\n感謝您的耐心等候，我們將盡快與您聯繫。\n\n【24小時客服專線】\n➤ ᴘʜᴏɴᴇ 電話：0955311306`;
+                const msgEnd = `您的預約資料已成功送出！\n為確保您的行程細節與權益，客服專員正在為您進行訂單核對。\n\n📍 預約注意事項：\n• 訂單確認：\n須收到本公司的『預約確認回覆』後，才算正式完成預約。\n\n• 付款資訊：\n若您選擇轉帳或刷卡結帳，客服將於確認訂單時，一併提供專屬付款連結或帳號。\n\n感謝您的耐心等候，我們將盡快與您聯繫。\n\n【24小時客服專線】\n➤ ᴘʜᴏɴᴇ 電話：0955311306`;
+                
+                let lineMessages = [];
+
+                // 第一段：去程 (包含所有明細、車資、備註)
+                lineMessages.push({ type: 'text', text: msgOut });
+
+                // 第二段：回程 (如果有)
+                if (hasReturn) {
+                    lineMessages.push({ type: 'text', text: msgRet });
+                }
+
+                // 第三段：結尾提醒
+                lineMessages.push({ type: 'text', text: msgEnd });
+
                 try {
-                    await liff.sendMessages([{ type: 'text', text: msg1.replace(/\n\s*\n/g, '\n') }, { type: 'text', text: msg2 }]); 
+                    await liff.sendMessages(lineMessages); 
                     liff.closeWindow(); // 傳送完訊息後立即關閉 LIFF 視窗
                 } catch (lineErr) {
                     // 如果 LINE 傳送失敗，由於表單已送出給 Google，仍顯示成功提示
