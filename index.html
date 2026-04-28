@@ -296,6 +296,7 @@
                             <option value="小車">小車 (限3人2托運1登機箱)</option>
                             <option value="大車">大車 (限7人7件總行李)</option>
                             <option value="進口商務車(SIENNA/BENZ V)">進口商務車 (SIENNA/BENZ V)</option>
+                            <option value="New Alphard 40">New Alphard 40 (限4人3件總行李)</option>
                         </select>
                         <p id="carWarning" class="text-sm text-red-500 font-bold mt-2 hidden"></p>
                     </div>
@@ -475,6 +476,7 @@
                                 <option value="小車">小車 (限3人2托運1登機箱)</option>
                                 <option value="大車">大車 (限7人7件總行李)</option>
                                 <option value="進口商務車(SIENNA/BENZ V)">進口商務車 (SIENNA/BENZ V)</option>
+                                <option value="New Alphard 40">New Alphard 40 (限4人3件總行李)</option>
                             </select>
                             <p id="carWarning_R" class="text-sm text-red-500 font-bold mt-2 hidden"></p>
                         </div>
@@ -488,8 +490,8 @@
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700">付款方式</label>
                         <select id="payment" class="mt-1 w-full p-2 border rounded focus-primary quote-trigger">
-                            <option value="現金">現金</option>
                             <option value="轉帳">轉帳</option>
+                            <option value="刷卡(限街口/全支付)">刷卡(限街口/全支付)</option>
                         </select>
                     </div>
 
@@ -594,7 +596,7 @@
         // --- 設定常數 ---
         const LIFF_ID = "2009922945-KmKUgqbg";
         const LINE_OA_LINK = "https://line.me/R/ti/p/@ansing";
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbxQMq2uQOE1KOzhvPRoMid4oHAbRLIKT_96stpJnAE8CqaoBmiIRkQQG6i4KbenKclL/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwyKTc6QW-jFVKptuy637ZSAjRCjMF_UwCKb33ZCaZhR-yREV01jOGdhaRwVf4--Po2/exec"; 
 
         // 👉 系統會自動從 Google 試算表「折扣碼」工作表抓取，不需再手動填寫
         let DISCOUNT_CODES = {};
@@ -753,6 +755,17 @@
                     return;
                 }
                 
+                // 檢查付款方式 (僅限轉帳)
+                const paymentMethod = document.getElementById('payment').value;
+                if (paymentMethod !== '轉帳') {
+                    currentDiscountAmt = 0;
+                    currentDiscountCode = '';
+                    msgEl.innerText = '❌ 所有的折扣碼/優惠僅限使用「轉帳」支付';
+                    msgEl.className = 'text-xs mt-1 font-bold text-red-500 block';
+                    updateLogic();
+                    return;
+                }
+
                 let amt = 0;
                 // 1. RT-Ticket 判斷
                 if (code === 'RT-TICKET') {
@@ -772,8 +785,8 @@
                 else if (code.startsWith('ANREF')) {
                     if (document.getElementById('needReturnTrip').checked) {
                         if (DISCOUNT_CODES[code]) {
-                            amt = DISCOUNT_CODES[code]; // 會抓取試算表中的 200
-                            msgEl.innerText = `✅ 已成功套用好友優惠，折抵 $${amt}`;
+                            amt = DISCOUNT_CODES[code]; // 會抓取試算表中的金額
+                            msgEl.innerText = `✅ 已成功套用好友優惠，折抵 $${amt.toLocaleString('en-US')}`;
                         } else {
                             currentDiscountAmt = 0;
                             currentDiscountCode = '';
@@ -794,7 +807,7 @@
                 // 3. 其他從試算表抓取的代碼
                 else if (DISCOUNT_CODES[code]) {
                     amt = DISCOUNT_CODES[code];
-                    msgEl.innerText = `✅ 已成功套用，折抵 $${amt}`;
+                    msgEl.innerText = `✅ 已成功套用，折抵 $${amt.toLocaleString('en-US')}`;
                 }
 
                 if (amt > 0) {
@@ -824,6 +837,17 @@
                     } else {
                         updateLogic();
                     }
+                }
+            });
+
+            // 當更改付款方式時，自動重新驗證折扣碼
+            document.getElementById('payment').addEventListener('change', () => {
+                const code = document.getElementById('discountInput').value.trim();
+                if (code !== '') {
+                    document.getElementById('applyDiscountBtn').click();
+                } else if (document.getElementById('needReturnTrip').checked) {
+                    document.getElementById('discountInput').value = 'RT-Ticket';
+                    document.getElementById('applyDiscountBtn').click();
                 }
             });
         }
@@ -1194,6 +1218,7 @@
                 if (matchMain) {
                     if (carType === '小車') mainPrice = parseInt(matchMain.d) || 0;
                     else if (carType === '大車') mainPrice = parseInt(matchMain.e) || 0;
+                    else if (carType === 'New Alphard 40') mainPrice = parseInt(matchMain.g) || 0;
                     else mainPrice = parseInt(matchMain.f) || 0;
                 }
 
@@ -1204,12 +1229,13 @@
                         let extraPrice = 0;
                         if (carType === '小車') extraPrice = parseInt(matchExtra.d) || 0;
                         else if (carType === '大車') extraPrice = parseInt(matchExtra.e) || 0;
+                        else if (carType === 'New Alphard 40') extraPrice = parseInt(matchExtra.g) || 0;
                         else extraPrice = parseInt(matchExtra.f) || 0;
                         finalBasePrice = Math.max(mainPrice, extraPrice);
                     }
                 }
                 basicFareCalc = finalBasePrice;
-                if (basicFareCalc > 0) baseFareDisplay = `$${basicFareCalc}`;
+                if (basicFareCalc > 0) baseFareDisplay = `$${basicFareCalc.toLocaleString('en-US')}`;
             }
 
             let html = '';
@@ -1227,7 +1253,7 @@
             let tripDist = isReturn ? extraStopDist_R : extraStopDist;
             if (needExtraStop) {
                 if (tripDistFee > 0) { 
-                    html += `<div class="flex justify-between items-center"><span>└ 加點服務費 <span class="text-[10px] text-[#e9e7ef]/60">(${tripDist.toFixed(1)}公里)</span></span><span>+$${tripDistFee}</span></div>`; 
+                    html += `<div class="flex justify-between items-center"><span>└ 加點服務費 <span class="text-[10px] text-[#e9e7ef]/60">(${tripDist.toFixed(1)}公里)</span></span><span>+$${tripDistFee.toLocaleString('en-US')}</span></div>`; 
                     tripSurchargeTotal += tripDistFee; 
                 } else if (tripDistFee === -1) { html += `<div class="flex justify-between"><span class="text-[#e9e7ef]/70 italic">└ 加點(客服人工報價)</span></div>`; }
             }
@@ -1245,7 +1271,7 @@
                     if (sF > 0) seatDetails.push(`前向${sF}`);
                     if (sB > 0) seatDetails.push(`增高墊${sB}`);
                     seatDetailsStr = seatDetails.join(', ');
-                    html += `<div class="flex justify-between"><span>└ 安全座椅 <span class="text-[10px] text-[#e9e7ef]/60">(${seatDetailsStr})</span></span><span>+$${seats*200}</span></div>`; 
+                    html += `<div class="flex justify-between"><span>└ 安全座椅 <span class="text-[10px] text-[#e9e7ef]/60">(${seatDetailsStr})</span></span><span>+$${(seats * 200).toLocaleString('en-US')}</span></div>`; 
                     tripSurchargeTotal += (seats * 200); 
                 }
                 let remain = infant - seats;
@@ -1280,13 +1306,26 @@
 
             let totalP = (parseInt(document.getElementById('paxAdult' + prefix).value)||1) + (parseInt(document.getElementById('paxChild' + prefix).value)||0) + infant;
             let checkedLug = parseInt(checkEl.value)||0;
+            
             let isSmallOk = (totalP <= 3) && (checkedLug <= 2) && (carry <= 1) && !(totalP === 2 && checkedLug === 2 && carry === 2);
+            let isAlphardOk = (totalP <= 4) && ((checkedLug + carry) <= 3);
+            
             let carSel = document.getElementById('carType' + prefix);
             let optSmall = carSel.querySelector('option[value="小車"]');
-            optSmall.disabled = !isSmallOk;
+            let optAlphard = carSel.querySelector('option[value="New Alphard 40"]');
+            
+            if(optSmall) optSmall.disabled = !isSmallOk;
+            if(optAlphard) optAlphard.disabled = !isAlphardOk;
+            
             if(!isSmallOk && carSel.value === '小車') carSel.value = '大車';
-            document.getElementById('carWarning' + prefix).innerText = isSmallOk ? '' : '※ 小車不適用當前人數/行李';
-            document.getElementById('carWarning' + prefix).classList.toggle('hidden', isSmallOk);
+            if(!isAlphardOk && carSel.value === 'New Alphard 40') carSel.value = '大車';
+
+            let warningMsg = [];
+            if (!isSmallOk) warningMsg.push('小車');
+            if (!isAlphardOk) warningMsg.push('New Alphard 40');
+
+            document.getElementById('carWarning' + prefix).innerText = warningMsg.length > 0 ? `※ ${warningMsg.join('、')}不適用當前人數/行李` : '';
+            document.getElementById('carWarning' + prefix).classList.toggle('hidden', warningMsg.length === 0);
 
             return {
                 html: html,
@@ -1341,18 +1380,18 @@
             
             let summaryHtml = '';
             if (retRes) {
-                summaryHtml += `<div class="flex justify-between items-center text-sm text-[#e9e7ef]/90"><span>去程總金額</span><span>$${outTotal + globalSurcharge}</span></div>`;
-                summaryHtml += `<div class="flex justify-between items-center text-sm text-[#e9e7ef]/90"><span>回程總金額</span><span>$${retTotal}</span></div>`;
+                summaryHtml += `<div class="flex justify-between items-center text-sm text-[#e9e7ef]/90"><span>去程總金額</span><span>$${(outTotal + globalSurcharge).toLocaleString('en-US')}</span></div>`;
+                summaryHtml += `<div class="flex justify-between items-center text-sm text-[#e9e7ef]/90"><span>回程總金額</span><span>$${retTotal.toLocaleString('en-US')}</span></div>`;
                 if (currentDiscountAmt > 0) {
-                    summaryHtml += `<div class="flex justify-between items-center text-sm text-[#f07cad] font-bold mt-1"><span>折扣折抵 (${currentDiscountCode})</span><span>-$${currentDiscountAmt}</span></div>`;
+                    summaryHtml += `<div class="flex justify-between items-center text-sm text-[#f07cad] font-bold mt-1"><span>折扣折抵 (${currentDiscountCode})</span><span>-$${currentDiscountAmt.toLocaleString('en-US')}</span></div>`;
                 }
-                summaryHtml += `<div class="flex justify-between items-center pt-2 mt-2 border-t border-[#e9e7ef]/30 text-lg"><span class="text-[#e9e7ef]">來回總車資</span><span id="quoteTotal" class="text-[#e9e7ef] font-black text-2xl drop-shadow-sm" data-out="${outTotal + globalSurcharge}" data-ret="${retTotal}" data-grand="${grandTotal}">$${grandTotal}</span></div>`;
+                summaryHtml += `<div class="flex justify-between items-center pt-2 mt-2 border-t border-[#e9e7ef]/30 text-lg"><span class="text-[#e9e7ef]">來回總車資</span><span id="quoteTotal" class="text-[#e9e7ef] font-black text-2xl drop-shadow-sm" data-out="${outTotal + globalSurcharge}" data-ret="${retTotal}" data-grand="${grandTotal}">$${grandTotal.toLocaleString('en-US')}</span></div>`;
             } else {
-                summaryHtml += `<div class="flex justify-between items-center text-sm text-[#e9e7ef]/90"><span>小計</span><span>$${outTotal + globalSurcharge}</span></div>`;
+                summaryHtml += `<div class="flex justify-between items-center text-sm text-[#e9e7ef]/90"><span>小計</span><span>$${(outTotal + globalSurcharge).toLocaleString('en-US')}</span></div>`;
                 if (currentDiscountAmt > 0) {
-                    summaryHtml += `<div class="flex justify-between items-center text-sm text-[#f07cad] font-bold mt-1"><span>折扣折抵 (${currentDiscountCode})</span><span>-$${currentDiscountAmt}</span></div>`;
+                    summaryHtml += `<div class="flex justify-between items-center text-sm text-[#f07cad] font-bold mt-1"><span>折扣折抵 (${currentDiscountCode})</span><span>-$${currentDiscountAmt.toLocaleString('en-US')}</span></div>`;
                 }
-                summaryHtml += `<div class="flex justify-between items-center text-lg mt-2 pt-2 border-t border-[#e9e7ef]/30"><span class="text-[#e9e7ef]">預估總車資</span><span id="quoteTotal" class="text-[#e9e7ef] font-black text-2xl drop-shadow-sm" data-out="${outTotal + globalSurcharge}" data-ret="0" data-grand="${grandTotal}">$${grandTotal}</span></div>`;
+                summaryHtml += `<div class="flex justify-between items-center text-lg mt-2 pt-2 border-t border-[#e9e7ef]/30"><span class="text-[#e9e7ef]">預估總車資</span><span id="quoteTotal" class="text-[#e9e7ef] font-black text-2xl drop-shadow-sm" data-out="${outTotal + globalSurcharge}" data-ret="0" data-grand="${grandTotal}">$${grandTotal.toLocaleString('en-US')}</span></div>`;
             }
             document.getElementById('quoteSummary').innerHTML = summaryHtml;
         }
@@ -1366,45 +1405,53 @@
             const hasReturn = document.getElementById('needReturnTrip').checked;
             
             let errors = [];
-            if (!document.getElementById('ordererName').value.trim()) errors.push("訂車人姓名");
-            if (!document.getElementById('ordererPhone').value.trim()) errors.push("訂車人聯絡電話");
+            if (!document.getElementById('ordererName').value.trim()) errors.push({msg: "訂車人姓名", id: "ordererName"});
+            if (!document.getElementById('ordererPhone').value.trim()) errors.push({msg: "訂車人聯絡電話", id: "ordererPhone"});
             if (!sameAs) {
-                if (!document.getElementById('paxName').value.trim()) errors.push("乘車人姓名");
-                if (!document.getElementById('paxPhone').value.trim()) errors.push("乘車人聯絡電話");
+                if (!document.getElementById('paxName').value.trim()) errors.push({msg: "乘車人姓名", id: "paxName"});
+                if (!document.getElementById('paxPhone').value.trim()) errors.push({msg: "乘車人聯絡電話", id: "paxPhone"});
             }
             
             const validateTrip = (prefix, label) => {
-                if (!document.getElementById('rideDate' + prefix).value) errors.push(`${label}乘車日期`);
-                if (!document.getElementById('flightNo' + prefix).value.trim()) errors.push(`${label}航班編號`);
-                if (!document.getElementById('address' + prefix).value.trim()) errors.push(`${label}主要詳細地址`);
-                if (document.getElementById('needExtraStop' + prefix).checked && !document.getElementById('extraStopAddress' + prefix).value.trim()) errors.push(`${label}加點詳細地址`);
+                if (!document.getElementById('rideDate' + prefix).value) errors.push({msg: `${label}乘車日期`, id: 'rideDate' + prefix});
+                if (!document.getElementById('flightNo' + prefix).value.trim()) errors.push({msg: `${label}航班編號`, id: 'flightNo' + prefix});
+                if (!document.getElementById('address' + prefix).value.trim()) errors.push({msg: `${label}主要詳細地址`, id: 'address' + prefix});
+                if (document.getElementById('needExtraStop' + prefix).checked && !document.getElementById('extraStopAddress' + prefix).value.trim()) errors.push({msg: `${label}加點詳細地址`, id: 'extraStopAddress' + prefix});
                 
                 let infantCount = parseInt(document.getElementById('paxInfant' + prefix).value) || 0;
                 let sR = parseInt(document.getElementById('seatRear' + prefix).value) || 0;
                 let sF = parseInt(document.getElementById('seatForward' + prefix).value) || 0;
                 let sB = parseInt(document.getElementById('seatBooster' + prefix).value) || 0;
-                if (infantCount > 0 && (sR + sF + sB) === 0) errors.push(`${label}幼童安全座椅 (4歲以下必須選擇)`);
+                if (infantCount > 0 && (sR + sF + sB) === 0) errors.push({msg: `${label}幼童安全座椅 (4歲以下必須選擇)`, id: 'seatRear' + prefix});
                 
                 const sportRadio = Array.from(document.getElementsByName('sportLuggageRadio' + prefix)).find(r => r.checked)?.value;
-                if (sportRadio === "是" && !document.getElementById('sportLuggageSize' + prefix).value.trim()) errors.push(`${label}胖胖箱尺寸/大小`);
+                if (sportRadio === "是" && !document.getElementById('sportLuggageSize' + prefix).value.trim()) errors.push({msg: `${label}胖胖箱尺寸/大小`, id: 'sportLuggageSize' + prefix});
             };
 
             validateTrip('', '去程: ');
             if (hasReturn) validateTrip('_R', '回程: ');
 
-            if (document.getElementById('optSign').checked && !document.getElementById('signContent').value.trim()) errors.push("舉牌服務姓名或內容");
+            if (document.getElementById('optSign').checked && !document.getElementById('signContent').value.trim()) errors.push({msg: "舉牌服務姓名或內容", id: 'signContent'});
 
-            if (!hasReadDetails) errors.push("請點擊「詳細說明」閱讀乘車規範");
-            else if (!document.getElementById('agreeDisclaimer').checked) errors.push("請勾選同意【乘車注意事項】聲明");
+            if (!hasReadDetails) errors.push({msg: "請點擊「詳細說明」閱讀乘車規範", id: 'toggleDetails'});
+            else if (!document.getElementById('agreeDisclaimer').checked) errors.push({msg: "請勾選同意【乘車注意事項】聲明", id: 'agreeDisclaimer'});
 
             if (errors.length > 0) {
                 Swal.fire({
                     title: '資料未填寫完整',
-                    html: `<div style="text-align: left; line-height: 1.8;">請完成以下項目：<br><br><span style="color: #f07cad; font-weight: bold;">${errors.map((err, idx) => `${idx+1}. ${err}`).join('<br>')}</span></div>`,
+                    html: `<div style="text-align: left; line-height: 1.8;">請完成以下項目：<br><br><span style="color: #f07cad; font-weight: bold;">${errors.map((err, idx) => `${idx+1}. ${err.msg}`).join('<br>')}</span></div>`,
                     icon: 'warning',
                     confirmButtonColor: '#553f62',
                     returnFocus: false
-                }).then(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+                }).then(() => { 
+                    const firstErrEl = document.getElementById(errors[0].id);
+                    if (firstErrEl) {
+                        firstErrEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        firstErrEl.focus({ preventScroll: true });
+                    } else {
+                        window.scrollTo({ top: 0, behavior: 'smooth' }); 
+                    }
+                });
                 return;
             }
 
@@ -1462,18 +1509,18 @@
             const baseOrderId = document.getElementById('orderId').value;
 
             const qtEl = document.getElementById('quoteTotal');
-            const outTotalAmt = qtEl.getAttribute('data-out') || "0";
-            const retTotalAmt = qtEl.getAttribute('data-ret') || "0";
-            const grandTotalAmt = qtEl.getAttribute('data-grand') || "0";
+            const outTotalAmt = parseInt(qtEl.getAttribute('data-out'), 10) || 0;
+            const retTotalAmt = parseInt(qtEl.getAttribute('data-ret'), 10) || 0;
+            const grandTotalAmt = parseInt(qtEl.getAttribute('data-grand'), 10) || 0;
 
-            let discountStrLine = currentDiscountAmt > 0 ? `\n  ├ 折扣折抵：-$${currentDiscountAmt} (${currentDiscountCode})` : '';
+            let discountStrLine = currentDiscountAmt > 0 ? `\n  ├ 折扣折抵：-$${currentDiscountAmt.toLocaleString('en-US')} (${currentDiscountCode})` : '';
             let lineTotalStr = hasReturn ? 
-                `\n  ├ 去程：$${outTotalAmt}\n  ├ 回程：$${retTotalAmt}${discountStrLine}\n  └ 最終總計：$${grandTotalAmt}` : 
-                (currentDiscountAmt > 0 ? `\n  ├ 原價：$${outTotalAmt}${discountStrLine}\n  └ 最終總計：$${grandTotalAmt}` : `$${grandTotalAmt}`);
+                `\n  ├ 去程：$${outTotalAmt.toLocaleString('en-US')}\n  ├ 回程：$${retTotalAmt.toLocaleString('en-US')}${discountStrLine}\n  └ 最終總計：$${grandTotalAmt.toLocaleString('en-US')}` : 
+                (currentDiscountAmt > 0 ? `\n  ├ 原價：$${outTotalAmt.toLocaleString('en-US')}${discountStrLine}\n  └ 最終總計：$${grandTotalAmt.toLocaleString('en-US')}` : `$${grandTotalAmt.toLocaleString('en-US')}`);
 
-            let discountStrGas = currentDiscountAmt > 0 ? ` (折抵 -$${currentDiscountAmt})` : '';
-            let outGoogleTotal = hasReturn ? `去程 $${outTotalAmt} (總計 $${grandTotalAmt})${discountStrGas}` : `$${grandTotalAmt}${discountStrGas}`;
-            let retGoogleTotal = hasReturn ? `回程 $${retTotalAmt} (總計 $${grandTotalAmt})${discountStrGas}` : `$0`;
+            let discountStrGas = currentDiscountAmt > 0 ? ` (折抵 -$${currentDiscountAmt.toLocaleString('en-US')})` : '';
+            let outGoogleTotal = hasReturn ? `去程 $${outTotalAmt.toLocaleString('en-US')} (總計 $${grandTotalAmt.toLocaleString('en-US')})${discountStrGas}` : `$${grandTotalAmt.toLocaleString('en-US')}${discountStrGas}`;
+            let retGoogleTotal = hasReturn ? `回程 $${retTotalAmt.toLocaleString('en-US')} (總計 $${grandTotalAmt.toLocaleString('en-US')})${discountStrGas}` : `$0`;
 
             // 組織 LINE 訊息
             let msgOut = `--- 【去程資訊】 ---\n乘車日期：${outT.rideDate}\n乘車時間：${outT.rideTime}\n預約類型：${outT.rideType}\n接送機場：${outT.airport}\n航班編號：${outT.flightNo}\n預約車型：${outT.carType}\n接送地址：${outT.address}\n${outT.extraStop ? '加點地址：' + outT.extraStop + '\n' : ''}乘車人數：大人:${outT.paxAdult}, 小孩:${outT.paxChild}, 幼兒:${outT.paxInfant}\n行李件數：登機箱:${outT.lugCarry}, 託運:${outT.lugChecked}\n${outT.sportLuggage !== '無' ? '胖胖箱：' + outT.sportLuggage + '\n' : ''}安全座椅：${outT.safetySeat}\n加價項目：${outT.surcharge}`;
@@ -1531,7 +1578,7 @@
                                 name: ordererName, title: document.getElementById('ordererTitle').value, phone: ordererPhone, email: email,
                                 lineUid: sysLineId, lineId: userLineId, paxFullName: paxFullName, paxPhone: paxPhone,                        
                                 date: retT.rideDate, time: "'" + retT.rideTime, serviceType: retT.rideType, airport: retT.airport, flightNumber: retT.flightNo,
-                                mainAddressFull: retT.address, extraAddressFull: retT.extraStop, carType: retT.carType,
+                                mainAddressFull: retT.address, extraAddressFull: outT.extraStop, carType: retT.carType,
                                 passengers: `大${retT.paxAdult} 中${retT.paxChild} 小${retT.paxInfant}`, luggage: `登機${retT.lugCarry} 托運${retT.lugChecked}`,
                                 sportLuggage: retT.sportLuggage, safetySeat: retT.safetySeat, signboard: signStr, totalFee: retGoogleTotal, payment: payStr, remarks: remarkStr, surcharge: retT.surcharge,
                                 discountCode: currentDiscountCode, discountAmt: currentDiscountAmt 
