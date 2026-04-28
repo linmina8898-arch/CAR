@@ -596,7 +596,7 @@
         // --- 設定常數 ---
         const LIFF_ID = "2009922945-KmKUgqbg";
         const LINE_OA_LINK = "https://line.me/R/ti/p/@ansing";
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwyKTc6QW-jFVKptuy637ZSAjRCjMF_UwCKb33ZCaZhR-yREV01jOGdhaRwVf4--Po2/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwA-QA5VjCxV4dNYqIHSookFHOJWNLxoCMWDoVGoblJEGzNBmx8syP705zVcrB9Tdya/exec"; 
 
         // 👉 系統會自動從 Google 試算表「折扣碼」工作表抓取，不需再手動填寫
         let DISCOUNT_CODES = {};
@@ -1103,30 +1103,50 @@
                     title: '最新消息',
                     html: `
                         <div style="color: #202020; font-size: 14px; line-height: 1.6; text-align: left; margin-top: 5px; max-height: 60vh; overflow-y: auto; padding-right: 5px;">
-                            <p>為確保您的行程順利及安排合適的車款，線上預約需於出發時間前 <strong>24 小時</strong> 完成。</p>
-                            <br>
-                            <span style="color: #f07cad; font-weight: bold;">【急單處理】</span><br>
-                            24 小時內之緊急用車需求，請直撥客服專線：<br>
-                            <div style="text-align: center; margin-top: 10px; margin-bottom: 15px;">
-                                <a href="tel:0955311306" style="color: #f07cad; font-size: 22px; font-weight: bold; text-decoration: none; display: inline-block; padding: 5px 15px; border: 2px solid #f07cad; border-radius: 25px; letter-spacing: 1px;">0955-311-306</a>
+                            
+                            <!-- 第一段 -->
+                            <div style="margin-bottom: 20px;">
+                                <div style="color: #553f62; font-weight: bold; font-size: 18px; margin-bottom: 8px;">【24小時內無法線上預約】</div>
+                                <p>為確保您的行程順利及安排合適的車款，線上預約需於出發時間前 <strong>24 小時</strong> 完成。</p>
+                                <br>
+                                <span style="color: #f07cad; font-weight: bold;">【急單處理】</span><br>
+                                24 小時內之緊急用車需求，請直撥客服專線：<br>
+                                <div style="text-align: center; margin-top: 10px; margin-bottom: 5px;">
+                                    <a href="tel:0955311306" style="color: #f07cad; font-size: 22px; font-weight: bold; text-decoration: none; display: inline-block; padding: 5px 15px; border: 2px solid #f07cad; border-radius: 25px; letter-spacing: 1px;">0955-311-306</a>
+                                </div>
                             </div>
 
-                            <hr style="border: 0; border-top: 1px dashed #ccc; margin: 15px 0;">
+                            <hr style="border: 0; border-top: 1px dashed #ccc; margin: 20px 0;">
 
-                            <span style="color: #553f62; font-weight: bold; font-size: 16px;">【機場接送服務 費率調整公告】</span><br>
-                            親愛的朋友們，感謝您長期的支持與信任！<br>
-                            因應國際油價調漲及營運成本增加，為守護每一趟旅程的服務品質與行車安全，我們將自即日起微調車資如下：<br><br>
-                            
-                            <span style="color: #f07cad; font-weight: bold;">🔸 車資異動：</span>單趟車資調漲 <strong>$100</strong> 元。<br>
-                            <span style="color: #f07cad; font-weight: bold;">🔸 限時回饋：</span>凡同時預約「來回行程」並「完成全額轉帳」，即享 <strong>$100</strong> 元折扣回饋！（等同其中一趟維持原價）<br><br>
-                            
-                            <div style="background-color: #fff5f8; padding: 8px 10px; border-radius: 5px; border-left: 4px solid #f07cad; font-size: 13px; margin-bottom: 15px;">
-                                ⚠️ <strong>溫馨提醒：</strong><br>
-                                預約來回優惠方案，恕不與其他優惠或集點活動併用。<br>
-                                造成您的不便，懇請見諒。
+                            <!-- 第二段 -->
+                            <div style="margin-bottom: 20px;">
+                                <div style="font-size: 12px; color: #888; margin-bottom: 2px;">2026/04/28</div>
+                                <div style="color: #553f62; font-weight: bold; font-size: 18px; margin-bottom: 8px; line-height: 1.4;">【跨越奢華的界線｜<br>Alphard 40系 ‧ 尊榮啟航】</div>
+                                <p>感謝各位長久以來的支持，為提升服務品質，<br>安興租車正式引進全新Alphard 40系。</p>
+                                <br>
+                                <p>無論是商務考察、機場接送或奢華旅遊，<br>坐進全新 Alphard 40系，感受前所未有的「極致舒適」。<br><strong style="color: #f07cad; font-size: 15px; display: inline-block; margin-top: 5px;">讓每一次移動，都成為一種享受。</strong></p>
                             </div>
-                            
-                            <p>我們將持續秉持初衷，為您提供最安全、準確且舒適的接送服務。</p>
+
+                            <hr style="border: 0; border-top: 1px dashed #ccc; margin: 20px 0;">
+
+                            <!-- 第三段 -->
+                            <div style="margin-bottom: 10px;">
+                                <div style="font-size: 12px; color: #888; margin-bottom: 2px;">2026/04/25</div>
+                                <div style="color: #553f62; font-weight: bold; font-size: 18px; margin-bottom: 8px;">【機場接送服務 費率調整公告】</div>
+                                <p>親愛的朋友們，感謝您長期的支持與信任！<br>
+                                因應國際油價調漲及營運成本增加，為守護每一趟旅程的服務品質與行車安全，我們將自即日起微調車資如下：</p>
+                                <br>
+                                <span style="color: #f07cad; font-weight: bold;">🔸 車資異動：</span>單趟車資調漲 <strong>$100</strong> 元。<br>
+                                <span style="color: #f07cad; font-weight: bold;">🔸 限時回饋：</span>凡同時預約「來回行程」並「完成全額轉帳」，即享 <strong>$100</strong> 元折扣回饋！（等同其中一趟維持原價）<br><br>
+                                
+                                <div style="background-color: #fff5f8; padding: 10px; border-radius: 5px; border-left: 4px solid #f07cad; font-size: 13px; margin-bottom: 15px;">
+                                    ⚠️ <strong>溫馨提醒：</strong><br>
+                                    預約來回優惠方案，恕不與其他優惠或集點活動併用。<br>
+                                    造成您的不便，懇請見諒。
+                                </div>
+                                
+                                <p>我們將持續秉持初衷，為您提供最安全、準確且舒適的接送服務。</p>
+                            </div>
                         </div>
                     `,
                     confirmButtonText: '我已了解',
@@ -1513,9 +1533,17 @@
             const retTotalAmt = parseInt(qtEl.getAttribute('data-ret'), 10) || 0;
             const grandTotalAmt = parseInt(qtEl.getAttribute('data-grand'), 10) || 0;
 
-            let discountStrGas = currentDiscountAmt > 0 ? ` (折抵 -$${currentDiscountAmt.toLocaleString('en-US')})` : '';
-            let outGoogleTotal = hasReturn ? `去程 $${outTotalAmt.toLocaleString('en-US')} (總計 $${grandTotalAmt.toLocaleString('en-US')})${discountStrGas}` : `$${grandTotalAmt.toLocaleString('en-US')}${discountStrGas}`;
-            let retGoogleTotal = hasReturn ? `回程 $${retTotalAmt.toLocaleString('en-US')} (總計 $${grandTotalAmt.toLocaleString('en-US')})${discountStrGas}` : `$0`;
+            let discountStrLine = currentDiscountAmt > 0 ? `\n ├ 折扣折抵：-$${currentDiscountAmt.toLocaleString('en-US')} (${currentDiscountCode})` : '';
+            let lineTotalStr = hasReturn ? 
+                `\n ├ 去程：$${outTotalAmt.toLocaleString('en-US')}\n ├ 回程：$${retTotalAmt.toLocaleString('en-US')}${discountStrLine}\n └ 最終總計：$${grandTotalAmt.toLocaleString('en-US')}` : 
+                (currentDiscountAmt > 0 ? `\n ├ 原價：$${outTotalAmt.toLocaleString('en-US')}${discountStrLine}\n └ 最終總計：$${grandTotalAmt.toLocaleString('en-US')}` : `$${grandTotalAmt.toLocaleString('en-US')}`);
+
+            // 將折抵只放在回程（若有回程），否則放去程 (給 Google 行事曆用的變數)
+            let outDiscountStrGas = (!hasReturn && currentDiscountAmt > 0) ? ` (折抵 -$${currentDiscountAmt.toLocaleString('en-US')})` : '';
+            let retDiscountStrGas = (hasReturn && currentDiscountAmt > 0) ? ` (折抵 -$${currentDiscountAmt.toLocaleString('en-US')})` : '';
+            
+            let outGoogleTotal = hasReturn ? `去程 $${outTotalAmt.toLocaleString('en-US')} (總計 $${grandTotalAmt.toLocaleString('en-US')})` : `$${grandTotalAmt.toLocaleString('en-US')}${outDiscountStrGas}`;
+            let retGoogleTotal = hasReturn ? `回程 $${retTotalAmt.toLocaleString('en-US')} (總計 $${grandTotalAmt.toLocaleString('en-US')})${retDiscountStrGas}` : `$0`;
 
             const signStr = document.getElementById('optSign').checked ? document.getElementById('signContent').value : '無';
             const payStr = document.getElementById('payment').value;
@@ -1528,8 +1556,8 @@
             const paxPhone = document.getElementById('paxPhone').value;
             const email = document.getElementById('email').value;
 
-            // 組織 LINE 訊息 (完全比照行事曆格式)
-            let msgOut = `【去程預約明細】\n` +
+            // 組織 LINE 訊息 (去程明細)
+            let msgOut = `--- 【去程資訊】 ---\n` +
                          `預約編號：${hasReturn ? baseOrderId + '-去程' : baseOrderId}\n` +
                          `乘車人姓名：${paxFullName}\n` +
                          `乘車日期：${outT.rideDate}\n` +
@@ -1546,14 +1574,12 @@
                          `安全座椅：${outT.safetySeat}\n` +
                          `舉牌服務：${signStr}\n` +
                          `加價項目：${outT.surcharge}\n` +
-                         (currentDiscountAmt > 0 ? `折扣折抵：-$${currentDiscountAmt.toLocaleString('en-US')} (${currentDiscountCode})\n` : "") +
-                         `總車資估算：${outGoogleTotal}\n` +
-                         `付款方式：${payStr}\n` +
                          `備註：${remarkStr}`;
             
+            // 組織 LINE 訊息 (回程明細)
             let msgRet = '';
             if (hasReturn) {
-                msgRet = `【回程預約明細】\n` +
+                msgRet = `--- 【回程資訊】 ---\n` +
                          `預約編號：${baseOrderId + '-回程'}\n` +
                          `乘車人姓名：${paxFullName}\n` +
                          `乘車日期：${retT.rideDate}\n` +
@@ -1570,11 +1596,13 @@
                          `安全座椅：${retT.safetySeat}\n` +
                          `舉牌服務：${signStr}\n` +
                          `加價項目：${retT.surcharge}\n` +
-                         (currentDiscountAmt > 0 ? `折扣折抵：-$${currentDiscountAmt.toLocaleString('en-US')} (${currentDiscountCode})\n` : "") +
-                         `總車資估算：${retGoogleTotal}\n` +
-                         `付款方式：${payStr}\n` +
                          `備註：${remarkStr}`;
             }
+
+            // 組織 LINE 訊息 (車資與備註)
+            let msgPrice = `--- 【付款資訊】 ---\n` +
+                           `預估車資：${lineTotalStr}\n` +
+                           `付款方式：${payStr}`;
 
             try {
                 // 發送第一筆 (去程)
@@ -1592,7 +1620,7 @@
                             mainAddressFull: outT.address, extraAddressFull: outT.extraStop, carType: outT.carType,
                             passengers: `大${outT.paxAdult} 中${outT.paxChild} 小${outT.paxInfant}`, luggage: `登機${outT.lugCarry} 托運${outT.lugChecked}`,
                             sportLuggage: outT.sportLuggage, safetySeat: outT.safetySeat, signboard: signStr, totalFee: outGoogleTotal, payment: payStr, remarks: remarkStr, surcharge: outT.surcharge,
-                            discountCode: currentDiscountCode, discountAmt: currentDiscountAmt 
+                            discountCode: hasReturn ? "" : currentDiscountCode, discountAmt: hasReturn ? "" : currentDiscountAmt 
                         }
                     }), 
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' } 
@@ -1633,15 +1661,18 @@
                 
                 let lineMessages = [];
 
-                // 第一段：去程 (包含所有明細、車資、備註)
+                // 第一段：去程明細
                 lineMessages.push({ type: 'text', text: msgOut });
 
-                // 第二段：回程 (如果有)
+                // 第二段：回程明細 (如果有)
                 if (hasReturn) {
                     lineMessages.push({ type: 'text', text: msgRet });
                 }
 
-                // 第三段：結尾提醒
+                // 第三段：預估車資與付款方式
+                lineMessages.push({ type: 'text', text: msgPrice });
+
+                // 第四段：結尾提醒
                 lineMessages.push({ type: 'text', text: msgEnd });
 
                 try {
