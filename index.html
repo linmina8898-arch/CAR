@@ -594,7 +594,7 @@
         // --- 設定常數 ---
         const LIFF_ID = "2009922945-KmKUgqbg";
         const LINE_OA_LINK = "https://line.me/R/ti/p/@ansing";
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwfR2KCchOjWLRbJzIkxTzU8BkDhGim4ZqX4usYAMIsjYV-VlomBSKhKWpeCOcuyUhf/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxQMq2uQOE1KOzhvPRoMid4oHAbRLIKT_96stpJnAE8CqaoBmiIRkQQG6i4KbenKclL/exec"; 
 
         // 👉 系統會自動從 Google 試算表「折扣碼」工作表抓取，不需再手動填寫
         let DISCOUNT_CODES = {};
@@ -740,7 +740,7 @@
             updateLogic(); 
         }
 
-        // 折扣碼事件設定
+        // 折扣碼事件設定 (支援 ANREF 推薦碼與擇優功能)
         function setupDiscountCode() {
             document.getElementById('applyDiscountBtn').addEventListener('click', () => {
                 const code = document.getElementById('discountInput').value.trim().toUpperCase();
@@ -752,11 +752,55 @@
                     updateLogic();
                     return;
                 }
-                if (DISCOUNT_CODES[code]) {
-                    currentDiscountAmt = DISCOUNT_CODES[code];
+                
+                let amt = 0;
+                // 1. RT-Ticket 判斷
+                if (code === 'RT-TICKET') {
+                    if (document.getElementById('needReturnTrip').checked) {
+                        amt = 100;
+                        msgEl.innerText = `✅ 已自動套用「來回雙享」折扣，折抵 $100`;
+                    } else {
+                        currentDiscountAmt = 0;
+                        currentDiscountCode = '';
+                        msgEl.innerText = '❌ RT-Ticket 僅限同時預約來回使用';
+                        msgEl.className = 'text-xs mt-1 font-bold text-red-500 block';
+                        updateLogic();
+                        return;
+                    }
+                } 
+                // 2. 好友推薦碼 (ANREF) 判斷
+                else if (code.startsWith('ANREF')) {
+                    if (document.getElementById('needReturnTrip').checked) {
+                        if (DISCOUNT_CODES[code]) {
+                            amt = DISCOUNT_CODES[code]; // 會抓取試算表中的 200
+                            msgEl.innerText = `✅ 已成功套用好友優惠，折抵 $${amt}`;
+                        } else {
+                            currentDiscountAmt = 0;
+                            currentDiscountCode = '';
+                            msgEl.innerText = '❌ 查無此優惠碼、已過期或已被核銷使用';
+                            msgEl.className = 'text-xs mt-1 font-bold text-red-500 block';
+                            updateLogic();
+                            return;
+                        }
+                    } else {
+                        currentDiscountAmt = 0;
+                        currentDiscountCode = '';
+                        msgEl.innerText = '❌ 好友推薦優惠碼僅限同時預約來回行程使用';
+                        msgEl.className = 'text-xs mt-1 font-bold text-red-500 block';
+                        updateLogic();
+                        return;
+                    }
+                }
+                // 3. 其他從試算表抓取的代碼
+                else if (DISCOUNT_CODES[code]) {
+                    amt = DISCOUNT_CODES[code];
+                    msgEl.innerText = `✅ 已成功套用，折抵 $${amt}`;
+                }
+
+                if (amt > 0) {
+                    currentDiscountAmt = amt;
                     currentDiscountCode = code;
-                    msgEl.innerText = `✅ 已成功套用，折抵 $${currentDiscountAmt}`;
-                    msgEl.className = 'text-xs mt-1 font-bold text-green-600 block';
+                    msgEl.className = 'text-xs mt-1 font-bold text-[#f07cad] block';
                 } else {
                     currentDiscountAmt = 0;
                     currentDiscountCode = '';
@@ -766,13 +810,20 @@
                 updateLogic();
             });
 
-            // 清空輸入框時同時取消折扣
+            // 清空輸入框時同時取消折扣，或防呆退回 RT-Ticket
             document.getElementById('discountInput').addEventListener('input', (e) => {
                 if(e.target.value.trim() === '') {
                     currentDiscountAmt = 0;
                     currentDiscountCode = '';
                     document.getElementById('discountMsg').className = 'hidden';
-                    updateLogic();
+                    
+                    // 如果取消了優惠碼，但是仍勾選了來回，自動補回 RT-Ticket 以保障客人權益
+                    if (document.getElementById('needReturnTrip').checked) {
+                        document.getElementById('discountInput').value = 'RT-Ticket';
+                        document.getElementById('applyDiscountBtn').click();
+                    } else {
+                        updateLogic();
+                    }
                 }
             });
         }
@@ -867,10 +918,30 @@
                     document.getElementById('sportLuggageSize_R').value = document.getElementById('sportLuggageSize').value;
 
                     document.getElementById('carType_R').value = document.getElementById('carType').value;
+
+                    // 自動帶入來回雙享折扣碼 RT-Ticket (若欄位為空、或是剛好是原來的，不覆蓋 ANREF)
+                    const discountInput = document.getElementById('discountInput');
+                    if (!discountInput.value || discountInput.value.toUpperCase() === 'RT-TICKET') {
+                        discountInput.value = 'RT-Ticket';
+                        document.getElementById('applyDiscountBtn').click();
+                    } else if (discountInput.value.toUpperCase().startsWith('ANREF')) {
+                        // 若客人原本手動輸入了 ANREF 但因為沒勾來回未生效，勾選來回後自動幫他重算
+                        document.getElementById('applyDiscountBtn').click();
+                    }
                     
                     calculateDistanceFee('_R');
                 } else {
                     rContainer.classList.add('hidden');
+
+                    // 若取消來回，且當前折扣碼是需要來回才能用的代碼，自動清除
+                    const discountInput = document.getElementById('discountInput');
+                    const valUpper = discountInput.value.toUpperCase();
+                    if (valUpper === 'RT-TICKET' || valUpper.startsWith('ANREF')) {
+                        discountInput.value = '';
+                        currentDiscountCode = '';
+                        currentDiscountAmt = 0;
+                        document.getElementById('discountMsg').className = 'hidden';
+                    }
                 }
                 updateLogic();
             });
