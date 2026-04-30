@@ -59,6 +59,7 @@
                 
                 <!-- Hidden Fields -->
                 <input type="hidden" id="sysLineId" name="sysLineId">
+                <input type="hidden" id="sysLineName" name="sysLineName">
                 <input type="hidden" id="orderId" name="orderId">
                 
                 <!-- 訂車人資訊 -->
@@ -519,11 +520,11 @@
                             </div>
                             <label id="lblNight" class="flex items-center space-x-2 opacity-60 transition-opacity duration-300">
                                 <input type="checkbox" id="optNight" value="夜間加成(+$200)" class="rounded w-4 h-4 text-primary focus:ring-primary surcharge-opt quote-trigger" disabled>
-                                <span>夜間加成 (去程 23:00~04:59) (+$200)</span>
+                                <span>夜間加成 (23:00~04:59) (+$200)</span>
                             </label>
                             <label id="lblUrgent" class="flex items-center space-x-2 opacity-60 transition-opacity duration-300">
                                 <input type="checkbox" id="optUrgent" value="急單加價(+$300)" class="rounded w-4 h-4 text-primary focus:ring-primary surcharge-opt quote-trigger" disabled>
-                                <span>急單加價 (去程 24~48H內) (+$300)</span>
+                                <span>急單加價 (24~48H內) (+$300)</span>
                             </label>
                         </div>
                     </div>
@@ -596,7 +597,7 @@
         // --- 設定常數 ---
         const LIFF_ID = "2009922945-KmKUgqbg";
         const LINE_OA_LINK = "https://line.me/R/ti/p/@ansing";
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwA-QA5VjCxV4dNYqIHSookFHOJWNLxoCMWDoVGoblJEGzNBmx8syP705zVcrB9Tdya/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxnK5hqvJU7aDGhGAM_bHLo3dZx1scZcDOyXFR6iv0verrK4Ad0hFXAg2xmTA5RABQm/exec"; 
 
         // 👉 系統會自動從 Google 試算表「折扣碼」工作表抓取，不需再手動填寫
         let DISCOUNT_CODES = {};
@@ -1038,6 +1039,7 @@
         async function initializeLiff() {
             if (window !== window.parent) { 
                 document.getElementById('sysLineId').value = 'Preview'; 
+                document.getElementById('sysLineName').value = '預覽測試用戶';
                 showNoticeAndForm(); 
                 return; 
             }
@@ -1046,6 +1048,7 @@
                 if (!liff.isLoggedIn()) { liff.login(); return; }
                 const profile = await liff.getProfile();
                 document.getElementById('sysLineId').value = profile.userId;
+                document.getElementById('sysLineName').value = profile.displayName;
                 
                 const friendStatus = await liff.getFriendship();
                 if (!friendStatus.friendFlag) {
@@ -1549,6 +1552,7 @@
             const payStr = document.getElementById('payment').value;
             const remarkStr = document.getElementById('remarks').value || '無';
             const sysLineId = document.getElementById('sysLineId').value;
+            const sysLineName = document.getElementById('sysLineName').value;
             const userLineId = sysLineId; // 自動抓取系統 LINE ID
             const ordererName = document.getElementById('ordererName').value;
             const ordererPhone = document.getElementById('ordererPhone').value;
@@ -1615,7 +1619,7 @@
                             reservationId: hasReturn ? baseOrderId + '-去程' : baseOrderId,
                             timestamp: new Date().toLocaleString('zh-TW', {timeZone: 'Asia/Taipei'}),
                             name: ordererName, title: document.getElementById('ordererTitle').value, phone: ordererPhone, email: email,
-                            lineUid: sysLineId, lineId: userLineId, paxFullName: paxFullName, paxPhone: paxPhone,                        
+                            lineUid: sysLineId, lineId: userLineId, lineName: sysLineName, paxFullName: paxFullName, paxPhone: paxPhone,                        
                             date: outT.rideDate, time: "'" + outT.rideTime, serviceType: outT.rideType, airport: outT.airport, flightNumber: outT.flightNo,
                             mainAddressFull: outT.address, extraAddressFull: outT.extraStop, carType: outT.carType,
                             passengers: `大${outT.paxAdult} 中${outT.paxChild} 小${outT.paxInfant}`, luggage: `登機${outT.lugCarry} 托運${outT.lugChecked}`,
@@ -1637,7 +1641,7 @@
                                 reservationId: baseOrderId + '-回程',
                                 timestamp: new Date().toLocaleString('zh-TW', {timeZone: 'Asia/Taipei'}),
                                 name: ordererName, title: document.getElementById('ordererTitle').value, phone: ordererPhone, email: email,
-                                lineUid: sysLineId, lineId: userLineId, paxFullName: paxFullName, paxPhone: paxPhone,                        
+                                lineUid: sysLineId, lineId: userLineId, lineName: sysLineName, paxFullName: paxFullName, paxPhone: paxPhone,                        
                                 date: retT.rideDate, time: "'" + retT.rideTime, serviceType: retT.rideType, airport: retT.airport, flightNumber: retT.flightNo,
                                 mainAddressFull: retT.address, extraAddressFull: outT.extraStop, carType: retT.carType,
                                 passengers: `大${retT.paxAdult} 中${retT.paxChild} 小${retT.paxInfant}`, luggage: `登機${retT.lugCarry} 托運${retT.lugChecked}`,
