@@ -84,6 +84,7 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700">聯絡電話</label>
                             <input type="tel" id="ordererPhone" maxlength="12" class="mt-1 w-full p-2 border rounded focus-primary" placeholder="0900-000-000">
+                            <p class="text-[11px] text-[#f07cad] font-bold mt-1 tracking-wide">※ 輸入上次預約的電話號碼，系統將自動為您帶入歷史資料</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">電子信箱 (MAIL)</label>
@@ -505,6 +506,7 @@
                         </div>
                         <p id="discountMsg" class="text-xs mt-1 font-bold hidden"></p>
                         <button type="button" id="queryDiscountBtn" class="mt-3 w-full bg-pink-50 text-[#f07cad] font-bold py-2 rounded border border-pink-200 hover:bg-pink-100 transition shadow-sm text-sm">🎁 查詢我的專屬優惠</button>
+                        <p class="text-[12px] text-[#f07cad] mt-1.5 text-center font-bold tracking-wide">※ 首次查詢將綁定聯絡電話，自動加碼送 100元折扣碼 × 2組</p>
                         <div id="userDiscountsContainer" class="hidden mt-2 space-y-2"></div>
                     </div>
 
@@ -599,9 +601,8 @@
         // --- 設定常數 ---
         const LIFF_ID = "2009922945-KmKUgqbg";
         const LINE_OA_LINK = "https://line.me/R/ti/p/@ansing";
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbyWFrh0x0nFW8V6cMq8Hdy_BpP5I54GbL7b0pX6bIYYYl4r2gRUq8KDP-KH00y71yjj/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbw5fgUxlqHVXM1QZLh1UuP0jWJTJzzX0PTty7h3G8cCHsdmrEU94ZLs9ItJptZDMchp/exec"; 
 
-        // 👉 系統會自動從 Google 試算表「折扣碼」工作表抓取，不需再手動填寫
         let DISCOUNT_CODES = {};
         let currentDiscountAmt = 0;
         let currentDiscountCode = '';
@@ -652,14 +653,12 @@
                 if (!response.ok) throw new Error('Network error');
                 const data = await response.json();
                 
-                // 判斷是否為新版包含折扣碼的回傳格式
                 if (data && data.prices) {
                     priceTable = data.prices;
                     DISCOUNT_CODES = data.discounts || {};
                     console.log("報價資料庫與折扣碼已同步更新");
                     updateLogic();
                 } else if (data && Array.isArray(data)) {
-                    // 相容舊版格式
                     priceTable = data;
                     console.log("報價資料庫已更新，共 " + priceTable.length + " 筆");
                     updateLogic();
@@ -740,12 +739,12 @@
             setupDetailsToggle();
             setupReturnTripToggle();
             setupDiscountCode();
+            setupAutoFill();
             
             fetchPriceTable();
             updateLogic(); 
         }
 
-        // 折扣碼事件設定
         function setupDiscountCode() {
             document.getElementById('applyDiscountBtn').addEventListener('click', () => {
                 const code = document.getElementById('discountInput').value.trim().toUpperCase();
@@ -771,31 +770,7 @@
 
                 let amt = 0;
                 
-                // 好友推薦碼 (ANREF) 判斷
-                if (code.startsWith('ANREF')) {
-                    if (document.getElementById('needReturnTrip').checked) {
-                        if (DISCOUNT_CODES[code]) {
-                            amt = DISCOUNT_CODES[code]; // 會抓取試算表中的金額
-                            msgEl.innerText = `✅ 已成功套用好友優惠，折抵 $${amt.toLocaleString('en-US')}`;
-                        } else {
-                            currentDiscountAmt = 0;
-                            currentDiscountCode = '';
-                            msgEl.innerText = '❌ 查無此優惠碼、已過期或已被核銷使用';
-                            msgEl.className = 'text-xs mt-1 font-bold text-red-500 block';
-                            updateLogic();
-                            return;
-                        }
-                    } else {
-                        currentDiscountAmt = 0;
-                        currentDiscountCode = '';
-                        msgEl.innerText = '❌ 好友推薦優惠碼僅限同時預約來回行程使用';
-                        msgEl.className = 'text-xs mt-1 font-bold text-red-500 block';
-                        updateLogic();
-                        return;
-                    }
-                }
-                // 其他從試算表抓取的代碼
-                else if (DISCOUNT_CODES[code]) {
+                if (DISCOUNT_CODES[code]) {
                     amt = DISCOUNT_CODES[code];
                     msgEl.innerText = `✅ 已成功套用，折抵 $${amt.toLocaleString('en-US')}`;
                 }
@@ -807,7 +782,7 @@
                 } else {
                     currentDiscountAmt = 0;
                     currentDiscountCode = '';
-                    msgEl.innerText = '❌ 無效的折扣碼';
+                    msgEl.innerText = '❌ 無效的折扣碼或已過期';
                     msgEl.className = 'text-xs mt-1 font-bold text-red-500 block';
                 }
                 updateLogic();
@@ -840,7 +815,7 @@
                     const sysLineName = document.getElementById('sysLineName').value;
                     
                     if (!phone) {
-                        Swal.fire('請先填寫', '請先填寫上方的「訂車人聯絡電話」才能查詢專屬優惠喔！', 'warning');
+                        Swal.fire({ title: '請先填寫', text: '請先填寫上方的「訂車人聯絡電話」才能查詢專屬優惠喔！', confirmButtonColor: '#553f62' });
                         return;
                     }
                     
@@ -878,7 +853,7 @@
                             document.getElementById('userDiscountsContainer').classList.remove('hidden');
                         }
                     } catch (err) {
-                        Swal.fire('錯誤', '查詢失敗，請稍後再試', 'error');
+                        Swal.fire({ title: '錯誤', text: '查詢失敗，請稍後再試', confirmButtonColor: '#553f62' });
                     } finally {
                         queryBtn.innerHTML = '🎁 查詢我的專屬優惠';
                         queryBtn.disabled = false;
@@ -935,6 +910,41 @@
             [oName, oTitle, oPhone].forEach(el => el.addEventListener('input', () => { if (sameCheck.checked) syncData(); }));
         }
 
+        function setupAutoFill() {
+            const phoneInput = document.getElementById('ordererPhone');
+            phoneInput.addEventListener('blur', async function() {
+                const phone = this.value.replace(/-/g, '').trim();
+                // 檢查是否為完整的手機號碼長度 (至少10碼)
+                if (phone.length >= 10) {
+                    try {
+                        const url = `${GAS_URL}?action=getLastUser&phone=${encodeURIComponent(phone)}&t=${Date.now()}`;
+                        const response = await fetch(url);
+                        const data = await response.json();
+                        
+                        if (data.user) {
+                            const nameInput = document.getElementById('ordererName');
+                            const titleInput = document.getElementById('ordererTitle');
+                            const emailInput = document.getElementById('email');
+                            
+                            // 若當下欄位為空，才自動帶入歷史資料
+                            if (!nameInput.value) nameInput.value = data.user.name || '';
+                            if (data.user.title) titleInput.value = data.user.title;
+                            if (!emailInput.value && data.user.email) emailInput.value = data.user.email;
+                            
+                            // 觸發同步乘車人檢查
+                            if (document.getElementById('sameAsOrderer').checked) {
+                                document.getElementById('paxName').value = nameInput.value;
+                                document.getElementById('paxTitle').value = titleInput.value;
+                                document.getElementById('paxPhone').value = this.value;
+                            }
+                        }
+                    } catch (err) {
+                        console.error("取得歷史紀錄失敗", err);
+                    }
+                }
+            });
+        }
+
         function setupReturnTripToggle() {
             document.getElementById('needReturnTrip').addEventListener('change', function() {
                 const rContainer = document.getElementById('returnTripContainer');
@@ -987,16 +997,6 @@
                     calculateDistanceFee('_R');
                 } else {
                     rContainer.classList.add('hidden');
-
-                    // 若取消來回，且當前折扣碼是 ANREF，自動清除
-                    const discountInput = document.getElementById('discountInput');
-                    const valUpper = discountInput.value.toUpperCase();
-                    if (valUpper.startsWith('ANREF')) {
-                        discountInput.value = '';
-                        currentDiscountCode = '';
-                        currentDiscountAmt = 0;
-                        document.getElementById('discountMsg').className = 'hidden';
-                    }
                 }
                 updateLogic();
             });
@@ -1106,7 +1106,6 @@
                                     Swal.fire({
                                         title: '偵測不到狀態',
                                         text: '系統目前仍未偵測到您的好友狀態。若您已成功加入，可能是連線延遲，請直接點擊下方進入預約。',
-                                        icon: 'warning',
                                         confirmButtonText: '進入預約系統',
                                         confirmButtonColor: '#553f62',
                                         allowOutsideClick: false
@@ -1212,7 +1211,6 @@
                     Swal.fire({
                         title: '無法線上預約',
                         html: `<div style="text-align: left; line-height: 1.6;">線上預約需於出發前 24 小時完成。<br><br><span style="color: #f07cad; font-weight: bold;">【緊急叫車】</span>請直撥客服專線：<div style="text-align: center; margin-top: 15px;"><a href="tel:0955311306" style="color: #f07cad; font-size: 26px; font-weight: bold; text-decoration: none; display: inline-block; padding: 5px 15px; border: 2px solid #f07cad; border-radius: 25px;">0955-311-306</a></div></div>`,
-                        icon: 'error',
                         confirmButtonColor: '#553f62'
                     });
                     rideDateEl.value = "";
@@ -1431,7 +1429,7 @@
             
             let autoReturnDiscount = hasReturn ? 100 : 0;
             let combinedDiscount = currentDiscountAmt + autoReturnDiscount;
-            if (combinedDiscount > 500) combinedDiscount = 500; // 最多折抵500元
+            if (combinedDiscount > 500) combinedDiscount = 500;
 
             let grandTotal = outTotal + retTotal + globalSurcharge - combinedDiscount;
             if (grandTotal < 0) grandTotal = 0;
@@ -1445,13 +1443,13 @@
                 }
                 if (currentDiscountAmt > 0) {
                     let actualUserDiscount = combinedDiscount - autoReturnDiscount;
-                    summaryHtml += `<div class="flex justify-between items-center text-sm text-[#f07cad] font-bold mt-1"><span>折扣折抵 (${currentDiscountCode})</span><span>-$${actualUserDiscount.toLocaleString('en-US')}</span></div>`;
+                    summaryHtml += `<div class="flex justify-between items-center text-sm text-[#f07cad] font-bold mt-1"><span>折扣碼優惠 (${currentDiscountCode})</span><span>-$${actualUserDiscount.toLocaleString('en-US')}</span></div>`;
                 }
                 summaryHtml += `<div class="flex justify-between items-center pt-2 mt-2 border-t border-[#e9e7ef]/30 text-lg"><span class="text-[#e9e7ef]">來回總車資</span><span id="quoteTotal" class="text-[#e9e7ef] font-black text-2xl drop-shadow-sm" data-out="${outTotal + globalSurcharge}" data-ret="${retTotal}" data-grand="${grandTotal}">$${grandTotal.toLocaleString('en-US')}</span></div>`;
             } else {
                 summaryHtml += `<div class="flex justify-between items-center text-sm text-[#e9e7ef]/90"><span>小計</span><span>$${(outTotal + globalSurcharge).toLocaleString('en-US')}</span></div>`;
                 if (currentDiscountAmt > 0) {
-                    summaryHtml += `<div class="flex justify-between items-center text-sm text-[#f07cad] font-bold mt-1"><span>折扣折抵 (${currentDiscountCode})</span><span>-$${combinedDiscount.toLocaleString('en-US')}</span></div>`;
+                    summaryHtml += `<div class="flex justify-between items-center text-sm text-[#f07cad] font-bold mt-1"><span>折扣碼優惠 (${currentDiscountCode})</span><span>-$${combinedDiscount.toLocaleString('en-US')}</span></div>`;
                 }
                 summaryHtml += `<div class="flex justify-between items-center text-lg mt-2 pt-2 border-t border-[#e9e7ef]/30"><span class="text-[#e9e7ef]">預估總車資</span><span id="quoteTotal" class="text-[#e9e7ef] font-black text-2xl drop-shadow-sm" data-out="${outTotal + globalSurcharge}" data-ret="0" data-grand="${grandTotal}">$${grandTotal.toLocaleString('en-US')}</span></div>`;
             }
@@ -1502,7 +1500,6 @@
                 Swal.fire({
                     title: '資料未填寫完整',
                     html: `<div style="text-align: left; line-height: 1.8;">請完成以下項目：<br><br><span style="color: #f07cad; font-weight: bold;">${errors.map((err, idx) => `${idx+1}. ${err.msg}`).join('<br>')}</span></div>`,
-                    icon: 'warning',
                     confirmButtonColor: '#553f62',
                     returnFocus: false
                 }).then(() => { 
@@ -1510,6 +1507,12 @@
                     if (firstErrEl) {
                         firstErrEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         firstErrEl.focus({ preventScroll: true });
+                        
+                        // 增加紅圈閃爍提示特效
+                        firstErrEl.classList.add('ring-4', 'ring-red-500', 'ring-offset-2', 'transition-all', 'duration-300');
+                        setTimeout(() => {
+                            firstErrEl.classList.remove('ring-4', 'ring-red-500', 'ring-offset-2', 'transition-all', 'duration-300');
+                        }, 2000);
                     } else {
                         window.scrollTo({ top: 0, behavior: 'smooth' }); 
                     }
@@ -1582,6 +1585,7 @@
             let outDiscountStrGas = (!hasReturn && currentDiscountAmt > 0) ? ` (折抵 -$${currentDiscountAmt.toLocaleString('en-US')})` : '';
             let retDiscountStrGas = (hasReturn && combinedDiscount > 0) ? ` (折抵 -$${combinedDiscount.toLocaleString('en-US')})` : '';
             
+            // 給 LINE 訊息下方的格式字串
             let outGoogleTotal = hasReturn ? `去程 $${outTotalAmt.toLocaleString('en-US')} (總計 $${grandTotalAmt.toLocaleString('en-US')})` : `$${grandTotalAmt.toLocaleString('en-US')}${outDiscountStrGas}`;
             let retGoogleTotal = hasReturn ? `回程 $${retTotalAmt.toLocaleString('en-US')} (總計 $${grandTotalAmt.toLocaleString('en-US')})${retDiscountStrGas}` : `$0`;
 
@@ -1697,7 +1701,7 @@
                 }
             } catch (err) {
                 // 如果 fetch 拋出網路錯誤
-                Swal.fire('錯誤', '網路傳送失敗，請檢查網路連線或電洽客服。\n\n【24小時客服專線】\n➤ ᴘʜᴏɴᴇ 電話：0955311306', 'error'); 
+                Swal.fire({ title: '錯誤', text: '網路傳送失敗，請檢查網路連線或電洽客服。\n\n【24小時客服專線】\n➤ ᴘʜᴏɴᴇ 電話：0955311306', confirmButtonColor: '#553f62' }); 
                 btn.disabled = false; btn.innerText = '確認送出預約'; 
                 return;
             }
@@ -1731,7 +1735,6 @@
                     Swal.fire({ 
                         title: '預約單已送出', 
                         html: '系統已成功收到您的預約！<br><br><span style="color:red; font-size:12px;">(註：無法自動回傳明細至 LINE 聊天室，請截圖保留畫面，或等候客服主動聯繫。)</span>', 
-                        icon: 'success',
                         confirmButtonColor: '#553f62'
                     }).then(() => { 
                         liff.closeWindow(); 
@@ -1739,7 +1742,7 @@
                 }
             } else {
                 // 若不在 LINE 裡面（例如瀏覽器測試），則跳出成功提示並重新整理
-                Swal.fire({ title: '已成功送出', text: '請等候客服確認。', icon: 'success' }).then(() => { window.location.reload(); });
+                Swal.fire({ title: '已成功送出', text: '請等候客服確認。', confirmButtonColor: '#553f62' }).then(() => { window.location.reload(); });
             }
         });
         window.onload = () => { initFormOptions(); initializeLiff(); };
