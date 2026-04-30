@@ -601,7 +601,7 @@
         // --- 設定常數 ---
         const LIFF_ID = "2009922945-KmKUgqbg";
         const LINE_OA_LINK = "https://line.me/R/ti/p/@ansing";
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbw5fgUxlqHVXM1QZLh1UuP0jWJTJzzX0PTty7h3G8cCHsdmrEU94ZLs9ItJptZDMchp/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyzpN-7NU0WMNtjHZwM4gYNYDhmz45NFEJiOp5MWCsnp2HdCsvftVBPNVC2X0M2anVA/exec"; 
 
         let DISCOUNT_CODES = {};
         let currentDiscountAmt = 0;
@@ -1173,8 +1173,8 @@
                                 
                                 <div style="background-color: #fff5f8; padding: 10px; border-radius: 5px; border-left: 4px solid #f07cad; font-size: 13px; margin-bottom: 15px;">
                                     ⚠️ <strong>溫馨提醒：</strong><br>
-                                    預約來回優惠方案，恕不與其他優惠或集點活動併用。<br>
-                                    造成您的不便，懇請見諒。
+                                    造成您的不便，懇請見諒。<br><br>
+                                    🎁 更多超值優惠活動，歡迎前往官方 LINE 查看詳情。
                                 </div>
                                 
                                 <p>我們將持續秉持初衷，為您提供最安全、準確且舒適的接送服務。</p>
@@ -1582,12 +1582,19 @@
             let combinedDiscount = currentDiscountAmt + autoReturnDiscount;
             if (combinedDiscount > 500) combinedDiscount = 500;
 
-            let outDiscountStrGas = (!hasReturn && currentDiscountAmt > 0) ? ` (折抵 -$${currentDiscountAmt.toLocaleString('en-US')})` : '';
-            let retDiscountStrGas = (hasReturn && combinedDiscount > 0) ? ` (折抵 -$${combinedDiscount.toLocaleString('en-US')})` : '';
-            
+            // 組織折扣明細字串 (明細下方用)
+            let discountDetailsStr = '';
+            if (autoReturnDiscount > 0) discountDetailsStr += `預約來回優惠：-$100\n`;
+            if (currentDiscountAmt > 0) discountDetailsStr += `折扣碼優惠 (${currentDiscountCode})：-$${currentDiscountAmt.toLocaleString('en-US')}\n`;
+
             // 給 LINE 訊息下方的格式字串
-            let outGoogleTotal = hasReturn ? `去程 $${outTotalAmt.toLocaleString('en-US')} (總計 $${grandTotalAmt.toLocaleString('en-US')})` : `$${grandTotalAmt.toLocaleString('en-US')}${outDiscountStrGas}`;
-            let retGoogleTotal = hasReturn ? `回程 $${retTotalAmt.toLocaleString('en-US')} (總計 $${grandTotalAmt.toLocaleString('en-US')})${retDiscountStrGas}` : `$0`;
+            let outLineBottom = `金額：$${outTotalAmt.toLocaleString('en-US')}\n` + 
+                                (!hasReturn && combinedDiscount > 0 ? discountDetailsStr : '') + 
+                                `總金額：$${grandTotalAmt.toLocaleString('en-US')}`;
+                                
+            let retLineBottom = `金額：$${retTotalAmt.toLocaleString('en-US')}\n` + 
+                                (hasReturn && combinedDiscount > 0 ? discountDetailsStr : '') + 
+                                `總金額：$${grandTotalAmt.toLocaleString('en-US')}`;
 
             const signStr = document.getElementById('optSign').checked ? document.getElementById('signContent').value : '無';
             const payStr = document.getElementById('payment').value;
@@ -1620,7 +1627,7 @@
                          `舉牌服務：${signStr}\n` +
                          `加價項目：${outT.surcharge}\n` +
                          `備註：${remarkStr}\n\n` +
-                         `${outGoogleTotal}`;
+                         `${outLineBottom}`;
             
             // 組織 LINE 訊息 (回程明細)
             let msgRet = '';
@@ -1643,13 +1650,17 @@
                          `舉牌服務：${signStr}\n` +
                          `加價項目：${retT.surcharge}\n` +
                          `備註：${remarkStr}\n\n` +
-                         `${retGoogleTotal}`;
+                         `${retLineBottom}`;
             }
 
             // 組織 LINE 訊息 (車資與付款方式)
+            let priceDetailsStr = '';
+            if (autoReturnDiscount > 0) priceDetailsStr += `\n ├ 預約來回優惠：-$100`;
+            if (currentDiscountAmt > 0) priceDetailsStr += `\n ├ 折扣碼優惠 (${currentDiscountCode})：-$${currentDiscountAmt.toLocaleString('en-US')}`;
+
             let lineTotalStr = hasReturn ? 
-                `\n ├ 去程：$${outTotalAmt.toLocaleString('en-US')}\n ├ 回程：$${retTotalAmt.toLocaleString('en-US')}${combinedDiscount > 0 ? `\n ├ 優惠折抵：-$${combinedDiscount.toLocaleString('en-US')}` : ''}\n └ 最終總計：$${grandTotalAmt.toLocaleString('en-US')}` : 
-                (combinedDiscount > 0 ? `\n ├ 原價：$${outTotalAmt.toLocaleString('en-US')}\n ├ 優惠折抵：-$${combinedDiscount.toLocaleString('en-US')}\n └ 最終總計：$${grandTotalAmt.toLocaleString('en-US')}` : `$${grandTotalAmt.toLocaleString('en-US')}`);
+                `\n ├ 去程：$${outTotalAmt.toLocaleString('en-US')}\n ├ 回程：$${retTotalAmt.toLocaleString('en-US')}${priceDetailsStr}\n └ 最終總計：$${grandTotalAmt.toLocaleString('en-US')}` : 
+                (combinedDiscount > 0 ? `\n ├ 原價：$${outTotalAmt.toLocaleString('en-US')}${priceDetailsStr}\n └ 最終總計：$${grandTotalAmt.toLocaleString('en-US')}` : `$${grandTotalAmt.toLocaleString('en-US')}`);
 
             let msgPrice = `--- 【付款資訊】 ---\n` +
                            `預估車資：${lineTotalStr}\n` +
@@ -1670,7 +1681,9 @@
                             date: outT.rideDate, time: "'" + outT.rideTime, serviceType: outT.rideType, airport: outT.airport, flightNumber: outT.flightNo,
                             mainAddressFull: outT.address, extraAddressFull: outT.extraStop, carType: outT.carType,
                             passengers: `大${outT.paxAdult} 中${outT.paxChild} 小${outT.paxInfant}`, luggage: `登機${outT.lugCarry} 托運${outT.lugChecked}`,
-                            sportLuggage: outT.sportLuggage, safetySeat: outT.safetySeat, signboard: signStr, totalFee: outGoogleTotal, payment: payStr, remarks: remarkStr, surcharge: outT.surcharge,
+                            sportLuggage: outT.sportLuggage, safetySeat: outT.safetySeat, signboard: signStr, 
+                            totalFee: outLineBottom, tripFee: outTotalAmt, grandTotal: grandTotalAmt, // 已將金額分開傳送
+                            payment: payStr, remarks: remarkStr, surcharge: outT.surcharge,
                             discountCode: hasReturn ? "" : currentDiscountCode, discountAmt: hasReturn ? "" : currentDiscountAmt 
                         }
                     }), 
@@ -1692,7 +1705,9 @@
                                 date: retT.rideDate, time: "'" + retT.rideTime, serviceType: retT.rideType, airport: retT.airport, flightNumber: retT.flightNo,
                                 mainAddressFull: retT.address, extraAddressFull: outT.extraStop, carType: retT.carType,
                                 passengers: `大${retT.paxAdult} 中${retT.paxChild} 小${retT.paxInfant}`, luggage: `登機${retT.lugCarry} 托運${retT.lugChecked}`,
-                                sportLuggage: retT.sportLuggage, safetySeat: retT.safetySeat, signboard: signStr, totalFee: retGoogleTotal, payment: payStr, remarks: remarkStr, surcharge: retT.surcharge,
+                                sportLuggage: retT.sportLuggage, safetySeat: retT.safetySeat, signboard: signStr, 
+                                totalFee: retLineBottom, tripFee: retTotalAmt, grandTotal: grandTotalAmt, // 已將金額分開傳送
+                                payment: payStr, remarks: remarkStr, surcharge: retT.surcharge,
                                 discountCode: currentDiscountCode, discountAmt: currentDiscountAmt 
                             }
                         }), 
