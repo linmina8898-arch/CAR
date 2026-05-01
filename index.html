@@ -601,7 +601,7 @@
         // --- 設定常數 ---
         const LIFF_ID = "2009922945-KmKUgqbg";
         const LINE_OA_LINK = "https://line.me/R/ti/p/@ansing";
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwT7ZdPS6Ey4s7nHWe-MIG81Gthbu6YwTau4aVbqEChNxuEtgZe8_eVcSch2GZOCRTt/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbx8lKA9wkXU7EDVFSY13EEbra6keH3E0qplHffkJ1neqk_Us7M8lponAcFBcXhpsntL/exec"; 
 
         let DISCOUNT_CODES = {};
         let currentDiscountAmt = 0;
@@ -849,7 +849,7 @@
                                 });
                             });
                         } else {
-                            document.getElementById('userDiscountsContainer').innerHTML = '<p class="text-xs text-gray-500">目前沒有可用的專屬優惠喔！</p>';
+                            document.getElementById('userDiscountsContainer').innerHTML = '<div class="bg-[#f07cad] text-white p-2.5 rounded-lg text-center text-sm font-bold tracking-wide shadow-md">目前沒有可用的專屬優惠喔！</div>';
                             document.getElementById('userDiscountsContainer').classList.remove('hidden');
                         }
                     } catch (err) {
@@ -1087,7 +1087,7 @@
                         html: `
                             <div style="text-align: left; line-height: 1.6; font-size: 14px;">
                                 <p>為了確保您能收到「預約成功通知」與「派車資訊」，請先加入安興租車官方帳號好友。</p>
-                                <p style="color: #f07cad; font-weight: bold; margin-top: 10px;">加完好友後，請手動「關閉」好友畫面，回到此表單並點擊下方按鈕進入。</p>
+                                <p style="color: #f07cad; font-weight: bold; margin-top: 10px;">加完好友後，請手持「關閉」好友畫面，回到此表單並點擊下方按鈕進入。</p>
                                 <div style="text-align: center; margin-top: 20px;">
                                     <a href="${LINE_OA_LINK}" target="_blank" style="background-color: #f07cad; color: white; padding: 10px 25px; border-radius: 25px; text-decoration: none; font-weight: bold; display: inline-block;">點我前往加好友</a>
                                 </div>
@@ -1142,7 +1142,7 @@
                             <!-- 第一段 -->
                             <div style="margin-bottom: 20px;">
                                 <div style="color: #553f62; font-weight: bold; font-size: 18px; margin-bottom: 8px;">【24小時內無法線上預約】</div>
-                                <p>為確保您的行程順利及安排合適的車款，線上預約需於出發時間前 <strong>24 小時</strong> 完成。</p>
+                                <p>為確保您的行程順利及安排合適車款，線上預約需於出發時間前 <strong>24 小時</strong> 完成。</p>
                                 <br>
                                 <span style="color: #f07cad; font-weight: bold;">【急單處理】</span><br>
                                 24 小時內之緊急用車需求，請直撥客服專線：<br>
@@ -1522,12 +1522,11 @@
             const baseOrderId = document.getElementById('orderId').value;
             const qtEl = document.getElementById('quoteTotal');
             
-            // 修正：計算去程與回程各別的折扣
             const rawOutTotal = parseInt(qtEl.getAttribute('data-out'), 10) || 0;
             const rawRetTotal = parseInt(qtEl.getAttribute('data-ret'), 10) || 0;
             const grandTotalAmt = parseInt(qtEl.getAttribute('data-grand'), 10) || 0;
-            const outDiscount = currentDiscountAmt; // 折扣碼優惠套用於去程
-            const retDiscount = hasReturn ? 100 : 0; // 來回優惠套用於回程
+            const outDiscount = currentDiscountAmt; 
+            const retDiscount = hasReturn ? 100 : 0; 
             const discountedOutTotal = rawOutTotal - outDiscount;
             const discountedRetTotal = rawRetTotal - retDiscount;
 
@@ -1542,7 +1541,7 @@
             const paxPhone = document.getElementById('paxPhone').value;
             const email = document.getElementById('email').value;
 
-            // 組織 LINE 訊息內容 (提前建立以便同時發送給 GAS)
+            // 組織 LINE 訊息內容 
             let outLineBottom = `金額：$${discountedOutTotal.toLocaleString('en-US')}\n` + 
                                 (outDiscount > 0 ? ` ├ 折扣碼優惠 (${currentDiscountCode})：-$${outDiscount}\n` : '') +
                                 `總金額：$${grandTotalAmt.toLocaleString('en-US')}`;
@@ -1560,24 +1559,24 @@
             let msgPrice = `--- 【付款資訊】 ---\n預估車資：${priceSummaryStr}\n付款方式：${payStr}`;
 
             try {
-                // 傳送去程 (新增 fullMessage 用於日曆)
+                // 傳送去程
                 await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({
                     action: 'addReservation', data: {
                         timestamp: new Date().toLocaleString('zh-TW', {timeZone: 'Asia/Taipei'}), ordererName: ordererName, ordererTitle: document.getElementById('ordererTitle').value, ordererPhone: ordererPhone, lineDisplayName: sysLineName, reservationId: hasReturn ? baseOrderId + '-去程' : baseOrderId, paxNameOnly: document.getElementById('paxName').value, paxPhone: paxPhone, rideDate: outT.rideDate, rideTime: outT.rideTime, serviceType: outT.rideType, airport: outT.airport, flightNumber: outT.flightNo, mainLocation: outT.address, extraLocation: outT.extraStop, carType: outT.carType, paxCount: `大${outT.paxAdult} 中${outT.paxChild} 小${outT.paxInfant}`, luggageCount: `登機${outT.lugCarry} 托運${outT.lugChecked}`, sportLuggage: outT.sportLuggage, seatDetails: outT.safetySeat, signboard: signStr, 
                         tripAmt: discountedOutTotal, grandTotal: grandTotalAmt, paymentMethod: payStr, remarks: remarkStr, surchargeDetails: outT.surcharge, 
                         discountCode: currentDiscountCode || "", discountAmt: outDiscount || "", ordererEmail: email, lineId: sysLineId,
-                        fullMessage: msgOut // 同步到日曆的內容
+                        fullMessage: msgOut
                     }
                 }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
 
                 if (hasReturn) {
-                    // 傳送回程 (新增 fullMessage 用於日曆)
+                    // 傳送回程
                     await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({
                         action: 'addReservation', data: {
                             timestamp: new Date().toLocaleString('zh-TW', {timeZone: 'Asia/Taipei'}), ordererName: ordererName, ordererTitle: document.getElementById('ordererTitle').value, ordererPhone: ordererPhone, lineDisplayName: sysLineName, reservationId: baseOrderId + '-回程', paxNameOnly: document.getElementById('paxName').value, paxPhone: paxPhone, rideDate: retT.rideDate, rideTime: retT.rideTime, serviceType: retT.rideType, airport: retT.airport, flightNumber: retT.flightNo, mainLocation: retT.address, extraLocation: outT.extraStop, carType: retT.carType, paxCount: `大${retT.paxAdult} 中${retT.paxChild} 小${retT.paxInfant}`, luggageCount: `登機${retT.lugCarry} 托運${retT.lugChecked}`, sportLuggage: retT.sportLuggage, seatDetails: retT.safetySeat, signboard: signStr, 
                             tripAmt: discountedRetTotal, grandTotal: grandTotalAmt, paymentMethod: payStr, remarks: remarkStr, surchargeDetails: retT.surcharge, 
                             discountCode: "預約來回優惠", discountAmt: 100, ordererEmail: email, lineId: sysLineId,
-                            fullMessage: msgRet // 同步到日曆的內容
+                            fullMessage: msgRet
                         }
                     }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
                 }
