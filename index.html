@@ -601,7 +601,8 @@
         // --- 設定常數 ---
         const LIFF_ID = "2009922945-KmKUgqbg";
         const LINE_OA_LINK = "https://line.me/R/ti/p/@ansing";
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbxp4y80Eh5e5KpRjNfpTitjihq2gSUGcjJDrngOIeTfOCQOd4i7HiIDkgYTpmkkUtJd/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycby1fZKdqK1qyjMGKdhzgkNPX2KEkqPLgUHSoNUhiV0lF3syKfTkN4_u9tYBSWwnB5qM/exec
+"; 
 
         let DISCOUNT_CODES = {};
         let currentDiscountAmt = 0;
@@ -1646,7 +1647,7 @@
             }
 
             if (liff.isInClient()) { 
-                const msgEnd = `您的預約資料已成功送出！\n須收到本公司的『預約確認回覆』後，才算正式完成預約。\n\n【24小時客服專線】\n➤ ᴘʜᴏɴᴇ 電話：0955311306`;
+                const msgEnd = `您的預約已成功送出！\n\n客服正為您核對訂單，以確保您的行程權益。\n\n📍 注意事項\n限時付款：收到確認後請於 24 小時內付款，逾期自動取消。\n付款方式：客服核對後，將於此處提供專屬付款連結或帳號。\n\n【24小時客服專線】\n➤ ᴘʜᴏɴᴇ 電話：0955311306`;
                 let lineMessages = [{ type: 'text', text: msgOut }];
                 if (hasReturn) lineMessages.push({ type: 'text', text: msgRet });
                 lineMessages.push({ type: 'text', text: msgPrice }, { type: 'text', text: msgEnd });
