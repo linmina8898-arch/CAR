@@ -1560,12 +1560,12 @@
                 let retDiscountsArr = [];
                 if (currentDiscountAmt > 0) retDiscountsArr.push(`折扣碼(${currentDiscountCode}) -$${currentDiscountAmt}`);
                 retDiscountsArr.push(`預約來回優惠 -$100`);
-                retDiscountStr = retDiscountsArr.join('、');
+                retDiscountStr = '\n ├ ' + retDiscountsArr.join('\n ├ ');
                 overallDiscountStr = retDiscountStr;
             } else {
                 outDiscount = currentDiscountAmt;
                 if (currentDiscountAmt > 0) {
-                    outDiscountStr = `折扣碼(${currentDiscountCode}) -$${currentDiscountAmt}`;
+                    outDiscountStr = `\n ├ 折扣碼(${currentDiscountCode}) -$${currentDiscountAmt}`;
                     overallDiscountStr = outDiscountStr;
                 }
             }
@@ -1584,10 +1584,12 @@
             const paxPhone = document.getElementById('paxPhone').value;
             const email = document.getElementById('email').value;
 
+            let outSurchargeDisplay = outT.surcharge === '無' ? '無' : '\n ├ ' + outT.surcharge.split('、').join('\n ├ ');
+
             // 組織 LINE 訊息內容
             let outLineBottom = `--- 【費用明細】 ---\n` + 
                                 ` ├ 基本車資：$${outBase.toLocaleString('en-US')}\n` +
-                                ` ├ 加價項目：${outT.surcharge}\n` +
+                                ` ├ 加價項目：${outSurchargeDisplay}\n` +
                                 ` ├ 折扣金額：${outDiscountStr}\n` +
                                 ` └ 總金額：$${discountedOutTotal.toLocaleString('en-US')}\n` +
                                 `付款方式：${payStr}`;
@@ -1596,9 +1598,10 @@
 
             let msgRet = '';
             if (hasReturn) {
+                let retSurchargeDisplay = retT.surcharge === '無' ? '無' : '\n ├ ' + retT.surcharge.split('、').join('\n ├ ');
                 let retLineBottom = `--- 【費用明細】 ---\n` + 
                                     ` ├ 基本車資：$${retBase.toLocaleString('en-US')}\n` +
-                                    ` ├ 加價項目：${retT.surcharge}\n` +
+                                    ` ├ 加價項目：${retSurchargeDisplay}\n` +
                                     ` ├ 折扣金額：${retDiscountStr}\n` +
                                     ` └ 總金額：$${discountedRetTotal.toLocaleString('en-US')}\n` +
                                     `付款方式：${payStr}`;
