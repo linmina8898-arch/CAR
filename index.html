@@ -601,7 +601,7 @@
         // --- 設定常數 ---
         const LIFF_ID = "2009922945-KmKUgqbg";
         const LINE_OA_LINK = "https://line.me/R/ti/p/@ansing";
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzOmKyoMKdCMdY0hoM7RBHOFGT3F0REsv81SVfA6ZWxhMxPlmDFFpGF15G2EoPS_alN/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxuM2HwKwXDS1fDJjehcAsL_tglYrTPM-eQDNTBdKfpDjcD12inN-g8DR5GFWdM_VgI/exec"; 
 
         let DISCOUNT_CODES = {};
         let currentDiscountAmt = 0;
@@ -1134,8 +1134,11 @@
                 Swal.fire({
                     title: '最新消息',
                     html: `
-                        <div style="color: #202020; font-size: 14px; line-height: 1.6; text-align: left; margin-top: 5px; max-height: 60vh; overflow-y: auto; padding-right: 5px;">
+                        <div id="swal-news-content" style="color: #202020; font-size: 14px; line-height: 1.6; text-align: left; margin-top: 5px; max-height: 60vh; overflow-y: auto; padding-right: 5px;">
                             
+                            <!-- 新增開頭備註文字 -->
+                            <p style="text-align: center; color: #f07cad; font-weight: bold; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; font-size: 13px;">** 請滑至底部點擊「確認送出」，即可開始預約。**</p>
+
                             <!-- 第一段 -->
                             <div style="margin-bottom: 20px;">
                                 <div style="color: #553f62; font-weight: bold; font-size: 18px; margin-bottom: 8px;">【24小時內無法線上預約】</div>
@@ -1181,10 +1184,23 @@
                             </div>
                         </div>
                     `,
-                    confirmButtonText: '我已了解',
+                    confirmButtonText: '請滑動至底部',
                     confirmButtonColor: '#553f62',
                     customClass: { popup: 'swal-custom-radius' },
-                    allowOutsideClick: false
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        const content = document.getElementById('swal-news-content');
+                        const confirmBtn = Swal.getConfirmButton();
+                        confirmBtn.disabled = true;
+                        confirmBtn.style.opacity = '0.5';
+                        content.addEventListener('scroll', () => {
+                            if (content.scrollHeight - content.scrollTop <= content.clientHeight + 5) {
+                                confirmBtn.disabled = false;
+                                confirmBtn.style.opacity = '1';
+                                confirmBtn.innerText = '確認，開始預約';
+                            }
+                        });
+                    }
                 }).then(() => {
                     sessionStorage.setItem('hasSeenNotice', 'true');
                 });
@@ -1223,13 +1239,11 @@
             const nightHour = parseInt(rideHourVal, 10);
             if (nightHour >= 23 || nightHour < 5) nightFee = 200;
 
-            // 只有去程控制視覺上的checkbox，但回程的加價會直接反映在清單上
             if (prefix === '') {
                 const optUrgent = document.getElementById('optUrgent');
                 const lblUrgent = document.getElementById('lblUrgent');
                 if (urgentFee > 0) { optUrgent.checked = true; lblUrgent.classList.remove('opacity-60'); } 
                 else { optUrgent.checked = false; lblUrgent.classList.add('opacity-60'); }
-
                 const optNight = document.getElementById('optNight');
                 const lblNight = document.getElementById('lblNight');
                 if (nightFee > 0) { optNight.checked = true; lblNight.classList.remove('opacity-60'); } 
@@ -1241,28 +1255,22 @@
             const fullZipInfo = document.getElementById('zipcode' + prefix).value; 
             const extraZipInfo = document.getElementById('extraZipcode' + prefix).value;
             const needExtraStop = document.getElementById('needExtraStop' + prefix).checked;
-
             document.getElementById('extraStopContainer' + prefix).style.display = needExtraStop ? 'block' : 'none';
-
             let selectedSport = Array.from(document.getElementsByName('sportLuggageRadio' + prefix)).find(r => r.checked)?.value;
             document.getElementById('sportLuggageContainer' + prefix).style.display = (selectedSport === "是") ? 'block' : 'none';
 
             const mainParts = fullZipInfo.split(' ');
             const mainZip = mainParts[0] ? mainParts[0].trim() : '';
             const mainArea = mainParts.slice(1).join('').trim();
-
             const extraParts = extraZipInfo.split(' ');
             const extraZip = extraParts[0] ? extraParts[0].trim() : '';
             const extraArea = extraParts.slice(1).join('').trim();
-
             const carType = document.getElementById('carType' + prefix).value;
-            
             const areaDisplay = fullZipInfo || "地區";
             let routeStr = (rideType === "送機") ? `${areaDisplay} → ${airport}` : `${airport} → ${areaDisplay}`;
 
             let basicFareCalc = 0;
             let baseFareDisplay = "客服人工確認報價";
-            
             if (mainZip && airport && priceTable.length > 0) {
                 const matchMain = findMatchedFare(mainZip, mainArea, airport);
                 let mainPrice = 0;
@@ -1272,7 +1280,6 @@
                     else if (carType === 'New Alphard 40') mainPrice = parseInt(matchMain.g) || 0;
                     else mainPrice = parseInt(matchMain.f) || 0;
                 }
-
                 let finalBasePrice = mainPrice;
                 if (needExtraStop && extraZip) {
                     const matchExtra = findMatchedFare(extraZip, extraArea, airport);
@@ -1291,15 +1298,11 @@
 
             let html = '';
             let tripSurchargeTotal = 0;
-            
-            // Route Header
             let label = isReturn ? '回程' : '去程';
             html += `<div class="flex justify-between items-center pb-2 border-b border-[#e9e7ef]/20 font-bold mb-1"><span class="text-[#f07cad]">【${label}】${routeStr}</span></div>`;
             html += `<div class="flex justify-between items-center py-1"><span class="font-medium text-[#e9e7ef]/80">車型: ${carType}</span></div>`;
             html += `<div class="flex justify-between items-center py-1"><span class="font-medium text-[#e9e7ef]/80">基本車資</span><span class="text-[#e9e7ef] font-bold italic">${baseFareDisplay}</span></div>`;
-
             if (rideType === '接機') { html += `<div class="flex justify-between"><span>└ 接機服務費</span><span>+$200</span></div>`; tripSurchargeTotal += 200; }
-            
             let tripDistFee = isReturn ? extraStopFee_R : extraStopFee;
             let tripDist = isReturn ? extraStopDist_R : extraStopDist;
             if (needExtraStop) {
@@ -1308,7 +1311,6 @@
                     tripSurchargeTotal += tripDistFee; 
                 } else if (tripDistFee === -1) { html += `<div class="flex justify-between"><span class="text-[#e9e7ef]/70 italic">└ 加點(客服人工報價)</span></div>`; }
             }
-            
             let infant = parseInt(document.getElementById('paxInfant' + prefix).value) || 0;
             let seatDetailsStr = '無';
             if(infant > 0) {
@@ -1334,57 +1336,39 @@
                 updateSeat('seatRear' + prefix, sR); updateSeat('seatForward' + prefix, sF); updateSeat('seatBooster' + prefix, sB);
                 document.getElementById('seatContainer' + prefix).style.display = 'block';
             } else { document.getElementById('seatContainer' + prefix).style.display = 'none'; }
-
             if (nightFee > 0) { html += `<div class="flex justify-between"><span>└ 夜間加成</span><span>+$200</span></div>`; tripSurchargeTotal += 200; }
             if (urgentFee > 0) { html += `<div class="flex justify-between"><span>└ 急單加價</span><span>+$300</span></div>`; tripSurchargeTotal += 300; }
-
-            // Luggage logic
             const noLuggage = document.getElementById('noLuggage' + prefix).checked;
             const carryEl = document.getElementById('luggageCarry' + prefix);
             const checkEl = document.getElementById('luggageChecked' + prefix);
-            if (noLuggage) {
-                carryEl.value = "0"; carryEl.disabled = true; checkEl.disabled = true;
-            } else {
-                carryEl.disabled = false; checkEl.disabled = false;
-            }
-
+            if (noLuggage) { carryEl.value = "0"; carryEl.disabled = true; checkEl.disabled = true; } 
+            else { carryEl.disabled = false; checkEl.disabled = false; }
             let carry = parseInt(carryEl.value) || 0;
             let maxCk = 7 - carry;
             let checkHtml = '';
             for(let i=0; i<=maxCk; i++) checkHtml += `<option value="${i}" ${parseInt(checkEl.value)===i?'selected':''}>${i}件</option>`;
             checkEl.innerHTML = checkHtml;
             if (noLuggage) checkEl.value = "0";
-
             let totalP = (parseInt(document.getElementById('paxAdult' + prefix).value)||1) + (parseInt(document.getElementById('paxChild' + prefix).value)||0) + infant;
             let checkedLug = parseInt(checkEl.value)||0;
-            
             let isSmallOk = (totalP <= 3) && (checkedLug <= 2) && (carry <= 1) && !(totalP === 2 && checkedLug === 2 && carry === 2);
             let isAlphardOk = (totalP <= 4) && ((checkedLug + carry) <= 3);
-            
             let carSel = document.getElementById('carType' + prefix);
             let optSmall = carSel.querySelector('option[value="小車"]');
             let optAlphard = carSel.querySelector('option[value="New Alphard 40"]');
-            
             if(optSmall) optSmall.disabled = !isSmallOk;
             if(optAlphard) optAlphard.disabled = !isAlphardOk;
-            
             if(!isSmallOk && carSel.value === '小車') carSel.value = '大車';
             if(!isAlphardOk && carSel.value === 'New Alphard 40') carSel.value = '大車';
-
             let warningMsg = [];
             if (!isSmallOk) warningMsg.push('小車');
             if (!isAlphardOk) warningMsg.push('New Alphard 40');
-
             document.getElementById('carWarning' + prefix).innerText = warningMsg.length > 0 ? `※ ${warningMsg.join('、')}不適用當前人數/行李` : '';
             document.getElementById('carWarning' + prefix).classList.toggle('hidden', warningMsg.length === 0);
 
             return {
-                html: html,
-                base: basicFareCalc,
-                surchargeTotal: tripSurchargeTotal,
-                seatStr: seatDetailsStr,
-                nightFee: nightFee,
-                urgentFee: urgentFee
+                html: html, base: basicFareCalc, surchargeTotal: tripSurchargeTotal,
+                seatStr: seatDetailsStr, nightFee: nightFee, urgentFee: urgentFee
             };
         }
 
@@ -1396,12 +1380,9 @@
                     inp.value = val;
                 }
             });
-
             document.getElementById('signContentContainer').style.display = document.getElementById('optSign').checked ? 'block' : 'none';
-
             let outRes = processTripData('');
-            if (!outRes) return; // date restricted
-            
+            if (!outRes) return; 
             let retRes = null;
             let hasReturn = document.getElementById('needReturnTrip').checked;
             if (hasReturn) {
@@ -1410,37 +1391,29 @@
             } else {
                 document.getElementById('quoteList_R').classList.add('hidden');
             }
-
             document.getElementById('quoteList').innerHTML = outRes.html;
             let outTotal = (outRes.base > 0) ? (outRes.base + outRes.surchargeTotal) : 0;
-            
             let retTotal = 0;
             if (retRes) {
                 document.getElementById('quoteList_R').innerHTML = retRes.html;
                 retTotal = (retRes.base > 0) ? (retRes.base + retRes.surchargeTotal) : 0;
             }
-
             let globalSurcharge = 0;
             if (document.getElementById('optSign').checked) {
                 globalSurcharge = 200;
                 let extraGlobalHtml = `<div class="flex justify-between mt-2 pt-2 border-t border-[#e9e7ef]/20"><span>└ 全域：舉牌服務費</span><span>+$200</span></div>`;
                 document.getElementById('quoteList').insertAdjacentHTML('beforeend', extraGlobalHtml);
             }
-            
             let autoReturnDiscount = hasReturn ? 100 : 0;
             let combinedDiscount = currentDiscountAmt + autoReturnDiscount;
             if (combinedDiscount > 500) combinedDiscount = 500;
-
             let grandTotal = outTotal + retTotal + globalSurcharge - combinedDiscount;
             if (grandTotal < 0) grandTotal = 0;
-            
             let summaryHtml = '';
             if (retRes) {
                 summaryHtml += `<div class="flex justify-between items-center text-sm text-[#e9e7ef]/90"><span>去程總金額</span><span>$${(outTotal + globalSurcharge).toLocaleString('en-US')}</span></div>`;
                 summaryHtml += `<div class="flex justify-between items-center text-sm text-[#e9e7ef]/90"><span>回程總金額</span><span>$${retTotal.toLocaleString('en-US')}</span></div>`;
-                if (autoReturnDiscount > 0) {
-                    summaryHtml += `<div class="flex justify-between items-center text-sm text-[#f07cad] font-bold mt-1"><span>預約來回優惠</span><span>-$100</span></div>`;
-                }
+                if (autoReturnDiscount > 0) summaryHtml += `<div class="flex justify-between items-center text-sm text-[#f07cad] font-bold mt-1"><span>預約來回優惠</span><span>-$100</span></div>`;
                 if (currentDiscountAmt > 0) {
                     let actualUserDiscount = combinedDiscount - autoReturnDiscount;
                     summaryHtml += `<div class="flex justify-between items-center text-sm text-[#f07cad] font-bold mt-1"><span>折扣碼優惠 (${currentDiscountCode})</span><span>-$${actualUserDiscount.toLocaleString('en-US')}</span></div>`;
@@ -1448,9 +1421,7 @@
                 summaryHtml += `<div class="flex justify-between items-center pt-2 mt-2 border-t border-[#e9e7ef]/30 text-lg"><span class="text-[#e9e7ef]">來回總車資</span><span id="quoteTotal" class="text-[#e9e7ef] font-black text-2xl drop-shadow-sm" data-out="${outTotal + globalSurcharge}" data-ret="${retTotal}" data-grand="${grandTotal}">$${grandTotal.toLocaleString('en-US')}</span></div>`;
             } else {
                 summaryHtml += `<div class="flex justify-between items-center text-sm text-[#e9e7ef]/90"><span>小計</span><span>$${(outTotal + globalSurcharge).toLocaleString('en-US')}</span></div>`;
-                if (currentDiscountAmt > 0) {
-                    summaryHtml += `<div class="flex justify-between items-center text-sm text-[#f07cad] font-bold mt-1"><span>折扣碼優惠 (${currentDiscountCode})</span><span>-$${combinedDiscount.toLocaleString('en-US')}</span></div>`;
-                }
+                if (currentDiscountAmt > 0) summaryHtml += `<div class="flex justify-between items-center text-sm text-[#f07cad] font-bold mt-1"><span>折扣碼優惠 (${currentDiscountCode})</span><span>-$${combinedDiscount.toLocaleString('en-US')}</span></div>`;
                 summaryHtml += `<div class="flex justify-between items-center text-lg mt-2 pt-2 border-t border-[#e9e7ef]/30"><span class="text-[#e9e7ef]">預估總車資</span><span id="quoteTotal" class="text-[#e9e7ef] font-black text-2xl drop-shadow-sm" data-out="${outTotal + globalSurcharge}" data-ret="0" data-grand="${grandTotal}">$${grandTotal.toLocaleString('en-US')}</span></div>`;
             }
             document.getElementById('quoteSummary').innerHTML = summaryHtml;
@@ -1463,7 +1434,6 @@
             e.preventDefault();
             const sameAs = document.getElementById('sameAsOrderer').checked;
             const hasReturn = document.getElementById('needReturnTrip').checked;
-            
             let errors = [];
             if (!document.getElementById('ordererName').value.trim()) errors.push({msg: "訂車人姓名", id: "ordererName"});
             if (!document.getElementById('ordererPhone').value.trim()) errors.push({msg: "訂車人聯絡電話", id: "ordererPhone"});
@@ -1471,59 +1441,43 @@
                 if (!document.getElementById('paxName').value.trim()) errors.push({msg: "乘車人姓名", id: "paxName"});
                 if (!document.getElementById('paxPhone').value.trim()) errors.push({msg: "乘車人聯絡電話", id: "paxPhone"});
             }
-            
             const validateTrip = (prefix, label) => {
                 if (!document.getElementById('rideDate' + prefix).value) errors.push({msg: `${label}乘車日期`, id: 'rideDate' + prefix});
                 if (!document.getElementById('flightNo' + prefix).value.trim()) errors.push({msg: `${label}航班編號`, id: 'flightNo' + prefix});
                 if (!document.getElementById('address' + prefix).value.trim()) errors.push({msg: `${label}主要詳細地址`, id: 'address' + prefix});
                 if (document.getElementById('needExtraStop' + prefix).checked && !document.getElementById('extraStopAddress' + prefix).value.trim()) errors.push({msg: `${label}加點詳細地址`, id: 'extraStopAddress' + prefix});
-                
                 let infantCount = parseInt(document.getElementById('paxInfant' + prefix).value) || 0;
                 let sR = parseInt(document.getElementById('seatRear' + prefix).value) || 0;
                 let sF = parseInt(document.getElementById('seatForward' + prefix).value) || 0;
                 let sB = parseInt(document.getElementById('seatBooster' + prefix).value) || 0;
                 if (infantCount > 0 && (sR + sF + sB) === 0) errors.push({msg: `${label}幼童安全座椅 (4歲以下必須選擇)`, id: 'seatRear' + prefix});
-                
                 const sportRadio = Array.from(document.getElementsByName('sportLuggageRadio' + prefix)).find(r => r.checked)?.value;
                 if (sportRadio === "是" && !document.getElementById('sportLuggageSize' + prefix).value.trim()) errors.push({msg: `${label}胖胖箱尺寸/大小`, id: 'sportLuggageSize' + prefix});
             };
-
             validateTrip('', '去程: ');
             if (hasReturn) validateTrip('_R', '回程: ');
-
             if (document.getElementById('optSign').checked && !document.getElementById('signContent').value.trim()) errors.push({msg: "舉牌服務姓名或內容", id: 'signContent'});
-
             if (!hasReadDetails) errors.push({msg: "請點擊「詳細說明」閱讀乘車規範", id: 'toggleDetails'});
             else if (!document.getElementById('agreeDisclaimer').checked) errors.push({msg: "請勾選同意【乘車注意事項】聲明", id: 'agreeDisclaimer'});
-
             if (errors.length > 0) {
                 Swal.fire({
                     title: '資料未填寫完整',
                     html: `<div style="text-align: left; line-height: 1.8;">請完成以下項目：<br><br><span style="color: #f07cad; font-weight: bold;">${errors.map((err, idx) => `${idx+1}. ${err.msg}`).join('<br>')}</span></div>`,
-                    confirmButtonColor: '#553f62',
-                    returnFocus: false
+                    confirmButtonColor: '#553f62'
                 }).then(() => { 
                     const firstErrEl = document.getElementById(errors[0].id);
                     if (firstErrEl) {
                         firstErrEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        firstErrEl.focus({ preventScroll: true });
-                        
-                        // 增加紅圈閃爍提示特效
-                        firstErrEl.classList.add('ring-4', 'ring-red-500', 'ring-offset-2', 'transition-all', 'duration-300');
-                        setTimeout(() => {
-                            firstErrEl.classList.remove('ring-4', 'ring-red-500', 'ring-offset-2', 'transition-all', 'duration-300');
-                        }, 2000);
-                    } else {
-                        window.scrollTo({ top: 0, behavior: 'smooth' }); 
+                        firstErrEl.classList.add('ring-4', 'ring-red-500', 'ring-offset-2');
+                        setTimeout(() => firstErrEl.classList.remove('ring-4', 'ring-red-500', 'ring-offset-2'), 2000);
                     }
                 });
                 return;
             }
-
             const btn = document.getElementById('submitBtn');
             btn.disabled = true; btn.innerText = '傳送中...';
 
-            const buildTripPayload = (prefix, labelText) => {
+            const buildTripPayload = (prefix) => {
                 let infantCount = parseInt(document.getElementById('paxInfant' + prefix).value) || 0;
                 let seatDetailsStr = '無';
                 if (infantCount > 0) {
@@ -1534,11 +1488,8 @@
                     if (r>0) sArr.push(`後向${r}`); if (f>0) sArr.push(`前向${f}`); if (b>0) sArr.push(`增高墊${b}`);
                     seatDetailsStr = sArr.join(', ');
                 }
-                
                 const sportRadio = Array.from(document.getElementsByName('sportLuggageRadio' + prefix)).find(r => r.checked)?.value;
                 let sportLuggage = (sportRadio === "是") ? `有(${document.getElementById('sportLuggageQty' + prefix).value}件, ${document.getElementById('sportLuggageSize' + prefix).value})` : '無';
-
-                // 手動再計算一次附加費字串
                 let surchargeArr = [];
                 const dDate = document.getElementById('rideDate' + prefix).value;
                 const dHr = document.getElementById('rideHour' + prefix).value;
@@ -1548,244 +1499,96 @@
                     const diffHours = (new Date(`${dDate}T${dHr}:${dMin}:00`) - new Date()) / (1000 * 60 * 60);
                     if (diffHours >= 24 && diffHours <= 48) surchargeArr.push('急單加價');
                 }
-
                 return {
                     address: stripTaiwan(document.getElementById('address' + prefix).value),
                     extraStop: document.getElementById('needExtraStop' + prefix).checked ? stripTaiwan(document.getElementById('extraStopAddress' + prefix).value) : '',
-                    rideDate: dDate,
-                    rideTime: `${dHr}:${dMin}`,
-                    rideType: document.getElementById('rideType' + prefix).value,
-                    airport: document.getElementById('airport' + prefix).value,
-                    flightNo: document.getElementById('flightNo' + prefix).value.toUpperCase(),
-                    carType: document.getElementById('carType' + prefix).value,
-                    paxAdult: document.getElementById('paxAdult' + prefix).value,
-                    paxChild: document.getElementById('paxChild' + prefix).value,
-                    paxInfant: document.getElementById('paxInfant' + prefix).value,
-                    lugCarry: document.getElementById('luggageCarry' + prefix).value,
-                    lugChecked: document.getElementById('luggageChecked' + prefix).value,
-                    sportLuggage: sportLuggage,
-                    safetySeat: seatDetailsStr,
-                    surcharge: surchargeArr.join(', ') || '無'
+                    rideDate: dDate, rideTime: `${dHr}:${dMin}`, rideType: document.getElementById('rideType' + prefix).value,
+                    airport: document.getElementById('airport' + prefix).value, flightNo: document.getElementById('flightNo' + prefix).value.toUpperCase(),
+                    carType: document.getElementById('carType' + prefix).value, paxAdult: document.getElementById('paxAdult' + prefix).value,
+                    paxChild: document.getElementById('paxChild' + prefix).value, paxInfant: document.getElementById('paxInfant' + prefix).value,
+                    lugCarry: document.getElementById('luggageCarry' + prefix).value, lugChecked: document.getElementById('luggageChecked' + prefix).value,
+                    sportLuggage: sportLuggage, safetySeat: seatDetailsStr, surcharge: surchargeArr.join(', ') || '無'
                 };
             };
 
             const outT = buildTripPayload('');
             const retT = hasReturn ? buildTripPayload('_R') : null;
             const baseOrderId = document.getElementById('orderId').value;
-
             const qtEl = document.getElementById('quoteTotal');
-            const outTotalAmt = parseInt(qtEl.getAttribute('data-out'), 10) || 0;
-            const retTotalAmt = parseInt(qtEl.getAttribute('data-ret'), 10) || 0;
+            
+            // 修正：計算去程與回程各別的折扣
+            const rawOutTotal = parseInt(qtEl.getAttribute('data-out'), 10) || 0;
+            const rawRetTotal = parseInt(qtEl.getAttribute('data-ret'), 10) || 0;
             const grandTotalAmt = parseInt(qtEl.getAttribute('data-grand'), 10) || 0;
-
-            let autoReturnDiscount = hasReturn ? 100 : 0;
-            let combinedDiscount = currentDiscountAmt + autoReturnDiscount;
-            if (combinedDiscount > 500) combinedDiscount = 500;
-
-            // 組織折扣明細字串 (明細下方用)
-            let discountDetailsStr = '';
-            if (autoReturnDiscount > 0) discountDetailsStr += `預約來回優惠：-$100\n`;
-            if (currentDiscountAmt > 0) discountDetailsStr += `折扣碼優惠 (${currentDiscountCode})：-$${currentDiscountAmt.toLocaleString('en-US')}\n`;
-
-            // 給 LINE 訊息下方的格式字串
-            let outLineBottom = `金額：$${outTotalAmt.toLocaleString('en-US')}\n` + 
-                                (!hasReturn && combinedDiscount > 0 ? discountDetailsStr : '') + 
-                                `總金額：$${grandTotalAmt.toLocaleString('en-US')}`;
-                                
-            let retLineBottom = `金額：$${retTotalAmt.toLocaleString('en-US')}\n` + 
-                                (hasReturn && combinedDiscount > 0 ? discountDetailsStr : '') + 
-                                `總金額：$${grandTotalAmt.toLocaleString('en-US')}`;
+            const outDiscount = currentDiscountAmt; // 折扣碼優惠套用於去程
+            const retDiscount = hasReturn ? 100 : 0; // 來回優惠套用於回程
+            const discountedOutTotal = rawOutTotal - outDiscount;
+            const discountedRetTotal = rawRetTotal - retDiscount;
 
             const signStr = document.getElementById('optSign').checked ? document.getElementById('signContent').value : '無';
             const payStr = document.getElementById('payment').value;
             const remarkStr = document.getElementById('remarks').value || '無';
             const sysLineId = document.getElementById('sysLineId').value;
             const sysLineName = document.getElementById('sysLineName').value;
-            const userLineId = sysLineId; // 自動抓取系統 LINE ID
             const ordererName = document.getElementById('ordererName').value;
             const ordererPhone = document.getElementById('ordererPhone').value;
             const paxFullName = document.getElementById('paxName').value + document.getElementById('paxTitle').value;
             const paxPhone = document.getElementById('paxPhone').value;
             const email = document.getElementById('email').value;
 
-            // 組織 LINE 訊息 (去程明細)
-            let msgOut = `--- 【去程資訊】 ---\n` +
-                         `預約編號：${hasReturn ? baseOrderId + '-去程' : baseOrderId}\n` +
-                         `乘車人姓名：${paxFullName}\n` +
-                         `乘車日期：${outT.rideDate}\n` +
-                         `乘車時間：${outT.rideTime}\n` +
-                         `接送機場：${outT.airport}\n` +
-                         `聯絡電話：${paxPhone}\n` +
-                         `主要接送地址：${outT.address}\n` +
-                         (outT.extraStop ? `加點地址：${outT.extraStop}\n` : "") +
-                         `航班編號：${outT.flightNo}\n` +
-                         `車型：${outT.carType}\n` +
-                         `人數：大${outT.paxAdult} 中${outT.paxChild} 小${outT.paxInfant}\n` +
-                         `行李：登機${outT.lugCarry} 托運${outT.lugChecked}\n` +
-                         `胖胖箱：${outT.sportLuggage}\n` +
-                         `安全座椅：${outT.safetySeat}\n` +
-                         `舉牌服務：${signStr}\n` +
-                         `加價項目：${outT.surcharge}\n` +
-                         `備註：${remarkStr}\n\n` +
-                         `${outLineBottom}`;
-            
-            // 組織 LINE 訊息 (回程明細)
+            // 修正 LINE 訊息：顯示折扣後金額
+            let outLineBottom = `金額：$${discountedOutTotal.toLocaleString('en-US')}\n` + 
+                                (outDiscount > 0 ? ` ├ 折扣碼優惠 (${currentDiscountCode})：-$${outDiscount}\n` : '') +
+                                `總金額：$${grandTotalAmt.toLocaleString('en-US')}`;
+            let msgOut = `--- 【去程資訊】 ---\n預約編號：${hasReturn ? baseOrderId + '-去程' : baseOrderId}\n乘車人姓名：${paxFullName}\n乘車日期：${outT.rideDate}\n乘車時間：${outT.rideTime}\n接送機場：${outT.airport}\n聯絡電話：${paxPhone}\n主要接送地址：${outT.address}\n${outT.extraStop ? `加點地址：${outT.extraStop}\n` : ""}航班編號：${outT.flightNo}\n車型：${outT.carType}\n人數：大${outT.paxAdult} 中${outT.paxChild} 小${outT.paxInfant}\n行李：登機${outT.lugCarry} 托運${outT.lugChecked}\n胖胖箱：${outT.sportLuggage}\n安全座椅：${outT.safetySeat}\n舉牌服務：${signStr}\n加價項目：${outT.surcharge}\n備註：${remarkStr}\n\n${outLineBottom}`;
+
             let msgRet = '';
             if (hasReturn) {
-                msgRet = `--- 【回程資訊】 ---\n` +
-                         `預約編號：${baseOrderId + '-回程'}\n` +
-                         `乘車人姓名：${paxFullName}\n` +
-                         `乘車日期：${retT.rideDate}\n` +
-                         `乘車時間：${retT.rideTime}\n` +
-                         `接送機場：${retT.airport}\n` +
-                         `聯絡電話：${paxPhone}\n` +
-                         `主要接送地址：${retT.address}\n` +
-                         (retT.extraStop ? `加點地址：${retT.extraStop}\n` : "") +
-                         `航班編號：${retT.flightNo}\n` +
-                         `車型：${retT.carType}\n` +
-                         `人數：大${retT.paxAdult} 中${retT.paxChild} 小${retT.paxInfant}\n` +
-                         `行李：登機${retT.lugCarry} 托運${retT.lugChecked}\n` +
-                         `胖胖箱：${retT.sportLuggage}\n` +
-                         `安全座椅：${retT.safetySeat}\n` +
-                         `舉牌服務：${signStr}\n` +
-                         `加價項目：${retT.surcharge}\n` +
-                         `備註：${remarkStr}\n\n` +
-                         `${retLineBottom}`;
+                let retLineBottom = `金額：$${discountedRetTotal.toLocaleString('en-US')}\n ├ 預約來回優惠：-$100\n總金額：$${grandTotalAmt.toLocaleString('en-US')}`;
+                msgRet = `--- 【回程資訊】 ---\n預約編號：${baseOrderId + '-回程'}\n乘車人姓名：${paxFullName}\n乘車日期：${retT.rideDate}\n乘車時間：${retT.rideTime}\n接送機場：${retT.airport}\n聯絡電話：${paxPhone}\n主要接送地址：${retT.address}\n航班編號：${retT.flightNo}\n車型：${retT.carType}\n人數：大${retT.paxAdult} 中${retT.paxChild} 小${retT.paxInfant}\n行李：登機${retT.lugCarry} 托運${retT.lugChecked}\n胖胖箱：${retT.sportLuggage}\n安全座椅：${retT.safetySeat}\n舉牌服務：${signStr}\n加價項目：${retT.surcharge}\n備註：${remarkStr}\n\n${retLineBottom}`;
             }
 
-            // 組織 LINE 訊息 (車資與付款方式)
-            let priceDetailsStr = '';
-            if (autoReturnDiscount > 0) priceDetailsStr += `\n ├ 預約來回優惠：-$100`;
-            if (currentDiscountAmt > 0) priceDetailsStr += `\n ├ 折扣碼優惠 (${currentDiscountCode})：-$${currentDiscountAmt.toLocaleString('en-US')}`;
-
-            let lineTotalStr = hasReturn ? 
-                `\n ├ 去程：$${outTotalAmt.toLocaleString('en-US')}\n ├ 回程：$${retTotalAmt.toLocaleString('en-US')}${priceDetailsStr}\n └ 最終總計：$${grandTotalAmt.toLocaleString('en-US')}` : 
-                (combinedDiscount > 0 ? `\n ├ 原價：$${outTotalAmt.toLocaleString('en-US')}${priceDetailsStr}\n └ 最終總計：$${grandTotalAmt.toLocaleString('en-US')}` : `$${grandTotalAmt.toLocaleString('en-US')}`);
-
-            let msgPrice = `--- 【付款資訊】 ---\n` +
-                           `預估車資：${lineTotalStr}\n` +
-                           `付款方式：${payStr}`;
+            let priceSummaryStr = hasReturn ? 
+                `\n ├ 去程(折後)：$${discountedOutTotal.toLocaleString('en-US')}\n ├ 回程(折後)：$${discountedRetTotal.toLocaleString('en-US')}\n └ 最終總計：$${grandTotalAmt.toLocaleString('en-US')}` : 
+                `$${grandTotalAmt.toLocaleString('en-US')}`;
+            let msgPrice = `--- 【付款資訊】 ---\n預估車資：${priceSummaryStr}\n付款方式：${payStr}`;
 
             try {
-                // 發送第一筆 (去程)
-                // 依據 A-AD 格式重組 JSON 對應鍵值
-                await fetch(GAS_URL, { 
-                    method: 'POST', 
-                    mode: 'no-cors',
-                    body: JSON.stringify({
-                        action: 'addReservation',
-                        data: {
-                            // A-AD 欄位對應資料
-                            timestamp: new Date().toLocaleString('zh-TW', {timeZone: 'Asia/Taipei'}), // A
-                            ordererName: ordererName, // B
-                            ordererTitle: document.getElementById('ordererTitle').value, // C
-                            ordererPhone: ordererPhone, // D
-                            lineDisplayName: sysLineName, // E
-                            reservationId: hasReturn ? baseOrderId + '-去程' : baseOrderId, // F
-                            paxNameOnly: document.getElementById('paxName').value, // G (對應乘車人姓名欄位)
-                            paxPhone: paxPhone, // H
-                            rideDate: outT.rideDate, // I
-                            rideTime: "'" + outT.rideTime, // J
-                            serviceType: outT.rideType, // K (類別)
-                            airport: outT.airport, // L
-                            flightNumber: outT.flightNo, // M
-                            mainLocation: outT.address, // N (地點1)
-                            extraLocation: outT.extraStop, // O (地點2)
-                            carType: outT.carType, // P
-                            paxCount: `大${outT.paxAdult} 中${outT.paxChild} 小${outT.paxInfant}`, // Q (人數)
-                            luggageCount: `登機${outT.lugCarry} 托運${outT.lugChecked}`, // R (行李)
-                            sportLuggage: outT.sportLuggage, // S (胖胖箱)
-                            seatDetails: outT.safetySeat, // T (椅子)
-                            signboard: signStr, // U (舉牌)
-                            tripAmt: outTotalAmt, // V (單趟金額)
-                            grandTotal: grandTotalAmt, // W (總金額)
-                            paymentMethod: payStr, // X
-                            remarks: remarkStr, // Y
-                            surchargeDetails: outT.surcharge, // Z
-                            discountCode: hasReturn ? "" : currentDiscountCode, // AA
-                            discountAmt: hasReturn ? "" : currentDiscountAmt, // AB
-                            ordererEmail: email, // AC
-                            lineId: sysLineId // AD
-                        }
-                    }), 
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' } 
-                });
+                // 傳送去程 (V欄位傳送折扣後金額，AB欄位帶入對應折扣)
+                await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({
+                    action: 'addReservation', data: {
+                        timestamp: new Date().toLocaleString('zh-TW', {timeZone: 'Asia/Taipei'}), ordererName: ordererName, ordererTitle: document.getElementById('ordererTitle').value, ordererPhone: ordererPhone, lineDisplayName: sysLineName, reservationId: hasReturn ? baseOrderId + '-去程' : baseOrderId, paxNameOnly: document.getElementById('paxName').value, paxPhone: paxPhone, rideDate: outT.rideDate, rideTime: "'" + outT.rideTime, serviceType: outT.rideType, airport: outT.airport, flightNumber: outT.flightNo, mainLocation: outT.address, extraLocation: outT.extraStop, carType: outT.carType, paxCount: `大${outT.paxAdult} 中${outT.paxChild} 小${outT.paxInfant}`, luggageCount: `登機${outT.lugCarry} 托運${outT.lugChecked}`, sportLuggage: outT.sportLuggage, seatDetails: outT.safetySeat, signboard: signStr, 
+                        tripAmt: discountedOutTotal, grandTotal: grandTotalAmt, paymentMethod: payStr, remarks: remarkStr, surchargeDetails: outT.surcharge, 
+                        discountCode: currentDiscountCode || "", discountAmt: outDiscount || "", ordererEmail: email, lineId: sysLineId
+                    }
+                }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
 
-                // 若有回程，發送第二筆 (回程)
                 if (hasReturn) {
-                    await fetch(GAS_URL, { 
-                        method: 'POST', 
-                        mode: 'no-cors',
-                        body: JSON.stringify({
-                            action: 'addReservation',
-                            data: {
-                                timestamp: new Date().toLocaleString('zh-TW', {timeZone: 'Asia/Taipei'}), // A
-                                ordererName: ordererName, // B
-                                ordererTitle: document.getElementById('ordererTitle').value, // C
-                                ordererPhone: ordererPhone, // D
-                                lineDisplayName: sysLineName, // E
-                                reservationId: baseOrderId + '-回程', // F
-                                paxNameOnly: document.getElementById('paxName').value, // G
-                                paxPhone: paxPhone, // H
-                                rideDate: retT.rideDate, // I
-                                rideTime: "'" + retT.rideTime, // J
-                                serviceType: retT.rideType, // K
-                                airport: retT.airport, // L
-                                flightNumber: retT.flightNo, // M
-                                mainLocation: retT.address, // N
-                                extraLocation: outT.extraStop, // O (通常加點會同步)
-                                carType: retT.carType, // P
-                                paxCount: `大${retT.paxAdult} 中${retT.paxChild} 小${retT.paxInfant}`, // Q
-                                luggageCount: `登機${retT.lugCarry} 托運${retT.lugChecked}`, // R
-                                sportLuggage: retT.sportLuggage, // S
-                                seatDetails: retT.safetySeat, // T
-                                signboard: signStr, // U
-                                tripAmt: retTotalAmt, // V
-                                grandTotal: grandTotalAmt, // W
-                                paymentMethod: payStr, // X
-                                remarks: remarkStr, // Y
-                                surchargeDetails: retT.surcharge, // Z
-                                discountCode: currentDiscountCode, // AA
-                                discountAmt: currentDiscountAmt, // AB
-                                ordererEmail: email, // AC
-                                lineId: sysLineId // AD
-                            }
-                        }), 
-                        headers: { 'Content-Type': 'text/plain;charset=utf-8' } 
-                    });
+                    // 傳送回程 (AB欄位明確填入來回優惠 100)
+                    await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({
+                        action: 'addReservation', data: {
+                            timestamp: new Date().toLocaleString('zh-TW', {timeZone: 'Asia/Taipei'}), ordererName: ordererName, ordererTitle: document.getElementById('ordererTitle').value, ordererPhone: ordererPhone, lineDisplayName: sysLineName, reservationId: baseOrderId + '-回程', paxNameOnly: document.getElementById('paxName').value, paxPhone: paxPhone, rideDate: retT.rideDate, rideTime: "'" + retT.rideTime, serviceType: retT.rideType, airport: retT.airport, flightNumber: retT.flightNo, mainLocation: retT.address, extraLocation: outT.extraStop, carType: retT.carType, paxCount: `大${retT.paxAdult} 中${retT.paxChild} 小${retT.paxInfant}`, luggageCount: `登機${retT.lugCarry} 托運${retT.lugChecked}`, sportLuggage: retT.sportLuggage, seatDetails: retT.safetySeat, signboard: signStr, 
+                            tripAmt: discountedRetTotal, grandTotal: grandTotalAmt, paymentMethod: payStr, remarks: remarkStr, surchargeDetails: retT.surcharge, 
+                            discountCode: "預約來回優惠", discountAmt: 100, ordererEmail: email, lineId: sysLineId
+                        }
+                    }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
                 }
             } catch (err) {
-                // 如果 fetch 拋出網路錯誤
-                Swal.fire({ title: '錯誤', text: '網路傳送失敗，請檢查網路連線或電洽客服。\n\n【24小時客服專線】\n➤ ᴘʜᴏɴᴇ 電話：0955311306', confirmButtonColor: '#553f62' }); 
-                btn.disabled = false; btn.innerText = '確認送出預約'; 
-                return;
+                Swal.fire({ title: '錯誤', text: '網路傳送失敗，請電洽客服：0955311306', confirmButtonColor: '#553f62' }); 
+                btn.disabled = false; btn.innerText = '確認送出預約'; return;
             }
 
-            // LINE 訊息回傳 (保持不變)
             if (liff.isInClient()) { 
-                const msgEnd = `您的預約資料已成功送出！\n為確保您的行程細節與權益，客服專員正在為您進行訂單核對。\n\n📍 預約注意事項：\n• 訂單確認：\n須收到本公司的『預約確認回覆』後，才算正式完成預約。\n\n• 付款資訊：\n若您選擇轉帳或刷卡結帳，客服將於確認訂單時，一併提供專屬付款連結或帳號。\n\n感謝您的耐心等候，我們將盡快與您聯繫。\n\n【24小時客服專線】\n➤ ᴘʜᴏɴᴇ 電話：0955311306`;
-                
-                let lineMessages = [];
-                lineMessages.push({ type: 'text', text: msgOut });
+                const msgEnd = `您的預約資料已成功送出！\n須收到本公司的『預約確認回覆』後，才算正式完成預約。\n\n【24小時客服專線】\n➤ ᴘʜᴏɴᴇ 電話：0955311306`;
+                let lineMessages = [{ type: 'text', text: msgOut }];
                 if (hasReturn) lineMessages.push({ type: 'text', text: msgRet });
-                lineMessages.push({ type: 'text', text: msgPrice });
-                lineMessages.push({ type: 'text', text: msgEnd });
-
-                try {
-                    await liff.sendMessages(lineMessages); 
-                    liff.closeWindow(); 
-                } catch (lineErr) {
-                    console.error("LINE SendMessage Error:", lineErr);
-                    Swal.fire({ 
-                        title: '預約單已送出', 
-                        html: '系統已成功收到您的預約！<br><br><span style="color:red; font-size:12px;">(註：無法自動回傳明細至 LINE 聊天室，請截圖保留畫面，或等候客服主動聯繫。)</span>', 
-                        confirmButtonColor: '#553f62'
-                    }).then(() => { 
-                        liff.closeWindow(); 
-                    });
+                lineMessages.push({ type: 'text', text: msgPrice }, { type: 'text', text: msgEnd });
+                try { await liff.sendMessages(lineMessages); liff.closeWindow(); } 
+                catch (lineErr) { 
+                    Swal.fire({ title: '預約單已送出', html: '系統已收到預約！但無法自動回傳 LINE，請截圖保留畫面。', confirmButtonColor: '#553f62' }).then(() => liff.closeWindow());
                 }
             } else {
-                Swal.fire({ title: '已成功送出', text: '請等候客服確認。', confirmButtonColor: '#553f62' }).then(() => { window.location.reload(); });
+                Swal.fire({ title: '已成功送出', text: '請等候客服確認。', confirmButtonColor: '#553f62' }).then(() => window.location.reload());
             }
         });
         window.onload = () => { initFormOptions(); initializeLiff(); };
