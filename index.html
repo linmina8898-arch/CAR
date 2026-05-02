@@ -68,6 +68,11 @@
                         <span class="w-1 h-5 bg-primary mr-2 inline-block rounded"></span>訂車人資訊
                     </h2>
                     <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">聯絡電話</label>
+                            <input type="tel" id="ordererPhone" maxlength="12" class="mt-1 w-full p-2 border rounded focus-primary" placeholder="0900-000-000">
+                            <p class="text-[11px] text-[#f07cad] font-bold mt-1 tracking-wide">※ 輸入上次預約的電話號碼，系統將自動為您帶入歷史資料</p>
+                        </div>
                         <div class="grid grid-cols-3 gap-3">
                             <div class="col-span-2">
                                 <label class="block text-sm font-medium text-gray-700">真實姓名</label>
@@ -80,11 +85,6 @@
                                     <option value="小姐">小姐</option>
                                 </select>
                             </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">聯絡電話</label>
-                            <input type="tel" id="ordererPhone" maxlength="12" class="mt-1 w-full p-2 border rounded focus-primary" placeholder="0900-000-000">
-                            <p class="text-[11px] text-[#f07cad] font-bold mt-1 tracking-wide">※ 輸入上次預約的電話號碼，系統將自動為您帶入歷史資料</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">電子信箱 (MAIL)</label>
@@ -273,7 +273,7 @@
                                 <span class="text-sm font-medium">否</span>
                             </label>
                         </div>
-                        <p class="text-[11px] text-red-600 font-bold leading-tight">(若未事先告知導致乘車當天行李放置不下，同意主動放棄行程，恕不退費。)</p>
+                        <p class="text-[11px] text-red-600 font-bold leading-tight">(若未事先告知導致乘車當天行李放置不下，同意主持放棄行程，恕不退費。)</p>
 
                         <div id="sportLuggageContainer" class="hidden mt-3 bg-[#fff5f8] p-4 rounded-lg border border-[#f07cad]">
                             <p class="text-xs text-[#f07cad] font-bold mb-2 text-center border-b border-pink-100 pb-2">⚠️ 注意：攜帶「胖胖箱」請務必註記</p>
@@ -574,7 +574,7 @@
                             <p><strong>預約車型：</strong> 請務必依「實際乘車人數」與「行李件數尺寸」預約合適車款。以免當天車輛乘載不下擔誤貴賓寶貴的時間。</p>
                             <p><strong>行李與乘車規範：</strong> 全程請繫妥安全帶，座位及腳踏區僅限放隨身背包。若現場行李過過多不符預約車型，公司有權拒載，且該趟行程恕不退費。</p>
                             <p><strong>車內禁食：</strong> 為維護乘車品質，顧及每位貴賓權益，車內全面禁止飲食、吸菸（包含電子菸、加熱菸）、吃檳榔。</p>
-                            <p><strong>兒童安全座椅：</strong> 0~12歲（18公斤內）嬰幼兒依法須使用安全座椅。若未依需求加購導致違規，相關罰款將由乘客自行負擔。</p>
+                            <p><strong>兒童安全座椅：</strong> 0~12歲（18公斤內）嬰幼兒依法須使用安全座椅。若未依需求加購導致規，相關罰款將由乘客自行負擔。</p>
                         </div>
                     </div>
                     <label class="flex items-center space-x-2 mt-2 font-bold text-primary bg-white p-3 rounded-lg border border-gray-200 shadow-sm cursor-pointer hover:bg-gray-50 transition">
@@ -601,7 +601,7 @@
         // --- 設定常數 ---
         const LIFF_ID = "2009922945-KmKUgqbg";
         const LINE_OA_LINK = "https://line.me/R/ti/p/@ansing";
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbxMao5vIMUFlRlA76NOs-Du3j8jo8wpfd_3GKmwa9mu5qBmi-zAm5EWu2f7dYgW-9rv/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwFVj3UEYolb-kdJW68dAYORINrKh-QLykZnTmxHaGU3NT-0mNYa81LsDcxVDZLcKpw/exec"; 
 
         let DISCOUNT_CODES = {};
         let currentDiscountAmt = 0;
@@ -616,7 +616,8 @@
 
         function stripTaiwan(str) {
             if (!str) return "";
-            return str.replace(/台灣/g, "").trim();
+            // 同時過濾掉「台灣」跟「臺灣」
+            return str.replace(/台灣|臺灣/g, "").trim();
         }
 
         function parseZoneInfo(place) {
@@ -627,7 +628,8 @@
                     if (types.includes('postal_code')) { zip = component.long_name; }
                     if (types.includes('administrative_area_level_1') || types.includes('administrative_area_level_2')) {
                         const name = component.long_name;
-                        if (name.match(/(市|縣)$/)) { city = name.replace('台灣', ''); }
+                        // 同時過濾掉「台灣」跟「臺灣」
+                        if (name.match(/(市|縣)$/)) { city = name.replace(/台灣|臺灣/g, ''); }
                     }
                     if (types.includes('sublocality_level_1') || types.includes('administrative_area_level_3') || types.includes('locality')) {
                         const name = component.long_name;
@@ -650,7 +652,7 @@
             try {
                 const url = `${GAS_URL}?action=getPrices&t=${Date.now()}`;
                 const response = await fetch(url, { method: 'GET', redirect: 'follow' });
-                if (!response.ok) throw new Error('Network error');
+                if (!response.ok) throw new Error('Network error or invalid GAS_URL');
                 const data = await response.json();
                 
                 if (data && data.prices) {
@@ -665,6 +667,17 @@
                 }
             } catch (err) { 
                 console.error("報價/折扣碼讀取失敗:", err); 
+                let errorDetails = '<br>1. GAS_URL 網址不正確<br>2. Google Apps Script 尚未部署為「所有人 (Anyone)」存取<br>3. 網路連線不穩';
+                if(err.message === 'Failed to fetch' || String(err).includes('Failed to fetch')) {
+                     errorDetails = '<br><br><b style="color: red;">[最可能的原因：權限設定錯誤]</b><br>您的 Google Apps Script 尚未設定為公開！<br>👉 請回到 GAS 專案，點擊右上角「部署」>「管理部署作業」，將「存取權限 (Who has access)」設定為<b>「所有人 (Anyone)」</b>，然後重新部署。';
+                }
+                
+                Swal.fire({
+                    title: '資料庫連線異常',
+                    html: `<div style="text-align: left; font-size: 14px;">無法取得最新報價與折扣碼，系統將暫時以「人工報價」模式運行。${errorDetails}</div>`,
+                    icon: 'warning',
+                    confirmButtonColor: '#553f62'
+                });
             }
         }
 
@@ -914,10 +927,11 @@
             const phoneInput = document.getElementById('ordererPhone');
             phoneInput.addEventListener('blur', async function() {
                 const phone = this.value.replace(/-/g, '').trim();
+                const sysLineId = document.getElementById('sysLineId').value;
                 // 檢查是否為完整的手機號碼長度 (至少10碼)
                 if (phone.length >= 10) {
                     try {
-                        const url = `${GAS_URL}?action=getLastUser&phone=${encodeURIComponent(phone)}&t=${Date.now()}`;
+                        const url = `${GAS_URL}?action=getLastUser&phone=${encodeURIComponent(phone)}&lineId=${encodeURIComponent(sysLineId)}&t=${Date.now()}`;
                         const response = await fetch(url);
                         const data = await response.json();
                         
@@ -1618,14 +1632,44 @@
                         ` └ 總金額：$${grandTotalAmt.toLocaleString('en-US')}\n` +
                         `付款方式：${payStr}`;
 
+            // 核心邏輯：加上單引號強制讓 Google 試算表以「純文字」儲存，避免自動格式化
+            const t = (v) => "'" + String(v);
+
             try {
                 // 傳送去程
                 await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({
                     action: 'addReservation', data: {
-                        timestamp: new Date().toLocaleString('zh-TW', {timeZone: 'Asia/Taipei'}), ordererName: ordererName, ordererTitle: document.getElementById('ordererTitle').value, ordererPhone: ordererPhone, lineDisplayName: sysLineName, reservationId: hasReturn ? baseOrderId + '-去程' : baseOrderId, paxNameOnly: paxFullName, paxPhone: paxPhone, rideDate: outT.rideDate, rideTime: outT.rideTime, serviceType: outT.rideType, airport: outT.airport, flightNumber: outT.flightNo, mainLocation: outT.address, extraLocation: outT.extraStop, carType: outT.carType, paxCount: `大${outT.paxAdult} 中${outT.paxChild} 小${outT.paxInfant}`, luggageCount: `登機${outT.lugCarry} 托運${outT.lugChecked}`, sportLuggage: outT.sportLuggage, seatDetails: outT.safetySeat, signboard: signStr, 
-                        tripAmt: discountedOutTotal, grandTotal: grandTotalAmt, paymentMethod: payStr, remarks: remarkStr, surchargeDetails: outT.surcharge, 
-                        discountCode: hasReturn ? "" : (currentDiscountCode || ""), discountAmt: outDiscount, ordererEmail: email, lineId: sysLineId,
-                        fullMessage: msgOut
+                        timestamp: t(new Date().toLocaleString('zh-TW', {timeZone: 'Asia/Taipei'})), 
+                        ordererName: t(ordererName), 
+                        ordererTitle: t(document.getElementById('ordererTitle').value), 
+                        ordererPhone: t(ordererPhone), 
+                        lineDisplayName: t(sysLineName), 
+                        reservationId: t(hasReturn ? baseOrderId + '-去程' : baseOrderId), 
+                        paxNameOnly: t(paxFullName), 
+                        paxPhone: t(paxPhone), 
+                        rideDate: t(outT.rideDate), 
+                        rideTime: t(outT.rideTime), 
+                        serviceType: t(outT.rideType), 
+                        airport: t(outT.airport), 
+                        flightNumber: t(outT.flightNo), 
+                        mainLocation: t(outT.address), 
+                        extraLocation: t(outT.extraStop), 
+                        carType: t(outT.carType), 
+                        paxCount: t(`大${outT.paxAdult} 中${outT.paxChild} 小${outT.paxInfant}`), 
+                        luggageCount: t(`登機${outT.lugCarry} 托運${outT.lugChecked}`), 
+                        sportLuggage: t(outT.sportLuggage), 
+                        seatDetails: t(outT.safetySeat), 
+                        signboard: t(signStr), 
+                        tripAmt: t(discountedOutTotal), 
+                        grandTotal: t(grandTotalAmt), 
+                        paymentMethod: t(payStr), 
+                        remarks: t(remarkStr), 
+                        surchargeDetails: t(outT.surcharge), 
+                        discountCode: t(hasReturn ? "" : (currentDiscountCode || "")), 
+                        discountAmt: t(outDiscount), 
+                        ordererEmail: t(email), 
+                        lineId: t(sysLineId),
+                        fullMessage: t(msgOut)
                     }
                 }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
 
@@ -1633,10 +1677,37 @@
                     // 傳送回程
                     await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({
                         action: 'addReservation', data: {
-                            timestamp: new Date().toLocaleString('zh-TW', {timeZone: 'Asia/Taipei'}), ordererName: ordererName, ordererTitle: document.getElementById('ordererTitle').value, ordererPhone: ordererPhone, lineDisplayName: sysLineName, reservationId: baseOrderId + '-回程', paxNameOnly: paxFullName, paxPhone: paxPhone, rideDate: retT.rideDate, rideTime: retT.rideTime, serviceType: retT.rideType, airport: retT.airport, flightNumber: retT.flightNo, mainLocation: retT.address, extraLocation: retT.extraStop, carType: retT.carType, paxCount: `大${retT.paxAdult} 中${retT.paxChild} 小${retT.paxInfant}`, luggageCount: `登機${retT.lugCarry} 托運${retT.lugChecked}`, sportLuggage: retT.sportLuggage, seatDetails: retT.safetySeat, signboard: signStr, 
-                            tripAmt: discountedRetTotal, grandTotal: grandTotalAmt, paymentMethod: payStr, remarks: remarkStr, surchargeDetails: retT.surcharge, 
-                            discountCode: hasReturn ? (currentDiscountAmt > 0 ? `折扣碼(${currentDiscountCode}) + 預約來回優惠` : "預約來回優惠") : "", discountAmt: retDiscount, ordererEmail: email, lineId: sysLineId,
-                            fullMessage: msgRet
+                            timestamp: t(new Date().toLocaleString('zh-TW', {timeZone: 'Asia/Taipei'})), 
+                            ordererName: t(ordererName), 
+                            ordererTitle: t(document.getElementById('ordererTitle').value), 
+                            ordererPhone: t(ordererPhone), 
+                            lineDisplayName: t(sysLineName), 
+                            reservationId: t(baseOrderId + '-回程'), 
+                            paxNameOnly: t(paxFullName), 
+                            paxPhone: t(paxPhone), 
+                            rideDate: t(retT.rideDate), 
+                            rideTime: t(retT.rideTime), 
+                            serviceType: t(retT.rideType), 
+                            airport: t(retT.airport), 
+                            flightNumber: t(retT.flightNo), 
+                            mainLocation: t(retT.address), 
+                            extraLocation: t(retT.extraStop), 
+                            carType: t(retT.carType), 
+                            paxCount: t(`大${retT.paxAdult} 中${retT.paxChild} 小${retT.paxInfant}`), 
+                            luggageCount: t(`登機${retT.lugCarry} 托運${retT.lugChecked}`), 
+                            sportLuggage: t(retT.sportLuggage), 
+                            seatDetails: t(retT.safetySeat), 
+                            signboard: t(signStr), 
+                            tripAmt: t(discountedRetTotal), 
+                            grandTotal: t(grandTotalAmt), 
+                            paymentMethod: t(payStr), 
+                            remarks: t(remarkStr), 
+                            surchargeDetails: t(retT.surcharge), 
+                            discountCode: t(hasReturn ? (currentDiscountAmt > 0 ? `折扣碼(${currentDiscountCode}) + 預約來回優惠` : "預約來回優惠") : ""), 
+                            discountAmt: t(retDiscount), 
+                            ordererEmail: t(email), 
+                            lineId: t(sysLineId),
+                            fullMessage: t(msgRet)
                         }
                     }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
                 }
