@@ -601,7 +601,7 @@
         // --- 設定常數 ---
         const LIFF_ID = "2009922945-KmKUgqbg";
         const LINE_OA_LINK = "https://line.me/R/ti/p/@ansing";
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwFVj3UEYolb-kdJW68dAYORINrKh-QLykZnTmxHaGU3NT-0mNYa81LsDcxVDZLcKpw/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbx7CxxaTpYc43Rn9LJ5nLaMQxe-JLM6d7hNUkCVdeTdCCImj1R6Rh6fli5EJM6HEHBs/exec"; 
 
         let DISCOUNT_CODES = {};
         let currentDiscountAmt = 0;
@@ -925,6 +925,16 @@
 
         function setupAutoFill() {
             const phoneInput = document.getElementById('ordererPhone');
+            const nameInput = document.getElementById('ordererName');
+            
+            // 點擊真實姓名欄位時，自動清空錯誤提示，方便客人手動輸入
+            nameInput.addEventListener('focus', function() {
+                if (this.value === '資料不相符，為確保個資安全無法顯示歷史資料，請與客服聯絡') {
+                    this.value = '';
+                    this.classList.remove('text-red-500', 'text-xs');
+                }
+            });
+
             phoneInput.addEventListener('blur', async function() {
                 const phone = this.value.replace(/-/g, '').trim();
                 const sysLineId = document.getElementById('sysLineId').value;
@@ -936,12 +946,14 @@
                         const data = await response.json();
                         
                         if (data.user) {
-                            const nameInput = document.getElementById('ordererName');
                             const titleInput = document.getElementById('ordererTitle');
                             const emailInput = document.getElementById('email');
                             
-                            // 若當下欄位為空，才自動帶入歷史資料
-                            if (!nameInput.value) nameInput.value = data.user.name || '';
+                            // 若當下欄位為空，或目前是顯示錯誤提示，才自動帶入歷史資料
+                            if (!nameInput.value || nameInput.value === '資料不相符，為確保個資安全無法顯示歷史資料，請與客服聯絡') {
+                                nameInput.value = data.user.name || '';
+                                nameInput.classList.remove('text-red-500', 'text-xs');
+                            }
                             if (data.user.title) titleInput.value = data.user.title;
                             if (!emailInput.value && data.user.email) emailInput.value = data.user.email;
                             
@@ -951,6 +963,10 @@
                                 document.getElementById('paxTitle').value = titleInput.value;
                                 document.getElementById('paxPhone').value = this.value;
                             }
+                        } else if (data.error === "mismatch") {
+                            // 電話相符但 LINE ID 不相符時的防護機制
+                            nameInput.value = '資料不相符，為確保個資安全無法顯示歷史資料，請與客服聯絡';
+                            nameInput.classList.add('text-red-500', 'text-xs');
                         }
                     } catch (err) {
                         console.error("取得歷史紀錄失敗", err);
