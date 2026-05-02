@@ -58,11 +58,10 @@
     <script>
         // ⚠️ 請確保這兩個常數與您的實際設定一致
         const LIFF_ID = "2009922945-KmKUgqbg"; 
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbx2njb7tUPiEGmf_oPAsylHF83N0uSm0ymsm-yx93tnZ-7Clz6tZefzorNes6-GxYFd/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzzZVxbdtKSAjGlFuBOi8qYTkv-U-l2eqY8uwUywTJPURhb3Mod00UAL70Zl6ZtL_wl/exec";
 
         async function init() {
             try {
-                // 如果是電腦預覽環境
                 if (window !== window.parent) {
                     document.getElementById('lineId').value = "Preview_User_ID";
                     showMainForm();
@@ -79,7 +78,14 @@
                 showMainForm();
             } catch (err) {
                 console.error(err);
-                Swal.fire('系統錯誤', 'LINE 系統連線失敗，請稍後再試', 'error');
+                Swal.fire({
+                    title: '系統錯誤',
+                    text: 'LINE 系統連線失敗，請稍後再試，或聯絡客服',
+                    icon: 'error',
+                    confirmButtonColor: '#553f62'
+                }).then(() => {
+                    if (liff.isInClient()) liff.closeWindow();
+                });
             }
         }
 
@@ -94,7 +100,7 @@
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
             btn.disabled = true;
-            btn.innerText = '正在處理並存檔...';
+            btn.innerText = '正在處理中...';
 
             const payload = {
                 action: 'bindDriverLine',
@@ -115,28 +121,32 @@
                 if (result.success) {
                     Swal.fire({
                         title: '綁定成功！',
-                        text: `${result.name} 司機您好，您的 LINE 帳號已成功連結安興租車系統。`,
+                        text: `${result.name} 司機您好，您的 LINE 已成功連結安興租車系統。`,
                         icon: 'success',
                         confirmButtonColor: '#553f62'
                     }).then(() => {
-                        if (liff.isInClient()) {
-                            liff.closeWindow();
-                        }
+                        if (liff.isInClient()) liff.closeWindow();
                     });
                 } else {
+                    // 這邊顯示後端回傳的錯誤訊息 (已包含：請聯絡客服)
                     Swal.fire({
                         title: '綁定失敗',
                         text: result.error,
                         icon: 'error',
                         confirmButtonColor: '#553f62'
+                    }).then(() => {
+                        if (liff.isInClient()) liff.closeWindow();
                     });
-                    btn.disabled = false;
-                    btn.innerText = '確認綁定';
                 }
             } catch (err) {
-                Swal.fire('連線錯誤', '無法傳送資料到伺服器，請檢查網路', 'error');
-                btn.disabled = false;
-                btn.innerText = '確認綁定';
+                Swal.fire({
+                    title: '連線錯誤',
+                    text: '無法連線到伺服器，請確認網路或聯絡客服',
+                    icon: 'error',
+                    confirmButtonColor: '#553f62'
+                }).then(() => {
+                    if (liff.isInClient()) liff.closeWindow();
+                });
             }
         });
 
