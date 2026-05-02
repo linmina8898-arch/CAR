@@ -273,7 +273,7 @@
                                 <span class="text-sm font-medium">否</span>
                             </label>
                         </div>
-                        <p class="text-[11px] text-red-600 font-bold leading-tight">(若未事先告知導致乘車當天行李放置不下，同意主動放棄行程，恕不退費。)</p>
+                        <p class="text-[11px] text-red-600 font-bold leading-tight">(若未事先告知導致乘車當天行李放置不下，同意主持放棄行程，恕不退費。)</p>
 
                         <div id="sportLuggageContainer" class="hidden mt-3 bg-[#fff5f8] p-4 rounded-lg border border-[#f07cad]">
                             <p class="text-xs text-[#f07cad] font-bold mb-2 text-center border-b border-pink-100 pb-2">⚠️ 注意：攜帶「胖胖箱」請務必註記</p>
@@ -574,7 +574,7 @@
                             <p><strong>預約車型：</strong> 請務必依「實際乘車人數」與「行李件數尺寸」預約合適車款。以免當天車輛乘載不下擔誤貴賓寶貴的時間。</p>
                             <p><strong>行李與乘車規範：</strong> 全程請繫妥安全帶，座位及腳踏區僅限放隨身背包。若現場行李過過多不符預約車型，公司有權拒載，且該趟行程恕不退費。</p>
                             <p><strong>車內禁食：</strong> 為維護乘車品質，顧及每位貴賓權益，車內全面禁止飲食、吸菸（包含電子菸、加熱菸）、吃檳榔。</p>
-                            <p><strong>兒童安全座椅：</strong> 0~12歲（18公斤內）嬰幼兒依法須使用安全座椅。若未依需求加購導致違規，相關罰款將由乘客自行負擔。</p>
+                            <p><strong>兒童安全座椅：</strong> 0~12歲（18公斤內）嬰幼兒依法須使用安全座椅。若未依需求加購導致規，相關罰款將由乘客自行負擔。</p>
                         </div>
                     </div>
                     <label class="flex items-center space-x-2 mt-2 font-bold text-primary bg-white p-3 rounded-lg border border-gray-200 shadow-sm cursor-pointer hover:bg-gray-50 transition">
@@ -601,7 +601,7 @@
         // --- 設定常數 ---
         const LIFF_ID = "2009922945-KmKUgqbg";
         const LINE_OA_LINK = "https://line.me/R/ti/p/@ansing";
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbxMao5vIMUFlRlA76NOs-Du3j8jo8wpfd_3GKmwa9mu5qBmi-zAm5EWu2f7dYgW-9rv/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwatpdLrN3M-8S-vtwi0oT21BzSj4p9k5oLlAEwwl1Visbl9Xj_zQ42JnuIr0R934W4/exec"; 
 
         let DISCOUNT_CODES = {};
         let currentDiscountAmt = 0;
@@ -1618,14 +1618,44 @@
                         ` └ 總金額：$${grandTotalAmt.toLocaleString('en-US')}\n` +
                         `付款方式：${payStr}`;
 
+            // [新增] 核心邏輯：加上單引號強制讓 Google 試算表以「純文字」儲存，避免自動格式化
+            const t = (v) => "'" + String(v);
+
             try {
                 // 傳送去程
                 await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({
                     action: 'addReservation', data: {
-                        timestamp: new Date().toLocaleString('zh-TW', {timeZone: 'Asia/Taipei'}), ordererName: ordererName, ordererTitle: document.getElementById('ordererTitle').value, ordererPhone: ordererPhone, lineDisplayName: sysLineName, reservationId: hasReturn ? baseOrderId + '-去程' : baseOrderId, paxNameOnly: paxFullName, paxPhone: paxPhone, rideDate: outT.rideDate, rideTime: outT.rideTime, serviceType: outT.rideType, airport: outT.airport, flightNumber: outT.flightNo, mainLocation: outT.address, extraLocation: outT.extraStop, carType: outT.carType, paxCount: `大${outT.paxAdult} 中${outT.paxChild} 小${outT.paxInfant}`, luggageCount: `登機${outT.lugCarry} 托運${outT.lugChecked}`, sportLuggage: outT.sportLuggage, seatDetails: outT.safetySeat, signboard: signStr, 
-                        tripAmt: discountedOutTotal, grandTotal: grandTotalAmt, paymentMethod: payStr, remarks: remarkStr, surchargeDetails: outT.surcharge, 
-                        discountCode: hasReturn ? "" : (currentDiscountCode || ""), discountAmt: outDiscount, ordererEmail: email, lineId: sysLineId,
-                        fullMessage: msgOut
+                        timestamp: t(new Date().toLocaleString('zh-TW', {timeZone: 'Asia/Taipei'})), 
+                        ordererName: t(ordererName), 
+                        ordererTitle: t(document.getElementById('ordererTitle').value), 
+                        ordererPhone: t(ordererPhone), 
+                        lineDisplayName: t(sysLineName), 
+                        reservationId: t(hasReturn ? baseOrderId + '-去程' : baseOrderId), 
+                        paxNameOnly: t(paxFullName), 
+                        paxPhone: t(paxPhone), 
+                        rideDate: t(outT.rideDate), 
+                        rideTime: t(outT.rideTime), 
+                        serviceType: t(outT.rideType), 
+                        airport: t(outT.airport), 
+                        flightNumber: t(outT.flightNo), 
+                        mainLocation: t(outT.address), 
+                        extraLocation: t(outT.extraStop), 
+                        carType: t(outT.carType), 
+                        paxCount: t(`大${outT.paxAdult} 中${outT.paxChild} 小${outT.paxInfant}`), 
+                        luggageCount: t(`登機${outT.lugCarry} 托運${outT.lugChecked}`), 
+                        sportLuggage: t(outT.sportLuggage), 
+                        seatDetails: t(outT.safetySeat), 
+                        signboard: t(signStr), 
+                        tripAmt: t(discountedOutTotal), 
+                        grandTotal: t(grandTotalAmt), 
+                        paymentMethod: t(payStr), 
+                        remarks: t(remarkStr), 
+                        surchargeDetails: t(outT.surcharge), 
+                        discountCode: t(hasReturn ? "" : (currentDiscountCode || "")), 
+                        discountAmt: t(outDiscount), 
+                        ordererEmail: t(email), 
+                        lineId: t(sysLineId),
+                        fullMessage: t(msgOut)
                     }
                 }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
 
@@ -1633,10 +1663,37 @@
                     // 傳送回程
                     await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({
                         action: 'addReservation', data: {
-                            timestamp: new Date().toLocaleString('zh-TW', {timeZone: 'Asia/Taipei'}), ordererName: ordererName, ordererTitle: document.getElementById('ordererTitle').value, ordererPhone: ordererPhone, lineDisplayName: sysLineName, reservationId: baseOrderId + '-回程', paxNameOnly: paxFullName, paxPhone: paxPhone, rideDate: retT.rideDate, rideTime: retT.rideTime, serviceType: retT.rideType, airport: retT.airport, flightNumber: retT.flightNo, mainLocation: retT.address, extraLocation: retT.extraStop, carType: retT.carType, paxCount: `大${retT.paxAdult} 中${retT.paxChild} 小${retT.paxInfant}`, luggageCount: `登機${retT.lugCarry} 托運${retT.lugChecked}`, sportLuggage: retT.sportLuggage, seatDetails: retT.safetySeat, signboard: signStr, 
-                            tripAmt: discountedRetTotal, grandTotal: grandTotalAmt, paymentMethod: payStr, remarks: remarkStr, surchargeDetails: retT.surcharge, 
-                            discountCode: hasReturn ? (currentDiscountAmt > 0 ? `折扣碼(${currentDiscountCode}) + 預約來回優惠` : "預約來回優惠") : "", discountAmt: retDiscount, ordererEmail: email, lineId: sysLineId,
-                            fullMessage: msgRet
+                            timestamp: t(new Date().toLocaleString('zh-TW', {timeZone: 'Asia/Taipei'})), 
+                            ordererName: t(ordererName), 
+                            ordererTitle: t(document.getElementById('ordererTitle').value), 
+                            ordererPhone: t(ordererPhone), 
+                            lineDisplayName: t(sysLineName), 
+                            reservationId: t(baseOrderId + '-回程'), 
+                            paxNameOnly: t(paxFullName), 
+                            paxPhone: t(paxPhone), 
+                            rideDate: t(retT.rideDate), 
+                            rideTime: t(retT.rideTime), 
+                            serviceType: t(retT.rideType), 
+                            airport: t(retT.airport), 
+                            flightNumber: t(retT.flightNo), 
+                            mainLocation: t(retT.address), 
+                            extraLocation: t(retT.extraStop), 
+                            carType: t(retT.carType), 
+                            paxCount: t(`大${retT.paxAdult} 中${retT.paxChild} 小${retT.paxInfant}`), 
+                            luggageCount: t(`登機${retT.lugCarry} 托運${retT.lugChecked}`), 
+                            sportLuggage: t(retT.sportLuggage), 
+                            seatDetails: t(retT.safetySeat), 
+                            signboard: t(signStr), 
+                            tripAmt: t(discountedRetTotal), 
+                            grandTotal: t(grandTotalAmt), 
+                            paymentMethod: t(payStr), 
+                            remarks: t(remarkStr), 
+                            surchargeDetails: t(retT.surcharge), 
+                            discountCode: t(hasReturn ? (currentDiscountAmt > 0 ? `折扣碼(${currentDiscountCode}) + 預約來回優惠` : "預約來回優惠") : ""), 
+                            discountAmt: t(retDiscount), 
+                            ordererEmail: t(email), 
+                            lineId: t(sysLineId),
+                            fullMessage: t(msgRet)
                         }
                     }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
                 }
