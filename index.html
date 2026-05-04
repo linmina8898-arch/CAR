@@ -5,6 +5,8 @@
     ======================================================================
     更新版本紀錄 (Changelog)
     ======================================================================
+    [v1.2.4] 2026-05-04
+    - 移除自動將換行轉換為 `<br>` 的邏輯，允許管理者在 GAS「最新消息」中直接撰寫完整 HTML 以精確控制排版。
     [v1.2.3] 2026-05-04
     - 效能優化：恢復非同步讀取報價與公告，解決「系統載入中...」畫面停留過久的問題。
     - 體驗優化：最新消息視窗在等待資料時會顯示「正在同步最新公告...」，資料到達後會自動更新畫面。
@@ -625,7 +627,7 @@
         // --- 設定常數 ---
         const LIFF_ID = "2009922945-KmKUgqbg";
         const LINE_OA_LINK = "https://line.me/R/ti/p/@ansing";
-        const GAS_URL = "https://script.google.com/macros/s/AKfycby10ANS5qhouSpqRuKUIoNevNnsOwnjhCDXthQ1ganzu94K3MyAPb--BOzjo4EjxCU/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbz-Ou4PXmJgAuz7I0vD4Sq1TDz2NSihToo2KiUnZwWPie6Tb2QvSXYrIs1i36XYc7Z1/exec"; 
 
         let DISCOUNT_CODES = {};
         let currentDiscountAmt = 0;
@@ -687,10 +689,10 @@
                     console.log("報價資料庫與折扣碼已同步更新");
                     updateLogic();
                     
-                    // 動態更新彈出視窗內容
+                    // 動態更新彈出視窗內容，直接放入原始字串不取代換行符號
                     const newsWrapper = document.getElementById('news-wrapper');
                     if (newsWrapper) {
-                        newsWrapper.innerHTML = SYSTEM_NEWS ? SYSTEM_NEWS.replace(/\n/g, '<br>') : '<p style="text-align: center; color: #888;">目前無最新公告</p>';
+                        newsWrapper.innerHTML = SYSTEM_NEWS ? SYSTEM_NEWS : '<p style="text-align: center; color: #888;">目前無最新公告</p>';
                     }
                 } else if (data && Array.isArray(data)) {
                     priceTable = data;
@@ -1205,7 +1207,7 @@
                 } else if (SYSTEM_NEWS === "") {
                     newsHtml = '<p style="text-align: center; color: #888;">目前無最新公告</p>';
                 } else {
-                    newsHtml = SYSTEM_NEWS.replace(/\n/g, '<br>');
+                    newsHtml = SYSTEM_NEWS; // 這裡直接使用原始 HTML，不取代換行符號
                 }
 
                 Swal.fire({
