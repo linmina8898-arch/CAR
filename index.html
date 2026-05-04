@@ -5,6 +5,14 @@
     ======================================================================
     更新版本紀錄 (Changelog)
     ======================================================================
+    [v1.2.0] 2026-05-04
+    - 移除彈出視窗的「最新消息」標題。
+    - 實作動態公告：從 GAS 讀取「最新消息」工作表的內容並顯示。
+    - 調整載入順序，確保取得資料後才顯示視窗。
+    [v1.1.0] 2026-05-04
+    - 調整安全座椅顯示邏輯：4歲以下(強制)與4-12歲(選配)皆會顯示加購選單，總數上限為兩者人數總和。
+    - 變更驗證規則：4歲以下仍強制必選，4-12歲可自由選配。
+    - 優化 payload：不論是幼童或兒童選配，都會正確帶入明細與加價總額。
     [v1.0.0] 2026-05-04
     - 建立更新版本紀錄區塊，以利後續追蹤修改。
     - 目前程式碼狀態：未變更任何功能邏輯。
@@ -229,7 +237,7 @@
                     </div>
 
                     <div id="seatContainer" class="hidden bg-white p-3 rounded mb-4 border border-red-200 shadow-sm">
-                        <p class="text-sm text-red-500 font-bold mb-2">※ 有幼童同行，請務必選擇安全座椅 (數量需等於幼童人數)</p>
+                        <p class="text-sm text-red-500 font-bold mb-2">※ 4歲以下依法必選安全座椅；4-12歲可視需求加購增高墊</p>
                         <div class="grid grid-cols-3 gap-2">
                             <div>
                                 <label class="block text-xs text-gray-600 font-medium">後向(0-2歲)</label>
@@ -412,7 +420,7 @@
                         </div>
 
                         <div id="seatContainer_R" class="hidden bg-white p-3 rounded mb-4 border border-red-200 shadow-sm">
-                            <p class="text-sm text-red-500 font-bold mb-2">※ 有幼童同行，請務必選擇安全座椅 (數量需等於幼童人數)</p>
+                            <p class="text-sm text-red-500 font-bold mb-2">※ 4歲以下依法必選安全座椅；4-12歲可視需求加購增高墊</p>
                             <div class="grid grid-cols-3 gap-2">
                                 <div>
                                     <label class="block text-xs text-gray-600 font-medium">後向(0-2歲)</label>
@@ -610,7 +618,7 @@
         // --- 設定常數 ---
         const LIFF_ID = "2009922945-KmKUgqbg";
         const LINE_OA_LINK = "https://line.me/R/ti/p/@ansing";
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbyJIeh7-xZOzUC3Wq7NCarOzzv3yTpNekEk9z8hO6ud0r95PE200HPZtjE4ZgR0bk-5/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycby10ANS5qhouSpqRuKUIoNevNnsOwnjhCDXthQ1ganzu94K3MyAPb--BOzjo4EjxCU/exec"; 
 
         let DISCOUNT_CODES = {};
         let currentDiscountAmt = 0;
@@ -622,6 +630,7 @@
         let extraStopDist_R = 0;
         let priceTable = []; 
         let hasReadDetails = false; 
+        let SYSTEM_NEWS = ""; // 新增：用來存放動態讀取的最新消息
 
         function stripTaiwan(str) {
             if (!str) return "";
@@ -667,6 +676,7 @@
                 if (data && data.prices) {
                     priceTable = data.prices;
                     DISCOUNT_CODES = data.discounts || {};
+                    SYSTEM_NEWS = data.news || ""; // 讀取最新消息
                     console.log("報價資料庫與折扣碼已同步更新");
                     updateLogic();
                 } else if (data && Array.isArray(data)) {
@@ -681,6 +691,7 @@
                      errorDetails = '<br><br><b style="color: red;">[最可能的原因：權限設定錯誤]</b><br>您的 Google Apps Script 尚未設定為公開！<br>👉 請回到 GAS 專案，點擊右上角「部署」>「管理部署作業」，將「存取權限 (Who has access)」設定為<b>「所有人 (Anyone)」</b>，然後重新部署。';
                 }
                 
+                sessionStorage.setItem('hasSeenNotice', 'true'); // 避免錯誤視窗被最新消息覆蓋
                 Swal.fire({
                     title: '資料庫連線異常',
                     html: `<div style="text-align: left; font-size: 14px;">無法取得最新報價與折扣碼，系統將暫時以「人工報價」模式運行。${errorDetails}</div>`,
@@ -763,7 +774,6 @@
             setupDiscountCode();
             setupAutoFill();
             
-            fetchPriceTable();
             updateLogic(); 
         }
 
@@ -1170,57 +1180,17 @@
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('formContainer').classList.remove('hidden');
             if (!sessionStorage.getItem('hasSeenNotice')) {
+                
+                // 將換行符號轉換為 HTML 斷行
+                const formattedNews = SYSTEM_NEWS ? SYSTEM_NEWS.replace(/\n/g, '<br>') : '<p style="text-align: center; color: #888;">目前無最新公告</p>';
+
                 Swal.fire({
-                    title: '最新消息',
                     html: `
                         <div id="swal-news-content" style="color: #202020; font-size: 14px; line-height: 1.6; text-align: left; margin-top: 5px; max-height: 60vh; overflow-y: auto; padding-right: 5px;">
                             
-                            <!-- 新增開頭備註文字 -->
                             <p style="text-align: center; color: #f07cad; font-weight: bold; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; font-size: 13px;">** 請滑至底部點擊「確認送出」，即可開始預約。**</p>
 
-                            <!-- 第一段 -->
-                            <div style="margin-bottom: 20px;">
-                                <div style="color: #553f62; font-weight: bold; font-size: 18px; margin-bottom: 8px;">【24小時內無法線上預約】</div>
-                                <p>為確保您的行程順利及安排合適車款，線上預約需於出發時間前 <strong>24 小時</strong> 完成。</p>
-                                <br>
-                                <span style="color: #f07cad; font-weight: bold;">【急單處理】</span><br>
-                                24 小時內之緊急用車需求，請直撥客服專線：<br>
-                                <div style="text-align: center; margin-top: 10px; margin-bottom: 5px;">
-                                    <a href="tel:0955311306" style="color: #f07cad; font-size: 22px; font-weight: bold; text-decoration: none; display: inline-block; padding: 5px 15px; border: 2px solid #f07cad; border-radius: 25px; letter-spacing: 1px;">0955-311-306</a>
-                                </div>
-                            </div>
-
-                            <hr style="border: 0; border-top: 1px dashed #ccc; margin: 20px 0;">
-
-                            <!-- 第二段 -->
-                            <div style="margin-bottom: 20px;">
-                                <div style="font-size: 12px; color: #888; margin-bottom: 2px;">2026/04/28</div>
-                                <div style="color: #553f62; font-weight: bold; font-size: 18px; margin-bottom: 8px; line-height: 1.4;">【跨越奢華的界線｜<br>Alphard 40系 ‧ 尊榮啟航】</div>
-                                <p>感謝各位長久以來的支持，為提升服務品質，<br>安興租車正式引進全新Alphard 40系。</p>
-                                <br>
-                                <p>無論是商務考察、機場接送或奢華旅遊，<br>坐進全新 Alphard 40系，感受前所未有的「極致舒適」。<br><strong style="color: #f07cad; font-size: 15px; display: inline-block; margin-top: 5px;">讓每一次移動，都成為一種享受。</strong></p>
-                            </div>
-
-                            <hr style="border: 0; border-top: 1px dashed #ccc; margin: 20px 0;">
-
-                            <!-- 第三段 -->
-                            <div style="margin-bottom: 10px;">
-                                <div style="font-size: 12px; color: #888; margin-bottom: 2px;">2026/04/25</div>
-                                <div style="color: #553f62; font-weight: bold; font-size: 18px; margin-bottom: 8px;">【機場接送服務 費率調整公告】</div>
-                                <p>親愛的朋友們，感謝您長期的支持與信任！<br>
-                                因應國際油價調漲及營運成本增加，為守護每一趟旅程的服務品質與行車安全，我們將自即日起微調車資如下：</p>
-                                <br>
-                                <span style="color: #f07cad; font-weight: bold;">🔸 車資異動：</span>單趟車資調漲 <strong>$100</strong> 元。<br>
-                                <span style="color: #f07cad; font-weight: bold;">🔸 限時回饋：</span>凡同時預約「來回行程」並「完成全額轉帳」，即享 <strong>$100</strong> 元折扣回饋！（等同其中一趟維持原價）<br><br>
-                                
-                                <div style="background-color: #fff5f8; padding: 10px; border-radius: 5px; border-left: 4px solid #f07cad; font-size: 13px; margin-bottom: 15px;">
-                                    ⚠️ <strong>溫馨提醒：</strong><br>
-                                    造成您的不便，懇請見諒。<br><br>
-                                    🎁 更多超值優惠活動，歡迎前往官方 LINE 查看詳情。
-                                </div>
-                                
-                                <p>我們將持續秉持初衷，為您提供最安全、準確且舒適的接送服務。</p>
-                            </div>
+                            ${formattedNews}
                         </div>
                     `,
                     confirmButtonText: '請滑動至底部',
@@ -1357,8 +1327,9 @@
                 } else if (tripDistFee === -1) { html += `<div class="flex justify-between"><span class="text-[#e9e7ef]/70 italic">└ 加點(客服人工報價)</span></div>`; }
             }
             let infant = parseInt(document.getElementById('paxInfant' + prefix).value) || 0;
+            let child = parseInt(document.getElementById('paxChild' + prefix).value) || 0;
             let seatDetailsStr = '無';
-            if(infant > 0) {
+            if(infant > 0 || child > 0) {
                 let sR = parseInt(document.getElementById('seatRear' + prefix).value)||0;
                 let sF = parseInt(document.getElementById('seatForward' + prefix).value)||0;
                 let sB = parseInt(document.getElementById('seatBooster' + prefix).value)||0;
@@ -1372,7 +1343,7 @@
                     html += `<div class="flex justify-between"><span>└ 安全座椅 <span class="text-[10px] text-[#e9e7ef]/60">(${seatDetailsStr})</span></span><span>+$${(seats * 200).toLocaleString('en-US')}</span></div>`; 
                     tripSurchargeTotal += (seats * 200); 
                 }
-                let remain = infant - seats;
+                let remain = (infant + child) - seats;
                 const updateSeat = (id, cur) => {
                     let el = document.getElementById(id), h = '';
                     for (let i=0; i<=(cur+remain); i++) h += `<option value="${i}" ${i===cur?'selected':''}>${i}</option>`;
@@ -1380,7 +1351,12 @@
                 };
                 updateSeat('seatRear' + prefix, sR); updateSeat('seatForward' + prefix, sF); updateSeat('seatBooster' + prefix, sB);
                 document.getElementById('seatContainer' + prefix).style.display = 'block';
-            } else { document.getElementById('seatContainer' + prefix).style.display = 'none'; }
+            } else { 
+                document.getElementById('seatRear' + prefix).innerHTML = '<option value="0">0</option>';
+                document.getElementById('seatForward' + prefix).innerHTML = '<option value="0">0</option>';
+                document.getElementById('seatBooster' + prefix).innerHTML = '<option value="0">0</option>';
+                document.getElementById('seatContainer' + prefix).style.display = 'none'; 
+            }
             if (nightFee > 0) { html += `<div class="flex justify-between"><span>└ 夜間加成</span><span>+$200</span></div>`; tripSurchargeTotal += 200; }
             if (urgentFee > 0) { html += `<div class="flex justify-between"><span>└ 急單加價</span><span>+$300</span></div>`; tripSurchargeTotal += 300; }
             const noLuggage = document.getElementById('noLuggage' + prefix).checked;
@@ -1495,7 +1471,7 @@
                 let sR = parseInt(document.getElementById('seatRear' + prefix).value) || 0;
                 let sF = parseInt(document.getElementById('seatForward' + prefix).value) || 0;
                 let sB = parseInt(document.getElementById('seatBooster' + prefix).value) || 0;
-                if (infantCount > 0 && (sR + sF + sB) === 0) errors.push({msg: `${label}幼童安全座椅 (4歲以下必須選擇)`, id: 'seatRear' + prefix});
+                if (infantCount > 0 && (sR + sF + sB) < infantCount) errors.push({msg: `${label}4歲以下依法必選安全座椅 (數量不足)`, id: 'seatRear' + prefix});
                 const sportRadio = Array.from(document.getElementsByName('sportLuggageRadio' + prefix)).find(r => r.checked)?.value;
                 if (sportRadio === "是" && !document.getElementById('sportLuggageSize' + prefix).value.trim()) errors.push({msg: `${label}胖胖箱尺寸/大小`, id: 'sportLuggageSize' + prefix});
             };
@@ -1526,19 +1502,19 @@
             btn.disabled = true; btn.innerText = '傳送中...';
 
             const buildTripPayload = (prefix) => {
-                let infantCount = parseInt(document.getElementById('paxInfant' + prefix).value) || 0;
+                let sR = parseInt(document.getElementById('seatRear' + prefix).value) || 0;
+                let sF = parseInt(document.getElementById('seatForward' + prefix).value) || 0;
+                let sB = parseInt(document.getElementById('seatBooster' + prefix).value) || 0;
+                let seatsCount = sR + sF + sB;
+                
                 let seatDetailsStr = '無';
                 let surchargeArr = [];
                 
-                if (infantCount > 0) {
+                if (seatsCount > 0) {
                     let sArr = [];
-                    let r = parseInt(document.getElementById('seatRear' + prefix).value) || 0;
-                    let f = parseInt(document.getElementById('seatForward' + prefix).value) || 0;
-                    let b = parseInt(document.getElementById('seatBooster' + prefix).value) || 0;
-                    let seatsCount = r + f + b;
-                    if (r>0) sArr.push(`後向${r}`); if (f>0) sArr.push(`前向${f}`); if (b>0) sArr.push(`增高墊${b}`);
+                    if (sR>0) sArr.push(`後向${sR}`); if (sF>0) sArr.push(`前向${sF}`); if (sB>0) sArr.push(`增高墊${sB}`);
                     seatDetailsStr = sArr.join(', ');
-                    if (seatsCount > 0) surchargeArr.push(`安全座椅x${seatsCount}(+$${seatsCount*200})`);
+                    surchargeArr.push(`安全座椅x${seatsCount}(+$${seatsCount*200})`);
                 }
                 
                 const sportRadio = Array.from(document.getElementsByName('sportLuggageRadio' + prefix)).find(r => r.checked)?.value;
@@ -1757,7 +1733,11 @@
                 Swal.fire({ title: '已成功送出', text: '請等候客服確認。', confirmButtonColor: '#553f62' }).then(() => window.location.reload());
             }
         });
-        window.onload = () => { initFormOptions(); initializeLiff(); };
+        window.onload = async () => { 
+            initFormOptions(); 
+            await fetchPriceTable(); 
+            initializeLiff(); 
+        };
     </script>
 </body>
 </html>
