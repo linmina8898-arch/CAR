@@ -604,12 +604,12 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.2.2"; 
+        const APP_VERSION = "v1.9.9"; 
 
         // --- 設定常數 ---
         const LIFF_ID = "2009922945-KmKUgqbg";
         const LINE_OA_LINK = "https://line.me/R/ti/p/@ansing";
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbygdo8tU2q6XOcxGCRaQqKl13BsbOXQPAKynQuXmeur-kfGz4-pZox11pQ6TruDSW27/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwzxxHDU-pq0HqySoPcArpi0DfRzFt9OtHFDWnoaUtNQiR5EwXM9K_ncAW5HWVRlxL-/exec"; 
 
         let DISCOUNT_CODES = {};
         let currentDiscountAmt = 0;
@@ -1185,21 +1185,27 @@
                         const content = document.getElementById('swal-news-content');
                         const confirmBtn = Swal.getConfirmButton();
                         
-                        // 預設狀態為禁用
-                        Swal.disableButtons();
-                        confirmBtn.innerText = '請往下閱讀 ↓';
+                        // 捨棄 Swal.disableButtons() 以避免內部報錯，改用原生 DOM 操作
+                        if (confirmBtn) {
+                            confirmBtn.disabled = true;
+                            confirmBtn.innerText = '請往下閱讀 ↓';
+                            confirmBtn.style.opacity = '0.5';
+                        }
 
                         const unlockButton = () => {
-                            Swal.enableButtons();
-                            confirmBtn.innerText = '確認，開始預約';
-                            // 防呆：如果還是解除不了，強制改變其樣式與狀態
-                            confirmBtn.removeAttribute('disabled');
+                            const btn = Swal.getConfirmButton(); // 動態重新獲取，確保安全
+                            if (btn) {
+                                btn.disabled = false;
+                                btn.removeAttribute('disabled');
+                                btn.innerText = '確認，開始預約';
+                                btn.style.opacity = '1';
+                            }
                         };
 
                         const checkScroll = () => {
                             if (!content) return;
-                            // 寬容度增加至 20px 避免部分手機計算誤差
-                            if (content.scrollHeight - content.scrollTop <= content.clientHeight + 20) {
+                            // 寬容度加大到 50px，並加上 Math.ceil 防止手機端小數點計算誤差卡死
+                            if (content.scrollHeight - Math.ceil(content.scrollTop) <= content.clientHeight + 50) {
                                 unlockButton();
                                 content.removeEventListener('scroll', checkScroll);
                             }
@@ -1208,12 +1214,12 @@
                         if (content) {
                             content.addEventListener('scroll', checkScroll, { passive: true });
                             
-                            // 延遲檢查：避免內容太短根本不用滑，或是渲染較慢
+                            // 延遲檢查：防止圖片載入或內容本來就不需要滑動
                             setTimeout(checkScroll, 300);
-                            setTimeout(checkScroll, 800);
+                            setTimeout(checkScroll, 1000);
                             
-                            // 【防卡死機制】如果手機瀏覽器異常無法觸發滾動，5秒後強制解鎖按鈕
-                            setTimeout(unlockButton, 5000);
+                            // 【終極防卡死】如果手機瀏覽器異常無法觸發滾動，3秒後必定強制解鎖
+                            setTimeout(unlockButton, 3000);
                         } else {
                             unlockButton(); // 萬一抓不到 div 元素直接解鎖
                         }
@@ -1659,7 +1665,7 @@
                         ` └ 總金額：$${grandTotalAmt.toLocaleString('en-US')}\n` +
                         `付款方式：${payStr}`;
 
-            // 核心邏輯：加上單引號強制讓 Google 試算表以「純文字」儲存，避免自動格式化
+            // 核心邏輯：將所有欄位包裝成純文字，讓 Google 試算表及日曆正確解析
             const t = (v) => "'" + String(v);
 
             try {
