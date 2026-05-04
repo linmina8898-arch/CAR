@@ -1,17 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <!-- 
-    ======================================================================
-    更新版本紀錄 (Changelog)
-    ======================================================================
-    [v1.3.2] 2026-05-04
-    - 終極還原：以用戶提供之「第一版原始碼」為絕對基底，完美保留所有排版、提示語、胖胖箱與加點區塊。
-    - 點狀修正1：補上「最新消息」動態抓取邏輯 (不覆寫 HTML 換行)。
-    - 點狀修正2：修正安全座椅邏輯，4-12歲可選配增高墊，並連動至 Payload。
-    - 點狀修正3：確保 `submit` 表單送出的 payload 欄位與後端完美對應。
-    ======================================================================
-    -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>安興租車預約/詢價 系統</title>
@@ -231,7 +220,7 @@
                     </div>
 
                     <div id="seatContainer" class="hidden bg-white p-3 rounded mb-4 border border-red-200 shadow-sm">
-                        <p class="text-sm text-red-500 font-bold mb-2">※ 4歲以下依法必選安全座椅；4-12歲可視需求加購增高墊</p>
+                        <p class="text-sm text-red-500 font-bold mb-2">※ 4歲以下請務必選擇安全座椅；4-12歲可選增高墊</p>
                         <div class="grid grid-cols-3 gap-2">
                             <div>
                                 <label class="block text-xs text-gray-600 font-medium">後向(0-2歲)</label>
@@ -414,7 +403,7 @@
                         </div>
 
                         <div id="seatContainer_R" class="hidden bg-white p-3 rounded mb-4 border border-red-200 shadow-sm">
-                            <p class="text-sm text-red-500 font-bold mb-2">※ 4歲以下依法必選安全座椅；4-12歲可視需求加購增高墊</p>
+                            <p class="text-sm text-red-500 font-bold mb-2">※ 4歲以下請務必選擇安全座椅；4-12歲可選增高墊</p>
                             <div class="grid grid-cols-3 gap-2">
                                 <div>
                                     <label class="block text-xs text-gray-600 font-medium">後向(0-2歲)</label>
@@ -608,15 +597,25 @@
         <p class="mt-4 text-[#553f62] font-bold" id="loadingText">系統載入中...</p>
     </div>
 
+    <!-- 系統版本號顯示 -->
+    <div class="text-center text-xs text-gray-400 mt-2 pb-6 font-mono">
+        System Version: <span id="versionDisplay"></span>
+    </div>
+
     <script>
+        // --- 系統版本記錄 ---
+        const APP_VERSION = "v1.2.0"; 
+
         // --- 設定常數 ---
         const LIFF_ID = "2009922945-KmKUgqbg";
         const LINE_OA_LINK = "https://line.me/R/ti/p/@ansing";
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbw4i_jtrPsKJVR95Qn3ek_lPH23oJpq5PgBVHfI9CD5rNfsmD09lFpxHuGqVmJqBASz/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycby9giK__2UrYKUrFhMuplF2LO7HEx4s1LCSdbUsf5ZleuV6u1jwnvbUw9tNlCr6D7-7/exec"; 
 
         let DISCOUNT_CODES = {};
         let currentDiscountAmt = 0;
         let currentDiscountCode = '';
+        
+        let NEWS_HTML = ""; // 儲存後端傳來的最新消息 HTML
 
         let extraStopFee = 0;
         let extraStopDist = 0;
@@ -624,11 +623,9 @@
         let extraStopDist_R = 0;
         let priceTable = []; 
         let hasReadDetails = false; 
-        let SYSTEM_NEWS = null;
 
         function stripTaiwan(str) {
             if (!str) return "";
-            // 同時過濾掉「台灣」跟「臺灣」
             return str.replace(/台灣|臺灣/g, "").trim();
         }
 
@@ -640,7 +637,6 @@
                     if (types.includes('postal_code')) { zip = component.long_name; }
                     if (types.includes('administrative_area_level_1') || types.includes('administrative_area_level_2')) {
                         const name = component.long_name;
-                        // 同時過濾掉「台灣」跟「臺灣」
                         if (name.match(/(市|縣)$/)) { city = name.replace(/台灣|臺灣/g, ''); }
                     }
                     if (types.includes('sublocality_level_1') || types.includes('administrative_area_level_3') || types.includes('locality')) {
@@ -667,19 +663,15 @@
                 if (!response.ok) throw new Error('Network error or invalid GAS_URL');
                 const data = await response.json();
                 
+                if (data && data.newsHtml) {
+                    NEWS_HTML = data.newsHtml;
+                }
+
                 if (data && data.prices) {
                     priceTable = data.prices;
                     DISCOUNT_CODES = data.discounts || {};
-                    SYSTEM_NEWS = data.news || "";
                     console.log("報價資料庫與折扣碼已同步更新");
                     updateLogic();
-
-                    const newsWrapper = document.getElementById('news-wrapper');
-                    if (newsWrapper) {
-                        newsWrapper.innerHTML = SYSTEM_NEWS ? SYSTEM_NEWS : '<p style="text-align: center; color: #888;">目前無最新公告</p>';
-                        const contentBox = document.getElementById('swal-news-content');
-                        if (contentBox) contentBox.dispatchEvent(new Event('scroll'));
-                    }
                 } else if (data && Array.isArray(data)) {
                     priceTable = data;
                     console.log("報價資料庫已更新，共 " + priceTable.length + " 筆");
@@ -687,10 +679,6 @@
                 }
             } catch (err) { 
                 console.error("報價/折扣碼讀取失敗:", err); 
-                SYSTEM_NEWS = "";
-                const newsWrapper = document.getElementById('news-wrapper');
-                if (newsWrapper) newsWrapper.innerHTML = '<p style="text-align: center; color: #888;">無法取得最新公告</p>';
-
                 let errorDetails = '<br>1. GAS_URL 網址不正確<br>2. Google Apps Script 尚未部署為「所有人 (Anyone)」存取<br>3. 網路連線不穩';
                 if(err.message === 'Failed to fetch' || String(err).includes('Failed to fetch')) {
                      errorDetails = '<br><br><b style="color: red;">[最可能的原因：權限設定錯誤]</b><br>您的 Google Apps Script 尚未設定為公開！<br>👉 請回到 GAS 專案，點擊右上角「部署」>「管理部署作業」，將「存取權限 (Who has access)」設定為<b>「所有人 (Anyone)」</b>，然後重新部署。';
@@ -794,7 +782,6 @@
                     return;
                 }
                 
-                // 檢查付款方式 (僅限轉帳)
                 const paymentMethod = document.getElementById('payment').value;
                 if (paymentMethod !== '轉帳') {
                     currentDiscountAmt = 0;
@@ -825,7 +812,6 @@
                 updateLogic();
             });
 
-            // 清空輸入框時同時取消折扣
             document.getElementById('discountInput').addEventListener('input', (e) => {
                 if(e.target.value.trim() === '') {
                     currentDiscountAmt = 0;
@@ -835,7 +821,6 @@
                 }
             });
 
-            // 當更改付款方式時，自動重新驗證折扣碼
             document.getElementById('payment').addEventListener('change', () => {
                 const code = document.getElementById('discountInput').value.trim();
                 if (code !== '') {
@@ -843,7 +828,6 @@
                 }
             });
 
-            // 查詢專屬優惠按鈕
             const queryBtn = document.getElementById('queryDiscountBtn');
             if (queryBtn) {
                 queryBtn.addEventListener('click', async () => {
@@ -872,13 +856,11 @@
                                     <div class="text-[10px] text-gray-400">效期: ${d.expiry}</div>
                                     <button type="button" class="bg-[#f07cad] text-white px-2 py-1 rounded text-xs use-discount-btn" data-code="${d.code}">使用</button>
                                 </div>`;
-                                // 同步加入快取，確保點擊套用時能識別
                                 DISCOUNT_CODES[d.code] = d.amount;
                             });
                             document.getElementById('userDiscountsContainer').innerHTML = html;
                             document.getElementById('userDiscountsContainer').classList.remove('hidden');
                             
-                            // 綁定使用按鈕
                             document.querySelectorAll('.use-discount-btn').forEach(b => {
                                 b.addEventListener('click', function() {
                                     document.getElementById('discountInput').value = this.getAttribute('data-code');
@@ -951,7 +933,6 @@
             const phoneInput = document.getElementById('ordererPhone');
             const nameInput = document.getElementById('ordererName');
             
-            // 點擊真實姓名欄位時，自動清空錯誤提示，方便客人手動輸入
             nameInput.addEventListener('focus', function() {
                 if (this.value === '資料不相符，為確保個資安全無法顯示歷史資料，請與客服聯絡') {
                     this.value = '';
@@ -962,7 +943,6 @@
             phoneInput.addEventListener('blur', async function() {
                 const phone = this.value.replace(/-/g, '').trim();
                 const sysLineId = document.getElementById('sysLineId').value;
-                // 檢查是否為完整的手機號碼長度 (至少10碼)
                 if (phone.length >= 10) {
                     try {
                         const url = `${GAS_URL}?action=getLastUser&phone=${encodeURIComponent(phone)}&lineId=${encodeURIComponent(sysLineId)}&t=${Date.now()}`;
@@ -973,7 +953,6 @@
                             const titleInput = document.getElementById('ordererTitle');
                             const emailInput = document.getElementById('email');
                             
-                            // 若當下欄位為空，或目前是顯示錯誤提示，才自動帶入歷史資料
                             if (!nameInput.value || nameInput.value === '資料不相符，為確保個資安全無法顯示歷史資料，請與客服聯絡') {
                                 nameInput.value = data.user.name || '';
                                 nameInput.classList.remove('text-red-500', 'text-xs');
@@ -981,14 +960,12 @@
                             if (data.user.title) titleInput.value = data.user.title;
                             if (!emailInput.value && data.user.email) emailInput.value = data.user.email;
                             
-                            // 觸發同步乘車人檢查
                             if (document.getElementById('sameAsOrderer').checked) {
                                 document.getElementById('paxName').value = nameInput.value;
                                 document.getElementById('paxTitle').value = titleInput.value;
                                 document.getElementById('paxPhone').value = this.value;
                             }
                         } else if (data.error === "mismatch") {
-                            // 電話相符但 LINE ID 不相符時的防護機制
                             nameInput.value = '資料不相符，為確保個資安全無法顯示歷史資料，請與客服聯絡';
                             nameInput.classList.add('text-red-500', 'text-xs');
                         }
@@ -1005,12 +982,10 @@
                 if (this.checked) {
                     rContainer.classList.remove('hidden');
                     
-                    // 日期與時間自動帶入去程的值
                     document.getElementById('rideDate_R').value = document.getElementById('rideDate').value;
                     document.getElementById('rideHour_R').value = document.getElementById('rideHour').value;
                     document.getElementById('rideMinute_R').value = document.getElementById('rideMinute').value;
 
-                    // 自動同步邏輯
                     document.getElementById('address_R').value = document.getElementById('address').value;
                     document.getElementById('zipcode_R').value = document.getElementById('zipcode').value;
                     
@@ -1019,11 +994,9 @@
                     document.getElementById('extraZipcode_R').value = document.getElementById('extraZipcode').value;
                     document.getElementById('extraStopAddress_R').value = document.getElementById('extraStopAddress').value;
 
-                    // 預約類型預設相反
                     document.getElementById('rideType_R').value = document.getElementById('rideType').value === '送機' ? '接機' : '送機';
                     document.getElementById('airport_R').value = document.getElementById('airport').value;
 
-                    // 人數同步
                     document.getElementById('paxAdult_R').value = document.getElementById('paxAdult').value;
                     document.getElementById('paxChild_R').value = document.getElementById('paxChild').value;
                     document.getElementById('paxInfant_R').value = document.getElementById('paxInfant').value;
@@ -1036,7 +1009,6 @@
                     document.getElementById('seatBooster_R').innerHTML = document.getElementById('seatBooster').innerHTML;
                     document.getElementById('seatBooster_R').value = document.getElementById('seatBooster').value;
 
-                    // 行李同步
                     document.getElementById('noLuggage_R').checked = document.getElementById('noLuggage').checked;
                     document.getElementById('luggageCarry_R').value = document.getElementById('luggageCarry').value;
                     document.getElementById('luggageChecked_R').value = document.getElementById('luggageChecked').value;
@@ -1186,23 +1158,27 @@
             document.getElementById('formContainer').classList.remove('hidden');
             if (!sessionStorage.getItem('hasSeenNotice')) {
                 
-                let newsHtml = '';
-                if (SYSTEM_NEWS === null) {
-                    newsHtml = '<p style="text-align: center; color: #888; font-weight: bold; margin-top: 20px;">🔄 正在同步最新公告與報價...</p>';
-                } else if (SYSTEM_NEWS === "") {
-                    newsHtml = '<p style="text-align: center; color: #888;">目前無最新公告</p>';
-                } else {
-                    newsHtml = SYSTEM_NEWS;
-                }
+                // 準備預設的最新消息 (如果 Google 試算表沒有填寫 A2)
+                const fallbackNews = `
+                    <p style="text-align: center; color: #f07cad; font-weight: bold; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; font-size: 13px;">** 請滑至底部點擊「確認送出」，即可開始預約。**</p>
+                    <div style="margin-bottom: 20px;">
+                        <div style="color: #553f62; font-weight: bold; font-size: 18px; margin-bottom: 8px;">【24小時內無法線上預約】</div>
+                        <p>為確保您的行程順利及安排合適車款，線上預約需於出發時間前 <strong>24 小時</strong> 完成。</p><br>
+                        <span style="color: #f07cad; font-weight: bold;">【急單處理】</span><br>
+                        24 小時內之緊急用車需求，請直撥客服專線：<br>
+                        <div style="text-align: center; margin-top: 10px; margin-bottom: 5px;">
+                            <a href="tel:0955311306" style="color: #f07cad; font-size: 22px; font-weight: bold; text-decoration: none; display: inline-block; padding: 5px 15px; border: 2px solid #f07cad; border-radius: 25px; letter-spacing: 1px;">0955-311-306</a>
+                        </div>
+                    </div>
+                `;
+
+                const displayNewsHtml = (NEWS_HTML && NEWS_HTML.trim() !== "") ? NEWS_HTML : fallbackNews;
 
                 Swal.fire({
+                    title: '最新消息',
                     html: `
                         <div id="swal-news-content" style="color: #202020; font-size: 14px; line-height: 1.6; text-align: left; margin-top: 5px; max-height: 60vh; overflow-y: auto; padding-right: 5px;">
-                            
-                            <!-- 新增開頭備註文字 -->
-                            <p style="text-align: center; color: #f07cad; font-weight: bold; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; font-size: 13px;">** 請滑至底部點擊「確認送出」，即可開始預約。**</p>
-
-                            <div id="news-wrapper">${newsHtml}</div>
+                            ${displayNewsHtml}
                         </div>
                     `,
                     confirmButtonText: '請滑動至底部',
@@ -1219,26 +1195,14 @@
                         confirmBtn.innerText = '請滑動至底部';
 
                         // 滾動監控
-                        const checkScroll = () => {
-                            if (!content || !confirmBtn) return;
-                            if (content.scrollHeight - content.scrollTop <= content.clientHeight + 10) {
+                        content.addEventListener('scroll', () => {
+                            // 計算是否滾動到底部 (加 5 像素的寬容度)
+                            if (content.scrollHeight - content.scrollTop <= content.clientHeight + 5) {
                                 confirmBtn.disabled = false;
                                 confirmBtn.style.opacity = '1';
                                 confirmBtn.innerText = '確認，開始預約';
                             }
-                        };
-                        
-                        content.addEventListener('scroll', checkScroll);
-
-                        // 連續輪詢機制，解決載入延遲
-                        let checkCount = 0;
-                        let checkTimer = setInterval(() => {
-                            checkScroll();
-                            checkCount++;
-                            if (!confirmBtn.disabled || checkCount >= 20) {
-                                clearInterval(checkTimer);
-                            }
-                        }, 100);
+                        });
                     }
                 }).then(() => {
                     sessionStorage.setItem('hasSeenNotice', 'true');
@@ -1355,34 +1319,44 @@
             let child = parseInt(document.getElementById('paxChild' + prefix).value) || 0;
             let seatDetailsStr = '無';
             
-            if(infant > 0 || child > 0) {
+            // 當有 0-4歲嬰幼兒，或 4-12歲孩童時，觸發座椅選單顯示
+            if((infant + child) > 0) {
                 let sR = parseInt(document.getElementById('seatRear' + prefix).value)||0;
                 let sF = parseInt(document.getElementById('seatForward' + prefix).value)||0;
                 let sB = parseInt(document.getElementById('seatBooster' + prefix).value)||0;
                 let seats = sR + sF + sB;
+                
                 if(seats > 0) {
                     let seatDetails = [];
                     if (sR > 0) seatDetails.push(`後向${sR}`);
                     if (sF > 0) seatDetails.push(`前向${sF}`);
                     if (sB > 0) seatDetails.push(`增高墊${sB}`);
                     seatDetailsStr = seatDetails.join(', ');
-                    html += `<div class="flex justify-between"><span>└ 安全座椅 <span class="text-[10px] text-[#e9e7ef]/60">(${seatDetailsStr})</span></span><span>+$${(seats * 200).toLocaleString('en-US')}</span></div>`; 
+                    html += `<div class="flex justify-between"><span>└ 安全座椅/增高墊 <span class="text-[10px] text-[#e9e7ef]/60">(${seatDetailsStr})</span></span><span>+$${(seats * 200).toLocaleString('en-US')}</span></div>`; 
                     tripSurchargeTotal += (seats * 200); 
                 }
+                
+                // 動態允許選取的最大數量 (嬰幼兒 + 孩童 的總和)
                 let remain = (infant + child) - seats;
                 const updateSeat = (id, cur) => {
                     let el = document.getElementById(id), h = '';
                     for (let i=0; i<=(cur+remain); i++) h += `<option value="${i}" ${i===cur?'selected':''}>${i}</option>`;
                     el.innerHTML = h;
                 };
-                updateSeat('seatRear' + prefix, sR); updateSeat('seatForward' + prefix, sF); updateSeat('seatBooster' + prefix, sB);
+                updateSeat('seatRear' + prefix, sR); 
+                updateSeat('seatForward' + prefix, sF); 
+                updateSeat('seatBooster' + prefix, sB);
+                
                 document.getElementById('seatContainer' + prefix).style.display = 'block';
-            } else { 
-                document.getElementById('seatRear' + prefix).innerHTML = '<option value="0">0</option>';
-                document.getElementById('seatForward' + prefix).innerHTML = '<option value="0">0</option>';
-                document.getElementById('seatBooster' + prefix).innerHTML = '<option value="0">0</option>';
-                document.getElementById('seatContainer' + prefix).style.display = 'none'; 
-            }
+                
+                // 動態切換提示文字 (有沒有4歲以下嬰幼兒的文字不同)
+                const warnEl = document.getElementById('seatContainer' + prefix).querySelector('.text-red-500');
+                if (warnEl) {
+                    if (infant > 0) warnEl.innerText = `※ 4歲以下請務必選擇安全座椅 (數量需 ≥ 幼童人數)；4-12歲可選增高墊`;
+                    else warnEl.innerText = `※ 4-12歲孩童，可視需求加購增高墊`;
+                }
+
+            } else { document.getElementById('seatContainer' + prefix).style.display = 'none'; }
             
             if (nightFee > 0) { html += `<div class="flex justify-between"><span>└ 夜間加成</span><span>+$200</span></div>`; tripSurchargeTotal += 200; }
             if (urgentFee > 0) { html += `<div class="flex justify-between"><span>└ 急單加價</span><span>+$300</span></div>`; tripSurchargeTotal += 300; }
@@ -1494,11 +1468,16 @@
                 if (!document.getElementById('flightNo' + prefix).value.trim()) errors.push({msg: `${label}航班編號`, id: 'flightNo' + prefix});
                 if (!document.getElementById('address' + prefix).value.trim()) errors.push({msg: `${label}主要詳細地址`, id: 'address' + prefix});
                 if (document.getElementById('needExtraStop' + prefix).checked && !document.getElementById('extraStopAddress' + prefix).value.trim()) errors.push({msg: `${label}加點詳細地址`, id: 'extraStopAddress' + prefix});
+                
                 let infantCount = parseInt(document.getElementById('paxInfant' + prefix).value) || 0;
+                let childCount = parseInt(document.getElementById('paxChild' + prefix).value) || 0;
                 let sR = parseInt(document.getElementById('seatRear' + prefix).value) || 0;
                 let sF = parseInt(document.getElementById('seatForward' + prefix).value) || 0;
                 let sB = parseInt(document.getElementById('seatBooster' + prefix).value) || 0;
-                if (infantCount > 0 && (sR + sF + sB) < infantCount) errors.push({msg: `${label}4歲以下依法必選安全座椅 (數量不足)`, id: 'seatRear' + prefix});
+                
+                // 強制規範：安全座椅/增高墊總數量必須至少滿足「4歲以下」的數量
+                if (infantCount > 0 && (sR + sF + sB) < infantCount) errors.push({msg: `${label}幼童安全座椅 (4歲以下必須選擇，且數量需 ≥ 幼童人數)`, id: 'seatRear' + prefix});
+                
                 const sportRadio = Array.from(document.getElementsByName('sportLuggageRadio' + prefix)).find(r => r.checked)?.value;
                 if (sportRadio === "是" && !document.getElementById('sportLuggageSize' + prefix).value.trim()) errors.push({msg: `${label}胖胖箱尺寸/大小`, id: 'sportLuggageSize' + prefix});
             };
@@ -1534,7 +1513,7 @@
                 let seatDetailsStr = '無';
                 let surchargeArr = [];
                 
-                if (infantCount > 0 || childCount > 0) {
+                if ((infantCount + childCount) > 0) {
                     let sArr = [];
                     let r = parseInt(document.getElementById('seatRear' + prefix).value) || 0;
                     let f = parseInt(document.getElementById('seatForward' + prefix).value) || 0;
@@ -1543,7 +1522,7 @@
                     if (r>0) sArr.push(`後向${r}`); if (f>0) sArr.push(`前向${f}`); if (b>0) sArr.push(`增高墊${b}`);
                     if (seatsCount > 0) {
                         seatDetailsStr = sArr.join(', ');
-                        surchargeArr.push(`安全座椅x${seatsCount}(+$${seatsCount*200})`);
+                        surchargeArr.push(`安全座椅/增高墊x${seatsCount}(+$${seatsCount*200})`);
                     }
                 }
                 
@@ -1703,7 +1682,8 @@
                         discountAmt: t(outDiscount), 
                         ordererEmail: t(email), 
                         lineId: t(sysLineId),
-                        fullMessage: t(msgOut)
+                        fullMessage: t(msgOut),
+                        appVersion: t(APP_VERSION)
                     }
                 }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
 
@@ -1741,7 +1721,8 @@
                             discountAmt: t(retDiscount), 
                             ordererEmail: t(email), 
                             lineId: t(sysLineId),
-                            fullMessage: t(msgRet)
+                            fullMessage: t(msgRet),
+                            appVersion: t(APP_VERSION)
                         }
                     }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
                 }
@@ -1764,6 +1745,7 @@
             }
         });
         window.onload = () => { 
+            document.getElementById('versionDisplay').innerText = APP_VERSION;
             initFormOptions(); 
             initializeLiff(); 
         };
