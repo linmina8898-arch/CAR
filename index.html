@@ -5,6 +5,11 @@
     ======================================================================
     更新版本紀錄 (Changelog)
     ======================================================================
+    [v1.2.3] 2026-05-04
+    - 效能優化：恢復非同步讀取報價與公告，解決「系統載入中...」畫面停留過久的問題。
+    - 體驗優化：最新消息視窗在等待資料時會顯示「正在同步最新公告...」，資料到達後會自動更新畫面。
+    [v1.2.2] 2026-05-04
+    - 修復：使用連續輪詢機制 (setInterval)，徹底解決因為視窗動畫渲染時間差，導致無公告時按鈕卡住的問題。
     [v1.2.1] 2026-05-04
     - 修復：當無公告或公告內容過短時，最新消息視窗按鈕卡在「請滑動至底部」無法點擊的問題。
     [v1.2.0] 2026-05-04
@@ -632,7 +637,7 @@
         let extraStopDist_R = 0;
         let priceTable = []; 
         let hasReadDetails = false; 
-        let SYSTEM_NEWS = ""; // 新增：用來存放動態讀取的最新消息
+        let SYSTEM_NEWS = null; // 修改為 null 代表「尚未載入完成」
 
         function stripTaiwan(str) {
             if (!str) return "";
@@ -681,6 +686,12 @@
                     SYSTEM_NEWS = data.news || ""; // 讀取最新消息
                     console.log("報價資料庫與折扣碼已同步更新");
                     updateLogic();
+                    
+                    // 動態更新彈出視窗內容
+                    const newsWrapper = document.getElementById('news-wrapper');
+                    if (newsWrapper) {
+                        newsWrapper.innerHTML = SYSTEM_NEWS ? SYSTEM_NEWS.replace(/\n/g, '<br>') : '<p style="text-align: center; color: #888;">目前無最新公告</p>';
+                    }
                 } else if (data && Array.isArray(data)) {
                     priceTable = data;
                     console.log("報價資料庫已更新，共 " + priceTable.length + " 筆");
@@ -688,6 +699,10 @@
                 }
             } catch (err) { 
                 console.error("報價/折扣碼讀取失敗:", err); 
+                SYSTEM_NEWS = ""; // 發生錯誤時設為空字串
+                const newsWrapper = document.getElementById('news-wrapper');
+                if (newsWrapper) newsWrapper.innerHTML = '<p style="text-align: center; color: #888;">無法取得最新公告</p>';
+
                 let errorDetails = '<br>1. GAS_URL 網址不正確<br>2. Google Apps Script 尚未部署為「所有人 (Anyone)」存取<br>3. 網路連線不穩';
                 if(err.message === 'Failed to fetch' || String(err).includes('Failed to fetch')) {
                      errorDetails = '<br><br><b style="color: red;">[最可能的原因：權限設定錯誤]</b><br>您的 Google Apps Script 尚未設定為公開！<br>👉 請回到 GAS 專案，點擊右上角「部署」>「管理部署作業」，將「存取權限 (Who has access)」設定為<b>「所有人 (Anyone)」</b>，然後重新部署。';
@@ -1183,8 +1198,15 @@
             document.getElementById('formContainer').classList.remove('hidden');
             if (!sessionStorage.getItem('hasSeenNotice')) {
                 
-                // 將換行符號轉換為 HTML 斷行
-                const formattedNews = SYSTEM_NEWS ? SYSTEM_NEWS.replace(/\n/g, '<br>') : '<p style="text-align: center; color: #888;">目前無最新公告</p>';
+                // 動態判斷要顯示的內容
+                let newsHtml = '';
+                if (SYSTEM_NEWS === null) {
+                    newsHtml = '<p style="text-align: center; color: #888; font-weight: bold; margin-top: 20px;">🔄 正在同步最新公告與報價...</p>';
+                } else if (SYSTEM_NEWS === "") {
+                    newsHtml = '<p style="text-align: center; color: #888;">目前無最新公告</p>';
+                } else {
+                    newsHtml = SYSTEM_NEWS.replace(/\n/g, '<br>');
+                }
 
                 Swal.fire({
                     html: `
@@ -1192,7 +1214,7 @@
                             
                             <p style="text-align: center; color: #f07cad; font-weight: bold; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; font-size: 13px;">** 請滑至底部點擊「確認送出」，即可開始預約。**</p>
 
-                            ${formattedNews}
+                            <div id="news-wrapper">${newsHtml}</div>
                         </div>
                     `,
                     confirmButtonText: '請滑動至底部',
@@ -1205,7 +1227,9 @@
                         
                         // 建立一個檢查是否到底部的函式
                         const checkScroll = () => {
-                            if (content.scrollHeight - content.scrollTop <= content.clientHeight + 5) {
+                            if (!content || !confirmBtn) return;
+                            // 寬容度設為 10，避免小數點誤差
+                            if (content.scrollHeight - content.scrollTop <= content.clientHeight + 10) {
                                 confirmBtn.disabled = false;
                                 confirmBtn.style.opacity = '1';
                                 confirmBtn.innerText = '確認，開始預約';
@@ -1217,12 +1241,19 @@
                         confirmBtn.style.opacity = '0.5';
                         confirmBtn.innerText = '請滑動至底部';
 
-                        // 關鍵修復：視窗打開後稍微等 0.1 秒（確保畫面渲染完畢），立刻檢查一次
-                        // 如果內容太短沒有捲軸，就會直接解鎖按鈕
-                        setTimeout(checkScroll, 100);
-
-                        // 滾動監控（針對內容很長的情況）
+                        // 滾動監控
                         content.addEventListener('scroll', checkScroll);
+
+                        // 關鍵修復：使用 setInterval 連續檢查，避免因為視窗動畫渲染導致高度計算的時間差
+                        let checkCount = 0;
+                        let checkTimer = setInterval(() => {
+                            checkScroll();
+                            checkCount++;
+                            // 若按鈕已解鎖，或檢查滿 20 次 (2秒)，則清除計時器
+                            if (!confirmBtn.disabled || checkCount >= 20) {
+                                clearInterval(checkTimer);
+                            }
+                        }, 100);
                     }
                 }).then(() => {
                     sessionStorage.setItem('hasSeenNotice', 'true');
@@ -1741,9 +1772,9 @@
                 Swal.fire({ title: '已成功送出', text: '請等候客服確認。', confirmButtonColor: '#553f62' }).then(() => window.location.reload());
             }
         });
-        window.onload = async () => { 
+        window.onload = () => { 
             initFormOptions(); 
-            await fetchPriceTable(); 
+            fetchPriceTable(); 
             initializeLiff(); 
         };
     </script>
