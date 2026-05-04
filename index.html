@@ -5,6 +5,9 @@
     ======================================================================
     更新版本紀錄 (Changelog)
     ======================================================================
+    [v1.2.5] 2026-05-04
+    - 修復：當 GAS 載入時間較長時，最新公告更新後按鈕可能未重新判斷高度而卡住的問題。
+    - 新增：無公告時的除錯提示，協助確認 GAS 是否正確部署。
     [v1.2.4] 2026-05-04
     - 移除自動將換行轉換為 `<br>` 的邏輯，允許管理者在 GAS「最新消息」中直接撰寫完整 HTML 以精確控制排版。
     [v1.2.3] 2026-05-04
@@ -627,7 +630,7 @@
         // --- 設定常數 ---
         const LIFF_ID = "2009922945-KmKUgqbg";
         const LINE_OA_LINK = "https://line.me/R/ti/p/@ansing";
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbz-Ou4PXmJgAuz7I0vD4Sq1TDz2NSihToo2KiUnZwWPie6Tb2QvSXYrIs1i36XYc7Z1/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwsQUPaKcFaMMFwwj3U0lunK3b52ORKgGU36Z4ZxKZlc31y7bjc3sB0W6SmiC3pJh8B/exec"; 
 
         let DISCOUNT_CODES = {};
         let currentDiscountAmt = 0;
@@ -692,7 +695,13 @@
                     // 動態更新彈出視窗內容，直接放入原始字串不取代換行符號
                     const newsWrapper = document.getElementById('news-wrapper');
                     if (newsWrapper) {
-                        newsWrapper.innerHTML = SYSTEM_NEWS ? SYSTEM_NEWS : '<p style="text-align: center; color: #888;">目前無最新公告</p>';
+                        newsWrapper.innerHTML = SYSTEM_NEWS ? SYSTEM_NEWS : '<p style="text-align: center; color: #888;">目前無最新公告 <br><span style="font-size: 10px;">(若您已設定，請確認 GAS 已正確部署新版本)</span></p>';
+                        
+                        // 重要修復：更新內容後，強制觸發一次滾動檢查，避免高度改變但按鈕未解鎖
+                        const contentBox = document.getElementById('swal-news-content');
+                        if (contentBox) {
+                            contentBox.dispatchEvent(new Event('scroll'));
+                        }
                     }
                 } else if (data && Array.isArray(data)) {
                     priceTable = data;
@@ -1774,9 +1783,9 @@
                 Swal.fire({ title: '已成功送出', text: '請等候客服確認。', confirmButtonColor: '#553f62' }).then(() => window.location.reload());
             }
         });
-        window.onload = () => { 
+        window.onload = async () => { 
             initFormOptions(); 
-            fetchPriceTable(); 
+            await fetchPriceTable(); 
             initializeLiff(); 
         };
     </script>
