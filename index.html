@@ -5,6 +5,8 @@
     ======================================================================
     更新版本紀錄 (Changelog)
     ======================================================================
+    [v1.2.1] 2026-05-04
+    - 修復：當無公告或公告內容過短時，最新消息視窗按鈕卡在「請滑動至底部」無法點擊的問題。
     [v1.2.0] 2026-05-04
     - 移除彈出視窗的「最新消息」標題。
     - 實作動態公告：從 GAS 讀取「最新消息」工作表的內容並顯示。
@@ -1201,20 +1203,26 @@
                         const content = document.getElementById('swal-news-content');
                         const confirmBtn = Swal.getConfirmButton();
                         
-                        // 初始狀態：禁用按鈕並調低透明度
-                        confirmBtn.disabled = true;
-                        confirmBtn.style.opacity = '0.5';
-                        confirmBtn.innerText = '請滑動至底部';
-
-                        // 滾動監控
-                        content.addEventListener('scroll', () => {
-                            // 計算是否滾動到底部 (加 5 像素的寬容度)
+                        // 建立一個檢查是否到底部的函式
+                        const checkScroll = () => {
                             if (content.scrollHeight - content.scrollTop <= content.clientHeight + 5) {
                                 confirmBtn.disabled = false;
                                 confirmBtn.style.opacity = '1';
                                 confirmBtn.innerText = '確認，開始預約';
                             }
-                        });
+                        };
+                        
+                        // 初始狀態：設定為禁用
+                        confirmBtn.disabled = true;
+                        confirmBtn.style.opacity = '0.5';
+                        confirmBtn.innerText = '請滑動至底部';
+
+                        // 關鍵修復：視窗打開後稍微等 0.1 秒（確保畫面渲染完畢），立刻檢查一次
+                        // 如果內容太短沒有捲軸，就會直接解鎖按鈕
+                        setTimeout(checkScroll, 100);
+
+                        // 滾動監控（針對內容很長的情況）
+                        content.addEventListener('scroll', checkScroll);
                     }
                 }).then(() => {
                     sessionStorage.setItem('hasSeenNotice', 'true');
