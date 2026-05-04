@@ -604,7 +604,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.2.0"; 
+        const APP_VERSION = "v1.2.1"; 
 
         // --- 設定常數 ---
         const LIFF_ID = "2009922945-KmKUgqbg";
@@ -671,12 +671,11 @@
                     priceTable = data.prices;
                     DISCOUNT_CODES = data.discounts || {};
                     console.log("報價資料庫與折扣碼已同步更新");
-                    updateLogic();
                 } else if (data && Array.isArray(data)) {
                     priceTable = data;
                     console.log("報價資料庫已更新，共 " + priceTable.length + " 筆");
-                    updateLogic();
                 }
+                updateLogic();
             } catch (err) { 
                 console.error("報價/折扣碼讀取失敗:", err); 
                 let errorDetails = '<br>1. GAS_URL 網址不正確<br>2. Google Apps Script 尚未部署為「所有人 (Anyone)」存取<br>3. 網路連線不穩';
@@ -723,7 +722,7 @@
             return `AS-${dateStr}${digits}${rChars}`;
         }
 
-        async function initFormOptions() {
+        function initFormOptions() {
             const now = new Date();
             const target = new Date(now.getTime() + 30 * 60 * 60 * 1000);
             const targetDateStr = target.getFullYear() + '-' + String(target.getMonth() + 1).padStart(2, '0') + '-' + String(target.getDate()).padStart(2, '0');
@@ -765,9 +764,6 @@
             setupReturnTripToggle();
             setupDiscountCode();
             setupAutoFill();
-            
-            fetchPriceTable();
-            updateLogic(); 
         }
 
         function setupDiscountCode() {
@@ -1189,20 +1185,25 @@
                         const content = document.getElementById('swal-news-content');
                         const confirmBtn = Swal.getConfirmButton();
                         
-                        // 初始狀態：禁用按鈕並調低透明度
+                        // 預設狀態為禁用
                         confirmBtn.disabled = true;
                         confirmBtn.style.opacity = '0.5';
                         confirmBtn.innerText = '請滑動至底部';
 
-                        // 滾動監控
-                        content.addEventListener('scroll', () => {
+                        const checkScroll = () => {
                             // 計算是否滾動到底部 (加 5 像素的寬容度)
                             if (content.scrollHeight - content.scrollTop <= content.clientHeight + 5) {
                                 confirmBtn.disabled = false;
                                 confirmBtn.style.opacity = '1';
                                 confirmBtn.innerText = '確認，開始預約';
                             }
-                        });
+                        };
+
+                        // 滾動時觸發檢查
+                        content.addEventListener('scroll', checkScroll);
+
+                        // 延遲一點點執行初始檢查 (避免太快觸發導致高度計算還是 0，且解決如果內容太短根本不用滑動的情況)
+                        setTimeout(checkScroll, 150);
                     }
                 }).then(() => {
                     sessionStorage.setItem('hasSeenNotice', 'true');
@@ -1744,10 +1745,11 @@
                 Swal.fire({ title: '已成功送出', text: '請等候客服確認。', confirmButtonColor: '#553f62' }).then(() => window.location.reload());
             }
         });
-        window.onload = () => { 
+        window.onload = async () => { 
             document.getElementById('versionDisplay').innerText = APP_VERSION;
             initFormOptions(); 
-            initializeLiff(); 
+            await fetchPriceTable(); 
+            await initializeLiff(); 
         };
     </script>
 </body>
