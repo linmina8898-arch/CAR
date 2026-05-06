@@ -108,7 +108,7 @@
                         <div class="grid grid-cols-3 gap-3">
                             <div class="col-span-2">
                                 <label class="block text-sm font-medium text-gray-700">真實姓名</label>
-                                <input type="text" id="paxName" class="mt-1 w-full p-2 border rounded focus-primary" placeholder="乘車人姓名">
+                                <input type="text" id="paxName" class="mt-1 w-full p-2 border rounded focus-primary" placeholder="乘客姓名">
                             </div>
                             <div class="col-span-1">
                                 <label class="block text-sm font-medium text-gray-700">稱謂</label>
@@ -1496,7 +1496,7 @@
             if (!document.getElementById('ordererName').value.trim()) errors.push({msg: "訂車人姓名", id: "ordererName"});
             if (!document.getElementById('ordererPhone').value.trim()) errors.push({msg: "訂車人聯絡電話", id: "ordererPhone"});
             if (!sameAs) {
-                if (!document.getElementById('paxName').value.trim()) errors.push({msg: "乘車人姓名", id: "paxName"});
+                if (!document.getElementById('paxName').value.trim()) errors.push({msg: "乘客姓名", id: "paxName"});
                 if (!document.getElementById('paxPhone').value.trim()) errors.push({msg: "乘車人聯絡電話", id: "paxPhone"});
             }
             const validateTrip = (prefix, label) => {
@@ -1673,7 +1673,7 @@
                          `預約類型：${outT.rideType}\n` +
                          `航班編號：${outT.flightNo}\n` +
                          `接送機場：${outT.airport}\n\n` +
-                         `乘車人姓名：${paxFullName}\n` +
+                         `乘客姓名：${paxFullName}\n` +
                          `聯絡電話：${paxPhone}\n` +
                          `主要接送地址：${outT.address}\n` +
                          (outT.extraStop ? `加點地址：${outT.extraStop}\n` : "") +
@@ -1703,7 +1703,7 @@
                          `預約類型：${retT.rideType}\n` +
                          `航班編號：${retT.flightNo}\n` +
                          `接送機場：${retT.airport}\n\n` +
-                         `乘車人姓名：${paxFullName}\n` +
+                         `乘客姓名：${paxFullName}\n` +
                          `聯絡電話：${paxPhone}\n` +
                          `主要接送地址：${retT.address}\n` +
                          (retT.extraStop ? `加點地址：${retT.extraStop}\n` : "") +
