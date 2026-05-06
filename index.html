@@ -1666,7 +1666,25 @@
                                 ` └ 總金額：$${discountedOutTotal.toLocaleString('en-US')}\n` +
                                 `付款方式：${payStr}`;
             
-            let msgOut = `--- 【去程資訊】 ---\n預約編號：${hasReturn ? baseOrderId + '-去程' : baseOrderId}\n乘車人姓名：${paxFullName}\n乘車日期：${outT.rideDate}\n乘車時間：${outT.rideTime}\n接送機場：${outT.airport}\n聯絡電話：${paxPhone}\n主要接送地址：${outT.address}\n${outT.extraStop ? `加點地址：${outT.extraStop}\n` : ""}航班編號：${outT.flightNo}\n車型：${outT.carType}\n人數：大${outT.paxAdult} 中${outT.paxChild} 小${outT.paxInfant}\n行李：登機${outT.lugCarry} 托運${outT.lugChecked}\n胖胖箱：${outT.sportLuggage}\n安全座椅：${outT.safetySeat}\n舉牌服務：${signStr}\n備註：${remarkStr}\n\n${outLineBottom}`;
+            let msgOut = `--- 【去程資訊】 ---\n` +
+                         `預約編號：${hasReturn ? baseOrderId + '-去程' : baseOrderId}\n\n` +
+                         `乘車日期：${outT.rideDate}\n` +
+                         `乘車時間：${outT.rideTime}\n` +
+                         `預約類型：${outT.rideType}\n` +
+                         `航班編號：${outT.flightNo}\n` +
+                         `接送機場：${outT.airport}\n\n` +
+                         `乘車人姓名：${paxFullName}\n` +
+                         `聯絡電話：${paxPhone}\n` +
+                         `主要接送地址：${outT.address}\n` +
+                         (outT.extraStop ? `加點地址：${outT.extraStop}\n` : "") +
+                         `車型：${outT.carType}\n` +
+                         `人數：大${outT.paxAdult} 中${outT.paxChild} 小${outT.paxInfant}\n` +
+                         `行李：登機${outT.lugCarry} 托運${outT.lugChecked}\n` +
+                         `胖胖箱：${outT.sportLuggage}\n\n` +
+                         `安全座椅：${outT.safetySeat}\n` +
+                         `舉牌服務：${signStr}\n` +
+                         `備註：${remarkStr}\n\n` +
+                         outLineBottom;
 
             let msgRet = '';
             if (hasReturn) {
@@ -1678,7 +1696,25 @@
                                     ` └ 總金額：$${discountedRetTotal.toLocaleString('en-US')}\n` +
                                     `付款方式：${payStr}`;
                                     
-                msgRet = `--- 【回程資訊】 ---\n預約編號：${baseOrderId + '-回程'}\n乘車人姓名：${paxFullName}\n乘車日期：${retT.rideDate}\n乘車時間：${retT.rideTime}\n接送機場：${retT.airport}\n聯絡電話：${paxPhone}\n主要接送地址：${retT.address}\n${retT.extraStop ? `加點地址：${retT.extraStop}\n` : ""}航班編號：${retT.flightNo}\n車型：${retT.carType}\n人數：大${retT.paxAdult} 中${retT.paxChild} 小${retT.paxInfant}\n行李：登機${retT.lugCarry} 托運${retT.lugChecked}\n胖胖箱：${retT.sportLuggage}\n安全座椅：${retT.safetySeat}\n舉牌服務：${signStr}\n備註：${remarkStr}\n\n${retLineBottom}`;
+                msgRet = `--- 【回程資訊】 ---\n` +
+                         `預約編號：${baseOrderId + '-回程'}\n\n` +
+                         `乘車日期：${retT.rideDate}\n` +
+                         `乘車時間：${retT.rideTime}\n` +
+                         `預約類型：${retT.rideType}\n` +
+                         `航班編號：${retT.flightNo}\n` +
+                         `接送機場：${retT.airport}\n\n` +
+                         `乘車人姓名：${paxFullName}\n` +
+                         `聯絡電話：${paxPhone}\n` +
+                         `主要接送地址：${retT.address}\n` +
+                         (retT.extraStop ? `加點地址：${retT.extraStop}\n` : "") +
+                         `車型：${retT.carType}\n` +
+                         `人數：大${retT.paxAdult} 中${retT.paxChild} 小${retT.paxInfant}\n` +
+                         `行李：登機${retT.lugCarry} 托運${retT.lugChecked}\n` +
+                         `胖胖箱：${retT.sportLuggage}\n\n` +
+                         `安全座椅：${retT.safetySeat}\n` +
+                         `舉牌服務：${signStr}\n` +
+                         `備註：${remarkStr}\n\n` +
+                         retLineBottom;
             }
 
             let msgPrice = `--- 【預估車資】 ---\n` + 
@@ -1689,6 +1725,8 @@
             msgPrice += ` ├ 折扣金額：${overallDiscountStr}\n` +
                         ` └ 總金額：$${grandTotalAmt.toLocaleString('en-US')}\n` +
                         `付款方式：${payStr}`;
+
+            const msgEnd = `您的預約已成功送出！\n\n客服正為您核對訂單，以確保您的行程權益。\n\n📍 注意事項\n限時付款：收到確認後請於 24 小時內付款，逾期自動取消。\n付款方式：客服核對後，將於此處提供專屬付款連結或帳號。\n\n【24小時客服專線】\n➤ ᴘʜᴏɴᴇ 電話：0955311306`;
 
             // 核心邏輯：將所有欄位包裝成純文字，讓 Google 試算表及日曆正確解析
             const t = (v) => "'" + String(v);
@@ -1727,7 +1765,7 @@
                         discountAmt: t(outDiscount), 
                         ordererEmail: t(email), 
                         lineId: t(sysLineId),
-                        fullMessage: t(msgOut),
+                        fullMessage: t(msgOut + "\n\n\n" + msgPrice + "\n\n\n" + msgEnd),
                         appVersion: t(APP_VERSION)
                     }
                 }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
@@ -1766,7 +1804,7 @@
                             discountAmt: t(retDiscount), 
                             ordererEmail: t(email), 
                             lineId: t(sysLineId),
-                            fullMessage: t(msgRet),
+                            fullMessage: t(msgRet + "\n\n\n" + msgPrice + "\n\n\n" + msgEnd),
                             appVersion: t(APP_VERSION)
                         }
                     }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
@@ -1777,7 +1815,6 @@
             }
 
             if (liff.isInClient()) { 
-                const msgEnd = `您的預約已成功送出！\n\n客服正為您核對訂單，以確保您的行程權益。\n\n📍 注意事項\n限時付款：收到確認後請於 24 小時內付款，逾期自動取消。\n付款方式：客服核對後，將於此處提供專屬付款連結或帳號。\n\n【24小時客服專線】\n➤ ᴘʜᴏɴᴇ 電話：0955311306`;
                 let lineMessages = [{ type: 'text', text: msgOut }];
                 if (hasReturn) lineMessages.push({ type: 'text', text: msgRet });
                 lineMessages.push({ type: 'text', text: msgPrice }, { type: 'text', text: msgEnd });
