@@ -1761,61 +1761,46 @@
 
             let outSurchargeDisplay = outT.surcharge === '無' ? '無' : '\n ├ ' + outT.surcharge.split('、').join('\n ├ ');
 
-            let outLineBottom = `--- 【費用明細】 ---\n` + 
-                                ` ├ 基本車資：$${outBase.toLocaleString('en-US')}\n` +
-                                ` ├ 加價項目：${outSurchargeDisplay}\n` +
-                                ` ├ 折扣金額：${outDiscountStr}\n` +
-                                ` └ 總金額：$${discountedOutTotal.toLocaleString('en-US')}\n` +
-                                `付款方式：${payStr}`;
+            let outLineBottom = `基本車資：$${outBase.toLocaleString('en-US')}\n` + 
+                                `加價項目：${outSurchargeDisplay}\n` +
+                                `折扣金額：${outDiscountStr}\n` +
+                                `單趟總計：$${discountedOutTotal.toLocaleString('en-US')}`;
+
+            let routeTitleOut = outT.rideType === '送機' ? `--- 【送機→${outT.airport}】 ---` : `--- 【${outT.airport}→接機】 ---`;
             
-            let msgOut = `--- 【去程資訊】 ---\n` +
-                         `預約編號：${hasReturn ? baseOrderId + '-去程' : baseOrderId}\n\n` +
-                         `乘車日期：${outT.rideDate}\n` +
-                         `乘車時間：${outT.rideTime}\n` +
-                         `預約類型：${outT.rideType}\n` +
-                         `航班編號：${outT.flightNo}\n` +
-                         `接送機場：${outT.airport}\n\n` +
-                         `乘客姓名：${paxFullName}\n` +
-                         `聯絡電話：${paxPhone}\n` +
-                         `主要接送地址：${outT.address}\n` +
-                         (outT.extraStop ? `加點地址：${outT.extraStop}\n` : "") +
-                         `車型：${outT.carType}\n` +
-                         `人數：大${outT.paxAdult} 中${outT.paxChild} 小${outT.paxInfant}\n` +
-                         `行李：登機${outT.lugCarry} 托運${outT.lugChecked}\n` +
-                         `胖胖箱：${outT.sportLuggage}\n\n` +
-                         `安全座椅：${outT.safetySeat}\n` +
-                         `舉牌服務：${signStr}\n` +
-                         `備註：${remarkStr}\n\n` +
+            let msgOut = `${hasReturn ? baseOrderId + '-去程' : baseOrderId}\n` +
+                         `${routeTitleOut}\n\n` +
+                         `${outT.rideDate}\n` +
+                         `${outT.rideTime}︱${outT.flightNo}\n\n` +
+                         `${paxFullName}  ${paxPhone}\n` +
+                         `${outT.address}` + (outT.extraStop ? `\n${outT.extraStop}` : "") + `\n\n` +
+                         `${outT.carType}︱大${outT.paxAdult}中${outT.paxChild}小${outT.paxInfant}︱登機${outT.lugCarry}托運${outT.lugChecked}${outT.sportLuggage !== '無' ? ' (胖胖箱:' + outT.sportLuggage + ')' : ''}\n` +
+                         `${outT.safetySeat}\n` +
+                         `${signStr}\n` +
+                         `${remarkStr}\n\n` +
                          outLineBottom;
 
             let msgRet = '';
             if (hasReturn) {
                 let retSurchargeDisplay = retT.surcharge === '無' ? '無' : '\n ├ ' + retT.surcharge.split('、').join('\n ├ ');
-                let retLineBottom = `--- 【費用明細】 ---\n` + 
-                                    ` ├ 基本車資：$${retBase.toLocaleString('en-US')}\n` +
-                                    ` ├ 加價項目：${retSurchargeDisplay}\n` +
-                                    ` ├ 折扣金額：${retDiscountStr}\n` +
-                                    ` └ 總金額：$${discountedRetTotal.toLocaleString('en-US')}\n` +
-                                    `付款方式：${payStr}`;
+                
+                let retLineBottom = `基本車資：$${retBase.toLocaleString('en-US')}\n` + 
+                                    `加價項目：${retSurchargeDisplay}\n` +
+                                    `折扣金額：${retDiscountStr}\n` +
+                                    `單趟總計：$${discountedRetTotal.toLocaleString('en-US')}`;
+
+                let routeTitleRet = retT.rideType === '送機' ? `--- 【送機→${retT.airport}】 ---` : `--- 【${retT.airport}→接機】 ---`;
                                     
-                msgRet = `--- 【回程資訊】 ---\n` +
-                         `預約編號：${baseOrderId + '-回程'}\n\n` +
-                         `乘車日期：${retT.rideDate}\n` +
-                         `乘車時間：${retT.rideTime}\n` +
-                         `預約類型：${retT.rideType}\n` +
-                         `航班編號：${retT.flightNo}\n` +
-                         `接送機場：${retT.airport}\n\n` +
-                         `乘客姓名：${paxFullName}\n` +
-                         `聯絡電話：${paxPhone}\n` +
-                         `主要接送地址：${retT.address}\n` +
-                         (retT.extraStop ? `加點地址：${retT.extraStop}\n` : "") +
-                         `車型：${retT.carType}\n` +
-                         `人數：大${retT.paxAdult} 中${retT.paxChild} 小${retT.paxInfant}\n` +
-                         `行李：登機${retT.lugCarry} 托運${retT.lugChecked}\n` +
-                         `胖胖箱：${retT.sportLuggage}\n\n` +
-                         `安全座椅：${retT.safetySeat}\n` +
-                         `舉牌服務：${signStr}\n` +
-                         `備註：${remarkStr}\n\n` +
+                msgRet = `${baseOrderId + '-回程'}\n` +
+                         `${routeTitleRet}\n\n` +
+                         `${retT.rideDate}\n` +
+                         `${retT.rideTime}︱${retT.flightNo}\n\n` +
+                         `${paxFullName}  ${paxPhone}\n` +
+                         `${retT.address}` + (retT.extraStop ? `\n${retT.extraStop}` : "") + `\n\n` +
+                         `${retT.carType}︱大${retT.paxAdult}中${retT.paxChild}小${retT.paxInfant}︱登機${retT.lugCarry}托運${retT.lugChecked}${retT.sportLuggage !== '無' ? ' (胖胖箱:' + retT.sportLuggage + ')' : ''}\n` +
+                         `${retT.safetySeat}\n` +
+                         `${signStr}\n` +
+                         `${remarkStr}\n\n` +
                          retLineBottom;
             }
 
