@@ -76,6 +76,18 @@
                 <!-- ==================== STEP 1: 報價與行程 ==================== -->
                 <div id="step1Wrapper" class="space-y-6 transition-all duration-500">
                     
+                    <!-- 熟客快速帶入區塊 -->
+                    <div class="bg-[#fff5f8] p-5 rounded-xl border-2 border-pink-200 shadow-sm">
+                        <label class="block text-sm font-bold text-[#f07cad] mb-2">聯絡電話 (舊客請點擊帶入歷史資料)</label>
+                        <div class="flex flex-col space-y-3">
+                            <input type="tel" id="ordererPhone" maxlength="12" class="w-full p-3 border border-pink-200 rounded-lg focus-primary text-base font-bold text-gray-700 bg-white" placeholder="請輸入聯絡電話 (0900-000-000)">
+                            <button type="button" id="btnAutoFill" class="w-full bg-[#f07cad] text-white font-bold px-4 py-3 rounded-lg shadow-md hover:bg-pink-500 transition text-sm flex justify-center items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                一鍵帶入上次接送地址與資料
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- 去程：行程資訊 -->
                     <div class="bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-sm">
                         <h2 class="text-lg font-bold text-primary mb-4 flex items-center"><span class="w-1 h-5 bg-primary mr-2 inline-block rounded"></span>基本行程</h2>
@@ -439,17 +451,8 @@
                             <span class="w-1 h-5 bg-primary mr-2 inline-block rounded"></span>聯絡人與乘客資訊
                         </h2>
                         <div class="space-y-5">
-                            <div class="bg-[#fff5f8] p-3 rounded-lg border border-pink-100">
-                                <label class="block text-sm font-bold text-[#f07cad] mb-1">聯絡電話</label>
-                                <div class="flex space-x-2">
-                                    <input type="tel" id="ordererPhone" maxlength="12" class="flex-1 p-2 border rounded focus-primary" placeholder="新客直接填寫 / 舊客輸入後點擊帶入">
-                                    <button type="button" id="btnAutoFill" class="bg-[#f07cad] text-white font-bold px-4 py-2 rounded shadow-sm hover:bg-opacity-90 transition text-sm whitespace-nowrap">
-                                        帶入歷史記錄
-                                    </button>
-                                </div>
-                            </div>
                             
-                            <div class="grid grid-cols-3 gap-3 border-t border-gray-200 pt-4 mt-2">
+                            <div class="grid grid-cols-3 gap-3">
                                 <div class="col-span-2">
                                     <label class="block text-sm font-medium text-gray-700">訂車人真實姓名</label>
                                     <input type="text" id="ordererName" class="mt-1 w-full p-2 border rounded focus-primary" placeholder="訂車人姓名">
@@ -677,6 +680,9 @@
 
         document.getElementById('btnNextStep').addEventListener('click', () => {
             let errors = [];
+            
+            // 驗證 Step 1 必填項目
+            if (!document.getElementById('ordererPhone').value.trim()) errors.push({msg: "聯絡電話", id: 'ordererPhone'});
             if (!document.getElementById('rideDate').value) errors.push({msg: "去程乘車日期", id: 'rideDate'});
             if (!document.getElementById('address').value.trim()) errors.push({msg: "去程詳細地址", id: 'address'});
             if (document.getElementById('needExtraStop').checked && !document.getElementById('extraStopAddress').value.trim()) errors.push({msg: "加點詳細地址", id: 'extraStopAddress'});
@@ -1029,16 +1035,30 @@
                         }
                         if (data.user.title) titleInput.value = data.user.title;
                         if (!emailInput.value && data.user.email) emailInput.value = data.user.email;
+                        
                         if (data.user.address) {
                             const addressInput = document.getElementById('address');
-                            if (!addressInput.value) addressInput.value = data.user.address;
+                            if (!addressInput.value) {
+                                addressInput.value = data.user.address;
+                                // 自動解析地址取得區碼以計算車資
+                                const geocoder = new google.maps.Geocoder();
+                                geocoder.geocode({ address: data.user.address, componentRestrictions: { country: 'TW' } }, (results, status) => {
+                                    if (status === 'OK' && results[0]) {
+                                        document.getElementById('zipcode').value = parseZoneInfo(results[0]);
+                                        calculateDistanceFee('');
+                                    } else {
+                                        updateLogic();
+                                    }
+                                });
+                            }
                         }
+                        
                         if (document.getElementById('sameAsOrderer').checked) {
                             document.getElementById('paxName').value = nameInput.value;
                             document.getElementById('paxTitle').value = titleInput.value;
                             document.getElementById('paxPhone').value = phoneInput.value;
                         }
-                        Swal.fire({ title: '載入成功', text: '已為您帶入歷史聯絡資料', icon: 'success', timer: 1500, showConfirmButton: false });
+                        Swal.fire({ title: '載入成功', text: '已為您帶入歷史聯絡資料與地址', icon: 'success', timer: 1500, showConfirmButton: false });
                     } else if (data.error === "mismatch") {
                         nameInput.value = '資料不相符，為確保個資安全無法顯示歷史資料，請與客服聯絡';
                         nameInput.classList.add('text-red-500', 'text-xs');
@@ -1599,16 +1619,12 @@
             const email = document.getElementById('email').value;
 
             let outSurchargeDisplay = outT.surcharge === '無' ? '無' : '\n ├ ' + outT.surcharge.split('、').join('\n ├ ');
-            let outLineBottom = `基本車資：$${outBase.toLocaleString('en-US')}\n` + 
-                                `加價項目：${outSurchargeDisplay}\n` +
-                                `折扣金額：${outDiscountStr}\n` +
-                                `單趟總計：$${discountedOutTotal.toLocaleString('en-US')}`;
 
             let routeTitleOut = outT.rideType === '送機' ? `--- 【送機→${outT.airport}】 ---` : `--- 【${outT.airport}→接機】 ---`;
             let msgOut = `${hasReturn ? baseOrderId + '-去程' : baseOrderId}\n` +
                          `${routeTitleOut}\n\n` +
                          `${outT.rideDate}\n` +
-                         `${outT.rideTime}︱${outT.rideType}︱${outT.flightNo}\n\n` +
+                         `${outT.rideTime}︱${outT.flightNo}\n\n` +
                          `${paxFullName}  ${paxPhone}\n` +
                          `${outT.address}` + (outT.extraStop ? `\n${outT.extraStop}` : "") + `\n\n` +
                          `車型：${outT.carType}\n` +
@@ -1616,22 +1632,17 @@
                          `行李：登機${outT.lugCarry}托運${outT.lugChecked}${outT.sportLuggage !== '無' ? ' (胖胖箱:' + outT.sportLuggage + ')' : ''}\n` +
                          `安全座椅：${outT.safetySeat}\n` +
                          `舉牌：${signStr}\n` +
-                         `備註：${remarkStr}\n\n` +
-                         outLineBottom;
+                         `備註：${remarkStr}\n`;
 
             let msgRet = '';
             if (hasReturn) {
                 let retSurchargeDisplay = retT.surcharge === '無' ? '無' : '\n ├ ' + retT.surcharge.split('、').join('\n ├ ');
-                let retLineBottom = `基本車資：$${retBase.toLocaleString('en-US')}\n` + 
-                                    `加價項目：${retSurchargeDisplay}\n` +
-                                    `折扣金額：${retDiscountStr}\n` +
-                                    `單趟總計：$${discountedRetTotal.toLocaleString('en-US')}`;
 
                 let routeTitleRet = retT.rideType === '送機' ? `--- 【送機→${retT.airport}】 ---` : `--- 【${retT.airport}→接機】 ---`;
                 msgRet = `${baseOrderId + '-回程'}\n` +
                          `${routeTitleRet}\n\n` +
                          `${retT.rideDate}\n` +
-                         `${retT.rideTime}︱${retT.rideType}︱${retT.flightNo}\n\n` +
+                         `${retT.rideTime}︱${retT.flightNo}\n\n` +
                          `${paxFullName}  ${paxPhone}\n` +
                          `${retT.address}` + (retT.extraStop ? `\n${retT.extraStop}` : "") + `\n\n` +
                          `車型：${retT.carType}\n` +
@@ -1639,8 +1650,7 @@
                          `行李：登機${retT.lugCarry}托運${retT.lugChecked}${retT.sportLuggage !== '無' ? ' (胖胖箱:' + retT.sportLuggage + ')' : ''}\n` +
                          `安全座椅：${retT.safetySeat}\n` +
                          `舉牌：${signStr}\n` +
-                         `備註：${remarkStr}\n\n` +
-                         retLineBottom;
+                         `備註：${remarkStr}\n`;
             }
 
             let msgPrice = `--- 【預估車資】 ---\n` + 
@@ -1672,7 +1682,7 @@
                         paymentMethod: t(payStr), remarks: t(remarkStr), surchargeDetails: t(outT.surcharge), 
                         discountCode: t(hasReturn ? "" : (currentDiscountCode || "")), discountAmt: t(outDiscount), 
                         ordererEmail: t(email), lineId: t(sysLineId),
-                        fullMessage: t(msgOut + "\n\n\n" + msgPrice + "\n\n\n" + msgEnd), appVersion: t(APP_VERSION)
+                        fullMessage: t(msgOut + "\n\n" + msgPrice + "\n\n\n" + msgEnd), appVersion: t(APP_VERSION)
                     }
                 }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
 
@@ -1694,7 +1704,7 @@
                             paymentMethod: t(payStr), remarks: t(remarkStr), surchargeDetails: t(retT.surcharge), 
                             discountCode: t(currentDiscountAmt > 0 ? `折扣碼(${currentDiscountCode}) + 預約來回優惠` : "預約來回優惠"), 
                             discountAmt: t(retDiscount), ordererEmail: t(email), lineId: t(sysLineId),
-                            fullMessage: t(msgRet + "\n\n\n" + msgPrice + "\n\n\n" + msgEnd), appVersion: t(APP_VERSION)
+                            fullMessage: t(msgRet + "\n\n" + msgPrice + "\n\n\n" + msgEnd), appVersion: t(APP_VERSION)
                         }
                     }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
                 }
