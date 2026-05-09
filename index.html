@@ -825,7 +825,7 @@
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
             let rChars = '';
             for(let i=0; i<3; i++) rChars += chars.charAt(Math.floor(Math.random() * chars.length));
-            return `AS-${digits}${rChars}`;
+            return `AS-${dateStr}${digits}${rChars}`;
         }
 
         function initFormOptions() {
@@ -1572,7 +1572,12 @@
 
             const outT = buildTripPayload('');
             const retT = hasReturn ? buildTripPayload('_R') : null;
+            
+            // 取得原本含日期的完整訂單編號 (用於存入 Google 試算表)
             const baseOrderId = document.getElementById('orderId').value;
+            // 產生精簡版訂單編號 (用於 LINE 訊息與日曆顯示)
+            const shortOrderId = baseOrderId.replace(/-\d{8}/, '-');
+            
             const qtEl = document.getElementById('quoteTotal');
             
             const rawOutTotal = parseInt(qtEl.getAttribute('data-out'), 10) || 0;
@@ -1630,7 +1635,9 @@
                                 `付款方式：${payStr}`;
 
             let routeTitleOut = outT.rideType === '送機' ? `--- 【送機→${outT.airport}】 ---` : `--- 【${outT.airport}→接機】 ---`;
-            let msgOut = `預約編號：${hasReturn ? baseOrderId + '-去程' : baseOrderId}\n\n` +
+            
+            // 使用 shortOrderId 顯示在 LINE 回傳訊息中
+            let msgOut = `預約編號：${hasReturn ? shortOrderId + '-去程' : shortOrderId}\n\n` +
                          `${routeTitleOut}\n\n` +
                          `乘車日期：${outT.rideDate}\n` +
                          `乘車時間：${outT.rideTime}\n` +
@@ -1664,7 +1671,9 @@
                                     `付款方式：${payStr}`;
 
                 let routeTitleRet = retT.rideType === '送機' ? `--- 【送機→${retT.airport}】 ---` : `--- 【${retT.airport}→接機】 ---`;
-                msgRet = `預約編號：${baseOrderId + '-回程'}\n\n` +
+                
+                // 使用 shortOrderId 顯示在 LINE 回傳訊息中
+                msgRet = `預約編號：${shortOrderId + '-回程'}\n\n` +
                          `${routeTitleRet}\n\n` +
                          `乘車日期：${retT.rideDate}\n` +
                          `乘車時間：${retT.rideTime}\n` +
@@ -1709,6 +1718,7 @@
             const t = (v) => "'" + String(v);
 
             try {
+                // 送往 Google Sheet 依舊保持 baseOrderId (長版)
                 await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({
                     action: 'addReservation', data: {
                         timestamp: t(new Date().toLocaleString('zh-TW', {timeZone: 'Asia/Taipei'})), 
