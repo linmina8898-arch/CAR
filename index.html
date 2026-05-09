@@ -825,7 +825,7 @@
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
             let rChars = '';
             for(let i=0; i<3; i++) rChars += chars.charAt(Math.floor(Math.random() * chars.length));
-            return `AS-${dateStr}${digits}${rChars}`;
+            return `AS-${digits}${rChars}`;
         }
 
         function initFormOptions() {
@@ -1174,6 +1174,20 @@
                 const profile = await liff.getProfile();
                 document.getElementById('sysLineId').value = profile.userId;
                 document.getElementById('sysLineName').value = profile.displayName;
+                
+                // --- 新增：管理員專屬隱藏版，自動顯示現金選項 ---
+                const ADMIN_LINE_IDS = [
+                    "U16aaa105c2d7d2782187ac3e25dfffad",
+                    "U4ba369e51e2228a6c95a29092a5bd382"
+                ];
+                if (ADMIN_LINE_IDS.includes(profile.userId)) {
+                    const paymentSelect = document.getElementById('payment');
+                    const cashOption = document.createElement('option');
+                    cashOption.value = '現金(限客服代訂)';
+                    cashOption.text = '現金(限客服代訂)';
+                    paymentSelect.appendChild(cashOption);
+                }
+                // ------------------------------------------------
                 
                 const friendStatus = await liff.getFriendship();
                 if (!friendStatus.friendFlag) {
