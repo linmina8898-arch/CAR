@@ -887,7 +887,7 @@
                 let amt = 0;
                 if (DISCOUNT_CODES[code]) {
                     amt = DISCOUNT_CODES[code];
-                    msgEl.innerText = `✅ 已成功套用，面額 $${amt.toLocaleString('en-US')} (單筆總折抵上限為 $500)`;
+                    msgEl.innerText = `✅ 已成功套用，面額 $${amt.toLocaleString('en-US')}`;
                 }
                 if (amt > 0) {
                     currentDiscountAmt = amt; currentDiscountCode = code;
