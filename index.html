@@ -700,6 +700,8 @@
         let extraStopDist_R = 0;
         let priceTable = []; 
         let hasReadDetails = false; 
+        
+        let priceFetchPromise = null; // 用於並行處理報價下載
 
         function showErrors(errors) {
             Swal.fire({
@@ -1209,11 +1211,19 @@
             });
         }
 
+        // 新增函數：用於在 LINE 與 GAS 請求都完成後再顯示畫面
+        async function proceedToShowForm() {
+            if (priceFetchPromise) {
+                await priceFetchPromise; 
+            }
+            showNoticeAndForm();
+        }
+
         async function initializeLiff() {
             if (window !== window.parent) { 
                 document.getElementById('sysLineId').value = 'Preview'; 
                 document.getElementById('sysLineName').value = '預覽測試用戶';
-                showNoticeAndForm(); return; 
+                await proceedToShowForm(); return; 
             }
             try {
                 await liff.init({ liffId: LIFF_ID });
@@ -1222,7 +1232,6 @@
                 document.getElementById('sysLineId').value = profile.userId;
                 document.getElementById('sysLineName').value = profile.displayName;
                 
-                // --- 新增：管理員專屬隱藏版，自動顯示現金選項 ---
                 const ADMIN_LINE_IDS = [
                     "U16aaa105c2d7d2782187ac3e25dfffad",
                     "U4ba369e51e2228a6c95a29092a5bd382"
@@ -1234,7 +1243,6 @@
                     cashOption.text = '現金(限客服代訂)';
                     paymentSelect.appendChild(cashOption);
                 }
-                // ------------------------------------------------
                 
                 const friendStatus = await liff.getFriendship();
                 if (!friendStatus.friendFlag) {
@@ -1252,15 +1260,15 @@
                         if (result.isConfirmed) {
                             try {
                                 const recheckStatus = await liff.getFriendship();
-                                if (recheckStatus.friendFlag) showNoticeAndForm();
-                                else Swal.fire({ title: '偵測不到狀態', text: '系統目前仍未偵測到您的好友狀態。若您已成功加入，可能是連線延遲，請直接點擊下方進入預約。', confirmButtonText: '進入預約系統', confirmButtonColor: '#553f62', allowOutsideClick: false }).then(() => { showNoticeAndForm(); });
-                            } catch (e) { showNoticeAndForm(); }
+                                if (recheckStatus.friendFlag) await proceedToShowForm();
+                                else Swal.fire({ title: '偵測不到狀態', text: '系統目前仍未偵測到您的好友狀態。若您已成功加入，可能是連線延遲，請直接點擊下方進入預約。', confirmButtonText: '進入預約系統', confirmButtonColor: '#553f62', allowOutsideClick: false }).then(async () => { await proceedToShowForm(); });
+                            } catch (e) { await proceedToShowForm(); }
                         }
                     });
                     return; 
                 }
-                showNoticeAndForm();
-            } catch (err) { console.error("LIFF 初始化或檢查失敗", err); showNoticeAndForm(); }
+                await proceedToShowForm();
+            } catch (err) { console.error("LIFF 初始化或檢查失敗", err); await proceedToShowForm(); }
         }
 
         function showNoticeAndForm() {
@@ -1856,7 +1864,10 @@
         
         window.onload = async () => { 
             document.getElementById('versionDisplay').innerText = APP_VERSION;
-            initFormOptions(); await fetchPriceTable(); await initializeLiff(); 
+            initFormOptions(); 
+            // 效能優化：讓「讀取報價表單」與「LINE 系統初始化」同時進行
+            priceFetchPromise = fetchPriceTable(); 
+            await initializeLiff(); 
         };
     </script>
 </body>
