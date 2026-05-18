@@ -724,7 +724,10 @@
         document.getElementById('btnNextStep').addEventListener('click', () => {
             let errors = [];
             
-            if (!document.getElementById('ordererPhone').value.trim()) errors.push({msg: "聯絡電話", id: 'ordererPhone'});
+            // 修正：驗證訂車人電話至少需 10 碼數字
+            const ordererPhoneRaw = document.getElementById('ordererPhone').value.replace(/\D/g, '');
+            if (ordererPhoneRaw.length < 10) errors.push({msg: "聯絡電話 (如沒有台灣門號請輸入0000-000-000，並在備註填寫聯絡方式，或選擇舉牌)", id: 'ordererPhone'});
+            
             if (!document.getElementById('rideDate').value) errors.push({msg: "去程乘車日期", id: 'rideDate'});
             if (!document.getElementById('address').value.trim()) errors.push({msg: "去程詳細地址", id: 'address'});
             if (document.getElementById('needExtraStop').checked && !document.getElementById('extraStopAddress').value.trim()) errors.push({msg: "加點詳細地址", id: 'extraStopAddress'});
@@ -1571,13 +1574,22 @@
             e.preventDefault();
             const sameAs = document.getElementById('sameAsOrderer').checked;
             const hasReturn = document.getElementById('needReturnTrip').checked;
+            const isSignSelected = document.getElementById('optSign').checked; // 檢查是否勾選舉牌
             let errors = [];
 
-            if (!document.getElementById('ordererPhone').value.trim()) errors.push({msg: "訂車人聯絡電話", id: "ordererPhone"});
+            // 修正：最終送出時，再次驗證訂車人與乘車人電話長度，但若有舉牌則放行
+            const ordererPhoneRaw = document.getElementById('ordererPhone').value.replace(/\D/g, '');
+            if (ordererPhoneRaw.length < 10 && !isSignSelected) {
+                errors.push({msg: "訂車人聯絡電話 (如沒有台灣門號請輸入0000-000-000，並在備註填寫聯絡方式，或選擇舉牌)", id: "ordererPhone"});
+            }
+            
             if (!document.getElementById('ordererName').value.trim()) errors.push({msg: "訂車人姓名", id: "ordererName"});
             if (!sameAs) {
                 if (!document.getElementById('paxName').value.trim()) errors.push({msg: "乘客姓名", id: "paxName"});
-                if (!document.getElementById('paxPhone').value.trim()) errors.push({msg: "乘車人聯絡電話", id: "paxPhone"});
+                const paxPhoneRaw = document.getElementById('paxPhone').value.replace(/\D/g, '');
+                if (paxPhoneRaw.length < 10 && !isSignSelected) {
+                    errors.push({msg: "乘車人聯絡電話 (如沒有台灣門號請輸入0000-000-000，並在備註填寫聯絡方式，或選擇舉牌)", id: "paxPhone"});
+                }
             }
             if (!document.getElementById('flightNo').value.trim()) errors.push({msg: "去程航班編號", id: 'flightNo'});
             if (hasReturn && !document.getElementById('flightNo_R').value.trim()) errors.push({msg: `回程航班編號`, id: 'flightNo_R'});
@@ -1793,9 +1805,10 @@
             const fullMsg = msgOut + (hasReturn ? "\n\n" + msgRet : "") + "\n\n" + msgPrice + "\n\n" + msgEnd;
             const t = (v) => "'" + String(v);
 
+            // 移除 await，改為 fire-and-forget，加快前端回應速度
             try {
                 // 送往 Google Sheet 依舊保持 baseOrderId (長版)
-                await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({
+                fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({
                     action: 'addReservation', data: {
                         timestamp: t(new Date().toLocaleString('zh-TW', {timeZone: 'Asia/Taipei'})), 
                         ordererName: t(ordererName), ordererTitle: t(document.getElementById('ordererTitle').value), 
@@ -1814,10 +1827,10 @@
                         ordererEmail: t(email), lineId: t(sysLineId),
                         fullMessage: t(fullMsg), appVersion: t(APP_VERSION)
                     }
-                }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
+                }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }).catch(e => console.error("去程 GAS 請求失敗:", e));
 
                 if (hasReturn) {
-                    await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({
+                    fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({
                         action: 'addReservation', data: {
                             timestamp: t(new Date().toLocaleString('zh-TW', {timeZone: 'Asia/Taipei'})), 
                             ordererName: t(ordererName), ordererTitle: t(document.getElementById('ordererTitle').value), 
@@ -1836,13 +1849,14 @@
                             discountAmt: t(retDiscount), ordererEmail: t(email), lineId: t(sysLineId),
                             fullMessage: t(fullMsg), appVersion: t(APP_VERSION)
                         }
-                    }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
+                    }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }).catch(e => console.error("回程 GAS 請求失敗:", e));
                 }
             } catch (err) {
-                Swal.fire({ title: '錯誤', text: '網路傳送失敗，請電洽客服：0955311306', confirmButtonColor: '#553f62' }); 
-                btn.disabled = false; btn.innerText = '確認送出預約'; return;
+                // 這裡的 catch 通常抓不到非同步的 fetch 錯誤，但保留作為保險
+                console.error("發送請求前發生錯誤:", err);
             }
 
+            // 無論 GAS 是否完成，直接進行後續動作 (變更 UI、發 LINE 訊息)
             document.getElementById('indStep3').classList.remove('opacity-50', 'grayscale');
             document.getElementById('indStep3').querySelector('div').classList.replace('bg-gray-400', 'bg-primary');
             document.getElementById('indStep3').querySelector('div').classList.add('shadow-sm', 'ring-2', 'ring-primary/20');
