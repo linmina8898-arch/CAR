@@ -1679,13 +1679,13 @@
                 retDiscount = combinedDiscount;
                 let actualUserDiscount = combinedDiscount - autoReturnDiscount;
                 if (currentDiscountAmt > 0) {
-                    retDiscountArr.push(`折扣碼(${currentDiscountCode})：-$${actualUserDiscount}`);
+                    retDiscountArr.push(`折扣碼(${currentDiscountCode}) -$${actualUserDiscount}`);
                 }
-                retDiscountArr.push(`預約來回優惠：-$100`);
+                retDiscountArr.push(`預約來回優惠 -$100`);
             } else {
                 outDiscount = combinedDiscount;
                 if (currentDiscountAmt > 0) {
-                    outDiscountArr.push(`折扣碼(${currentDiscountCode})：-$${outDiscount}`);
+                    outDiscountArr.push(`折扣碼(${currentDiscountCode}) -$${outDiscount}`);
                 }
             }
 
@@ -1699,57 +1699,65 @@
             const sysLineName = document.getElementById('sysLineName').value;
             const ordererName = document.getElementById('ordererName').value;
             const ordererPhone = document.getElementById('ordererPhone').value;
-            const paxFullName = document.getElementById('paxName').value + ' ' + document.getElementById('paxTitle').value;
+            const paxFullName = document.getElementById('paxName').value + document.getElementById('paxTitle').value;
             const paxPhone = document.getElementById('paxPhone').value;
             const email = document.getElementById('email').value;
 
-            // --- 組合去程明細 (微調版排版) ---
+            // --- 新增：代訂人判斷邏輯 ---
+            const ordererFullName = ordererName + " " + document.getElementById('ordererTitle').value;
+            let ordererStr = '';
+            // 如果 sameAs (同訂車人) 是 false，代表是代訂，就顯示代訂人資訊
+            if (!sameAs) {
+                ordererStr = `\n\n代訂：${ordererFullName} (${ordererPhone})`;
+            }
+
+            // --- 日期格式轉換 (加上星期幾，專供 LINE 訊息顯示用，不影響後端) ---
+            const daysOfWeek = ['日', '一', '二', '三', '四', '五', '六'];
+            let outDateObj = new Date(outT.rideDate);
+            let outDisplayDate = `${outT.rideDate.replace(/-/g, '/')} (${daysOfWeek[outDateObj.getDay()]})`;
+            
+            let retDisplayDate = '';
+            if (hasReturn) {
+                let retDateObj = new Date(retT.rideDate);
+                retDisplayDate = `${retT.rideDate.replace(/-/g, '/')} (${daysOfWeek[retDateObj.getDay()]})`;
+            }
+
+            // --- 去程明細 ---
             let outSurchargeArr = outT.surcharge === '無' ? [] : outT.surcharge.split('、');
-            let outSurchargeDisplay = outSurchargeArr.length === 0 ? '' : outSurchargeArr.map(s => {
-                let parts = s.split('(+');
-                return parts.length === 2 ? `${parts[0]}：+${parts[1].replace(')', '')}` : s;
-            }).join('\n');
-
-            let outDiscountDisplay = outDiscountArr.length === 0 ? '' : outDiscountArr.join('\n');
-
-            let outCostDetails = [];
-            if (outBase > 0) outCostDetails.push(`基本車資：$${outBase.toLocaleString('en-US')}`);
-            if (outSurchargeDisplay) outCostDetails.push(outSurchargeDisplay);
-            if (outDiscountDisplay) outCostDetails.push(outDiscountDisplay);
+            let outSurchargeDisplay = outSurchargeArr.length === 0 ? '' : `${outSurchargeArr.join('\n').replace(/\(\+\$/g, '：+$').replace(/\)/g, '')}\n`;
+            let outDiscountDisplay = outDiscountArr.length === 0 ? '' : `${outDiscountArr.join('\n').replace(/ \-\$/g, '：-$')}\n`;
 
             let outLineBottom = `【費用明細】\n` + 
-                                outCostDetails.join('\n') + `\n\n` +
-                                `應付總額：$${discountedOutTotal.toLocaleString('en-US')} (${payStr})`;
+                                `基本車資：$${outBase.toLocaleString('en-US')}\n` +
+                                outSurchargeDisplay +
+                                outDiscountDisplay +
+                                `\n應付總額：$${discountedOutTotal.toLocaleString('en-US')} (${payStr})` +
+                                ordererStr;
 
-            let routeTitleOut = outT.rideType === '送機' ? `送機 ➔ ${outT.airport}` : `${outT.airport} ➔ 接機`;
+            let routeTitleOut = outT.rideType === '送機' ? `行程：送機 ➔ ${outT.airport}` : `行程：${outT.airport} ➔ 接機`;
             let outFlightStr = outT.flightNo ? `\n航班：${outT.flightNo}` : '';
             let outExtraStopStr = outT.extraStop ? `\n加點：${outT.extraStop}` : '';
             let outSportLuggageStr = outT.sportLuggage !== '無' ? `\n胖箱：${outT.sportLuggage}` : '';
             let outSafetySeatStr = outT.safetySeat !== '無' ? `\n汽座：${outT.safetySeat}` : '';
             let outSignboardStr = signStr !== '無' ? `\n舉牌：${signStr}` : '';
-            
-            let paxAdultStr = parseInt(outT.paxAdult) > 0 ? `${outT.paxAdult}大` : '';
-            let paxChildStr = parseInt(outT.paxChild) > 0 ? ` ${outT.paxChild}中` : '';
-            let paxInfantStr = parseInt(outT.paxInfant) > 0 ? ` ${outT.paxInfant}小` : '';
-            let outPaxStr = (paxAdultStr + paxChildStr + paxInfantStr).trim();
 
-            // 修正：行李轉換為 大(托運)/小(登機) 格式
+            // 行李轉換為 大(托運)/小(登機) 格式
             let lugCheckedNum = parseInt(outT.lugChecked) || 0;
             let lugCarryNum = parseInt(outT.lugCarry) || 0;
             let outLugArr = [];
             if (lugCheckedNum > 0) outLugArr.push(`${lugCheckedNum}大`);
             if (lugCarryNum > 0) outLugArr.push(`${lugCarryNum}小`);
-            let outLugStr = outLugArr.length > 0 ? outLugArr.join(' ') : '無';
+            let outLugStr = outLugArr.length > 0 ? outLugArr.join('') : '無';
 
-            let msgOut = `安興租車 預約明細\n` +
+            let msgOut = `安興租車 預約確認\n` +
                          `單號：${hasReturn ? shortOrderId + '-去程' : shortOrderId}\n\n` +
-                         `行程：${routeTitleOut}` + outFlightStr + `\n` +
-                         `時間：${outT.rideDate} ${outT.rideTime}\n` +
+                         `${routeTitleOut}` + outFlightStr + `\n` +
+                         `時間：${outDisplayDate} ${outT.rideTime}\n` +
                          `地址：${outT.address}` + outExtraStopStr + `\n\n` +
                          `乘客：${paxFullName}\n` +
                          `電話：${paxPhone}\n` +
                          `車型：${outT.carType}\n` +
-                         `人數：${outPaxStr}\n` +
+                         `人數：${outT.paxAdult}大 ${outT.paxChild}中 ${outT.paxInfant}小\n` +
                          `行李：${outLugStr}` +
                          outSportLuggageStr + outSafetySeatStr + outSignboardStr + `\n\n` +
                          `【備註】\n${remarkStr === '無' ? '無' : remarkStr}\n\n` +
@@ -1760,51 +1768,40 @@
             let retLugStr = '無';
             if (hasReturn) {
                 let retSurchargeArr = retT.surcharge === '無' ? [] : retT.surcharge.split('、');
-                let retSurchargeDisplay = retSurchargeArr.length === 0 ? '' : retSurchargeArr.map(s => {
-                    let parts = s.split('(+');
-                    return parts.length === 2 ? `${parts[0]}：+${parts[1].replace(')', '')}` : s;
-                }).join('\n');
-                
-                let retDiscountDisplay = retDiscountArr.length === 0 ? '' : retDiscountArr.join('\n');
-
-                let retCostDetails = [];
-                if (retBase > 0) retCostDetails.push(`基本車資：$${retBase.toLocaleString('en-US')}`);
-                if (retSurchargeDisplay) retCostDetails.push(retSurchargeDisplay);
-                if (retDiscountDisplay) retCostDetails.push(retDiscountDisplay);
+                let retSurchargeDisplay = retSurchargeArr.length === 0 ? '' : `${retSurchargeArr.join('\n').replace(/\(\+\$/g, '：+$').replace(/\)/g, '')}\n`;
+                let retDiscountDisplay = retDiscountArr.length === 0 ? '' : `${retDiscountArr.join('\n').replace(/ \-\$/g, '：-$')}\n`;
 
                 let retLineBottom = `【費用明細】\n` + 
-                                    retCostDetails.join('\n') + `\n\n` +
-                                    `應付總額：$${discountedRetTotal.toLocaleString('en-US')} (${payStr})`;
+                                    `基本車資：$${retBase.toLocaleString('en-US')}\n` +
+                                    retSurchargeDisplay +
+                                    retDiscountDisplay +
+                                    `\n應付總額：$${discountedRetTotal.toLocaleString('en-US')} (${payStr})` +
+                                    ordererStr;
 
-                let routeTitleRet = retT.rideType === '送機' ? `送機 ➔ ${retT.airport}` : `${retT.airport} ➔ 接機`;
+                let routeTitleRet = retT.rideType === '送機' ? `行程：送機 ➔ ${retT.airport}` : `行程：${retT.airport} ➔ 接機`;
                 let retFlightStr = retT.flightNo ? `\n航班：${retT.flightNo}` : '';
                 let retExtraStopStr = retT.extraStop ? `\n加點：${retT.extraStop}` : '';
                 let retSportLuggageStr = retT.sportLuggage !== '無' ? `\n胖箱：${retT.sportLuggage}` : '';
                 let retSafetySeatStr = retT.safetySeat !== '無' ? `\n汽座：${retT.safetySeat}` : '';
                 let retSignboardStr = signStr !== '無' ? `\n舉牌：${signStr}` : '';
-                
-                let rPaxAdultStr = parseInt(retT.paxAdult) > 0 ? `${retT.paxAdult}大` : '';
-                let rPaxChildStr = parseInt(retT.paxChild) > 0 ? ` ${retT.paxChild}中` : '';
-                let rPaxInfantStr = parseInt(retT.paxInfant) > 0 ? ` ${retT.paxInfant}小` : '';
-                let retPaxStr = (rPaxAdultStr + rPaxChildStr + rPaxInfantStr).trim();
 
-                // 修正：回程行李轉換為 大(托運)/小(登機) 格式
+                // 回程行李轉換為 大(托運)/小(登機) 格式
                 let rLugCheckedNum = parseInt(retT.lugChecked) || 0;
                 let rLugCarryNum = parseInt(retT.lugCarry) || 0;
                 let retLugArr = [];
                 if (rLugCheckedNum > 0) retLugArr.push(`${rLugCheckedNum}大`);
                 if (rLugCarryNum > 0) retLugArr.push(`${rLugCarryNum}小`);
-                retLugStr = retLugArr.length > 0 ? retLugArr.join(' ') : '無';
+                retLugStr = retLugArr.length > 0 ? retLugArr.join('') : '無';
 
-                msgRet = `安興租車 預約明細\n` +
+                msgRet = `安興租車 預約確認\n` +
                          `單號：${shortOrderId + '-回程'}\n\n` +
-                         `行程：${routeTitleRet}` + retFlightStr + `\n` +
-                         `時間：${retT.rideDate} ${retT.rideTime}\n` +
+                         `${routeTitleRet}` + retFlightStr + `\n` +
+                         `時間：${retDisplayDate} ${retT.rideTime}\n` +
                          `地址：${retT.address}` + retExtraStopStr + `\n\n` +
                          `乘客：${paxFullName}\n` +
                          `電話：${paxPhone}\n` +
                          `車型：${retT.carType}\n` +
-                         `人數：${retPaxStr}\n` +
+                         `人數：${retT.paxAdult}大 ${retT.paxChild}中 ${retT.paxInfant}小\n` +
                          `行李：${retLugStr}` +
                          retSportLuggageStr + retSafetySeatStr + retSignboardStr + `\n\n` +
                          `【備註】\n${remarkStr === '無' ? '無' : remarkStr}\n\n` +
@@ -1825,7 +1822,7 @@
                  }
                  overallDiscountArr.push(`預約來回優惠：-$100`);
 
-                 msgPrice += `折扣金額：\n${overallDiscountArr.join('\n')}\n\n` +
+                 msgPrice += `\n折扣金額：\n${overallDiscountArr.join('\n')}\n\n` +
                              `來回總額：$${grandTotalAmt.toLocaleString('en-US')}`;
             }
 
