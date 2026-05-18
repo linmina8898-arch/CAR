@@ -1741,7 +1741,7 @@
             if (lugCarryNum > 0) outLugArr.push(`${lugCarryNum}小`);
             let outLugStr = outLugArr.length > 0 ? outLugArr.join(' ') : '無';
 
-            let msgOut = `■ 安興租車 預約確認 ■\n` +
+            let msgOut = `安興租車 預約明細\n` +
                          `單號：${hasReturn ? shortOrderId + '-去程' : shortOrderId}\n\n` +
                          `行程：${routeTitleOut}` + outFlightStr + `\n` +
                          `時間：${outT.rideDate} ${outT.rideTime}\n` +
@@ -1796,7 +1796,7 @@
                 if (rLugCarryNum > 0) retLugArr.push(`${rLugCarryNum}小`);
                 retLugStr = retLugArr.length > 0 ? retLugArr.join(' ') : '無';
 
-                msgRet = `■ 安興租車 預約確認 ■\n` +
+                msgRet = `安興租車 預約明細\n` +
                          `單號：${shortOrderId + '-回程'}\n\n` +
                          `行程：${routeTitleRet}` + retFlightStr + `\n` +
                          `時間：${retT.rideDate} ${retT.rideTime}\n` +
@@ -1814,7 +1814,7 @@
             // --- 整體預估車資 (僅回程時組合) ---
             let msgPrice = ``;
             if(hasReturn) {
-                 msgPrice = `--- 【預估總車資】 ---\n` + 
+                 msgPrice = `【預估總車資】\n` + 
                             `去程：$${rawOutTotal.toLocaleString('en-US')}\n` +
                             `回程：$${rawRetTotal.toLocaleString('en-US')}\n`;
                  
@@ -1829,7 +1829,7 @@
                              `來回總額：$${grandTotalAmt.toLocaleString('en-US')}`;
             }
 
-            const msgEnd = `※ 客服正為您核對訂單，請於收到確認後 24 小時內完成付款，逾期將自動取消。\n客服專線：0955-311-306`;
+            const msgEnd = `您的預約明細已成功送出！\n\n客服正為您核對訂單，以確保您的行程權益。\n\n📍注意事項\n✦ 限時付款：收到確認後請於 24 小時內付款，逾期自動取消。\n\n✦ 付款方式：客服核對後，將於此處提供專屬付款連結或帳號。\n\n【24小時客服專線】\n➤ ᴘʜᴏɴᴇ 電話：0955311306`;
 
             // 組給後端 GAS 寫入行事曆與表單的字串 (一次包含全部)
             const fullMsg = msgOut + (hasReturn ? "\n\n────────────────\n\n" + msgRet + "\n\n" + msgPrice : "") + "\n\n" + msgEnd;
@@ -1903,15 +1903,16 @@
                 console.error("發送請求前發生錯誤:", err);
             }
 
-            // 準備 LINE 訊息泡泡 (將提醒事項合併到最後一個泡泡中)
+            // 準備 LINE 訊息泡泡 (將提醒事項獨立成一個新泡泡)
             if (liff.isInClient()) { 
                 let lineMessages = [{ type: 'text', text: msgOut }];
                 if (hasReturn) {
                     lineMessages.push({ type: 'text', text: msgRet });
-                    lineMessages.push({ type: 'text', text: msgPrice + "\n\n" + msgEnd });
-                } else {
-                    lineMessages[0].text += "\n\n" + msgEnd;
+                    lineMessages.push({ type: 'text', text: msgPrice });
                 }
+                
+                // ⭐ 新增：獨立一則訊息傳送注意事項
+                lineMessages.push({ type: 'text', text: msgEnd });
                 
                 try { 
                     await liff.sendMessages(lineMessages); 
