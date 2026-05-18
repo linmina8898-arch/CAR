@@ -1710,99 +1710,131 @@
             const paxPhone = document.getElementById('paxPhone').value;
             const email = document.getElementById('email').value;
 
-            // --- 去程明細 ---
+            // --- 組合費用明細區塊 (去程) ---
             let outSurchargeArr = outT.surcharge === '無' ? [] : outT.surcharge.split('、');
-            let outSurchargeDisplay = outSurchargeArr.length === 0 ? '無' : '\n ├ ' + outSurchargeArr.join('\n ├ ');
-            let outDiscountDisplay = outDiscountArr.length === 0 ? '無' : '\n ├ ' + outDiscountArr.join('\n ├ ');
-
-            let outLineBottom = `--- 【費用明細】 ---\n` + 
-                                ` ├ 基本車資：$${outBase.toLocaleString('en-US')}\n` +
-                                ` ├ 加價項目：${outSurchargeDisplay}\n` +
-                                ` ├ 折扣金額：${outDiscountDisplay}\n` +
-                                ` └ 總金額：$${discountedOutTotal.toLocaleString('en-US')}\n` +
-                                `付款方式：${payStr}`;
-
-            let routeTitleOut = outT.rideType === '送機' ? `--- 【送機→${outT.airport}】 ---` : `--- 【${outT.airport}→接機】 ---`;
+            let outSurchargeDisplay = outSurchargeArr.length === 0 ? '' : '\n' + outSurchargeArr.map(s => {
+                let parts = s.split('(+');
+                return parts.length === 2 ? `${parts[0]}：+${parts[1].replace(')', '')}` : s; // 格式化為 "加項：+$金額"
+            }).join('\n');
             
-            // 使用 shortOrderId 顯示在 LINE 回傳訊息中
-            let msgOut = `預約編號：${hasReturn ? shortOrderId + '-去程' : shortOrderId}\n\n` +
-                         `${routeTitleOut}\n\n` +
-                         `乘車日期：${outT.rideDate}\n` +
-                         `乘車時間：${outT.rideTime}\n` +
-                         `預約類型：${outT.rideType}\n` +
-                         `航班編號：${outT.flightNo}\n` +
-                         `接送機場：${outT.airport}\n\n` +
-                         `乘客姓名：${paxFullName}\n` +
-                         `聯絡電話：${paxPhone}\n` +
-                         `接送地址：${outT.address}` + (outT.extraStop ? `\n(加點) ${outT.extraStop}` : "") + `\n\n` +
+            let outDiscountDisplay = outDiscountArr.length === 0 ? '' : '\n' + outDiscountArr.map(d => {
+                let parts = d.split(' -');
+                return parts.length === 2 ? `${parts[0]}：-${parts[1]}` : d; // 格式化為 "折扣：-$金額"
+            }).join('\n');
+
+            let outLineBottom = `【費用明細】\n` + 
+                                `基本車資：$${outBase.toLocaleString('en-US')}` +
+                                outSurchargeDisplay +
+                                outDiscountDisplay + `\n\n` +
+                                `應付總額：$${discountedOutTotal.toLocaleString('en-US')} (${payStr})`;
+
+            // --- 組合去程訊息 (推薦微調版排版) ---
+            let routeTitleOut = outT.rideType === '送機' ? `送機 ➔ ${outT.airport}` : `${outT.airport} ➔ 接機`;
+            
+            // 處理動態顯示的特殊需求欄位
+            let outFlightStr = outT.flightNo ? `\n航班：${outT.flightNo}` : '';
+            let outExtraStopStr = outT.extraStop ? `\n加點：${outT.extraStop}` : '';
+            let outSportLuggageStr = outT.sportLuggage !== '無' ? `\n胖箱：${outT.sportLuggage}` : '';
+            let outSafetySeatStr = outT.safetySeat !== '無' ? `\n汽座：${outT.safetySeat}` : '';
+            let outSignboardStr = signStr !== '無' ? `\n舉牌：${signStr}` : '';
+            
+            // 格式化人數與行李縮寫
+            let paxAdultStr = parseInt(outT.paxAdult) > 0 ? `${outT.paxAdult}大` : '';
+            let paxChildStr = parseInt(outT.paxChild) > 0 ? ` ${outT.paxChild}中` : '';
+            let paxInfantStr = parseInt(outT.paxInfant) > 0 ? ` ${outT.paxInfant}小` : '';
+            let outPaxStr = (paxAdultStr + paxChildStr + paxInfantStr).trim();
+            
+            let lugCarryStr = parseInt(outT.lugCarry) > 0 ? `登${outT.lugCarry}` : '';
+            let lugCheckedStr = parseInt(outT.lugChecked) > 0 ? ` 托${outT.lugChecked}` : '';
+            let outLugStr = (lugCarryStr + lugCheckedStr).trim() || '無';
+
+
+            let msgOut = `■ 安興租車 預約確認 ■\n` +
+                         `單號：${hasReturn ? shortOrderId + '-去程' : shortOrderId}\n\n` +
+                         `行程：${routeTitleOut}` + outFlightStr + `\n` +
+                         `時間：${outT.rideDate} ${outT.rideTime}\n` +
+                         `地址：${outT.address}` + outExtraStopStr + `\n\n` +
+                         `乘客：${paxFullName}\n` +
+                         `電話：${paxPhone}\n` +
                          `車型：${outT.carType}\n` +
-                         `人數：大${outT.paxAdult} 中${outT.paxChild} 小${outT.paxInfant}\n` +
-                         `行李：登機${outT.lugCarry} 托運${outT.lugChecked}\n\n` +
-                         `胖胖箱：${outT.sportLuggage}\n` +
-                         `安全座椅：${outT.safetySeat}\n` +
-                         `舉牌服務：${signStr}\n` +
-                         `備註：${remarkStr}\n\n` +
+                         `人數：${outPaxStr}\n` +
+                         `行李：${outLugStr}` +
+                         outSportLuggageStr + outSafetySeatStr + outSignboardStr + `\n\n` +
+                         `【備註】\n${remarkStr === '無' ? '無' : remarkStr}\n\n` +
                          outLineBottom;
 
-            // --- 回程明細 ---
+            // --- 組合費用明細區塊 (回程) ---
             let msgRet = '';
             if (hasReturn) {
                 let retSurchargeArr = retT.surcharge === '無' ? [] : retT.surcharge.split('、');
-                let retSurchargeDisplay = retSurchargeArr.length === 0 ? '無' : '\n ├ ' + retSurchargeArr.join('\n ├ ');
-                let retDiscountDisplay = retDiscountArr.length === 0 ? '無' : '\n ├ ' + retDiscountArr.join('\n ├ ');
-
-                let retLineBottom = `--- 【費用明細】 ---\n` + 
-                                    ` ├ 基本車資：$${retBase.toLocaleString('en-US')}\n` +
-                                    ` ├ 加價項目：${retSurchargeDisplay}\n` +
-                                    ` ├ 折扣金額：${retDiscountDisplay}\n` +
-                                    ` └ 總金額：$${discountedRetTotal.toLocaleString('en-US')}\n` +
-                                    `付款方式：${payStr}`;
-
-                let routeTitleRet = retT.rideType === '送機' ? `--- 【送機→${retT.airport}】 ---` : `--- 【${retT.airport}→接機】 ---`;
+                let retSurchargeDisplay = retSurchargeArr.length === 0 ? '' : '\n' + retSurchargeArr.map(s => {
+                    let parts = s.split('(+');
+                    return parts.length === 2 ? `${parts[0]}：+${parts[1].replace(')', '')}` : s;
+                }).join('\n');
                 
-                // 使用 shortOrderId 顯示在 LINE 回傳訊息中
-                msgRet = `預約編號：${shortOrderId + '-回程'}\n\n` +
-                         `${routeTitleRet}\n\n` +
-                         `乘車日期：${retT.rideDate}\n` +
-                         `乘車時間：${retT.rideTime}\n` +
-                         `預約類型：${retT.rideType}\n` +
-                         `航班編號：${retT.flightNo}\n` +
-                         `接送機場：${retT.airport}\n\n` +
-                         `乘客姓名：${paxFullName}\n` +
-                         `聯絡電話：${paxPhone}\n` +
-                         `接送地址：${retT.address}` + (retT.extraStop ? `\n(加點) ${retT.extraStop}` : "") + `\n\n` +
+                let retDiscountDisplay = retDiscountArr.length === 0 ? '' : '\n' + retDiscountArr.map(d => {
+                    let parts = d.split(' -');
+                    return parts.length === 2 ? `${parts[0]}：-${parts[1]}` : d;
+                }).join('\n');
+
+                let retLineBottom = `【費用明細】\n` + 
+                                    `基本車資：$${retBase.toLocaleString('en-US')}` +
+                                    retSurchargeDisplay +
+                                    retDiscountDisplay + `\n\n` +
+                                    `應付總額：$${discountedRetTotal.toLocaleString('en-US')} (${payStr})`;
+
+                // --- 組合回程訊息 (推薦微調版排版) ---
+                let routeTitleRet = retT.rideType === '送機' ? `送機 ➔ ${retT.airport}` : `${retT.airport} ➔ 接機`;
+                
+                // 處理動態顯示的特殊需求欄位
+                let retFlightStr = retT.flightNo ? `\n航班：${retT.flightNo}` : '';
+                let retExtraStopStr = retT.extraStop ? `\n加點：${retT.extraStop}` : '';
+                let retSportLuggageStr = retT.sportLuggage !== '無' ? `\n胖箱：${retT.sportLuggage}` : '';
+                let retSafetySeatStr = retT.safetySeat !== '無' ? `\n汽座：${retT.safetySeat}` : '';
+                let retSignboardStr = signStr !== '無' ? `\n舉牌：${signStr}` : '';
+                
+                // 格式化人數與行李縮寫
+                let rPaxAdultStr = parseInt(retT.paxAdult) > 0 ? `${retT.paxAdult}大` : '';
+                let rPaxChildStr = parseInt(retT.paxChild) > 0 ? ` ${retT.paxChild}中` : '';
+                let rPaxInfantStr = parseInt(retT.paxInfant) > 0 ? ` ${retT.paxInfant}小` : '';
+                let retPaxStr = (rPaxAdultStr + rPaxChildStr + rPaxInfantStr).trim();
+                
+                let rLugCarryStr = parseInt(retT.lugCarry) > 0 ? `登${retT.lugCarry}` : '';
+                let rLugCheckedStr = parseInt(retT.lugChecked) > 0 ? ` 托${retT.lugChecked}` : '';
+                let retLugStr = (rLugCarryStr + rLugCheckedStr).trim() || '無';
+
+
+                msgRet = `■ 安興租車 預約確認 ■\n` +
+                         `單號：${shortOrderId + '-回程'}\n\n` +
+                         `行程：${routeTitleRet}` + retFlightStr + `\n` +
+                         `時間：${retT.rideDate} ${retT.rideTime}\n` +
+                         `地址：${retT.address}` + retExtraStopStr + `\n\n` +
+                         `乘客：${paxFullName}\n` +
+                         `電話：${paxPhone}\n` +
                          `車型：${retT.carType}\n` +
-                         `人數：大${retT.paxAdult} 中${retT.paxChild} 小${retT.paxInfant}\n` +
-                         `行李：登機${retT.lugCarry} 托運${retT.lugChecked}\n\n` +
-                         `胖胖箱：${retT.sportLuggage}\n` +
-                         `安全座椅：${retT.safetySeat}\n` +
-                         `舉牌服務：${signStr}\n` +
-                         `備註：${remarkStr}\n\n` +
+                         `人數：${retPaxStr}\n` +
+                         `行李：${retLugStr}` +
+                         retSportLuggageStr + retSafetySeatStr + retSignboardStr + `\n\n` +
+                         `【備註】\n${remarkStr === '無' ? '無' : remarkStr}\n\n` +
                          retLineBottom;
             }
 
-            // --- 整體預估車資 ---
-            let overallDiscountArr = [];
-            if (hasReturn) {
-                if (currentDiscountAmt > 0) {
-                    let actualUserDiscount = combinedDiscount - autoReturnDiscount;
-                    overallDiscountArr.push(`折扣碼(${currentDiscountCode}) -$${actualUserDiscount}`);
-                }
-                overallDiscountArr.push(`預約來回優惠 -$100`);
-            } else {
-                if (currentDiscountAmt > 0) overallDiscountArr.push(`折扣碼(${currentDiscountCode}) -$${outDiscount}`);
+            // --- 整體預估車資 (僅作額外提醒用，主訊息已包含金額) ---
+            let msgPrice = ``;
+            if(hasReturn) {
+                 msgPrice = `--- 【預估總車資】 ---\n` + 
+                            ` ├ 去程：$${rawOutTotal.toLocaleString('en-US')}\n` +
+                            ` ├ 回程：$${rawRetTotal.toLocaleString('en-US')}\n`;
+                 let overallDiscountDisplay = overallDiscountArr.length === 0 ? '無' : overallDiscountArr.join('\n ├ ');
+                 if(overallDiscountArr.length > 0) {
+                     msgPrice += ` ├ 折扣金額：\n ├ ${overallDiscountDisplay}\n`;
+                 }
+                 msgPrice += ` └ 來回總額：$${grandTotalAmt.toLocaleString('en-US')}`;
             }
-            let overallDiscountDisplay = overallDiscountArr.length === 0 ? '無' : '\n ├ ' + overallDiscountArr.join('\n ├ ');
 
-            let msgPrice = `\n--- 【預估車資】 ---\n` + 
-                           ` ├ 去程：$${rawOutTotal.toLocaleString('en-US')}\n`;
-            if (hasReturn) msgPrice += ` ├ 回程：$${rawRetTotal.toLocaleString('en-US')}\n`;
-            msgPrice += ` ├ 折扣金額：${overallDiscountDisplay}\n` +
-                        ` └ 總金額：$${grandTotalAmt.toLocaleString('en-US')}`;
+            const msgEnd = `※ 客服正為您核對訂單，請於收到確認後 24 小時內完成付款，逾期將自動取消。\n客服專線：0955-311-306`;
 
-            const msgEnd = `\n\n您的預約已成功送出！\n\n客服正為您核對訂單，以確保您的行程權益。\n\n📍 注意事項\n限時付款：收到確認後請於 24 小時內付款，逾期自動取消。\n付款方式：客服核對後，將於此處提供專屬付款連結或帳號。\n\n【24小時客服專線】\n➤ ᴘʜᴏɴᴇ 電話：0955311306`;
-
-            const fullMsg = msgOut + (hasReturn ? "\n\n" + msgRet : "") + "\n\n" + msgPrice + "\n\n" + msgEnd;
+            const fullMsg = msgOut + (hasReturn ? "\n\n────────────────\n\n" + msgRet + (msgPrice ? "\n\n" + msgPrice : "") : "") + "\n\n" + msgEnd;
             const t = (v) => "'" + String(v);
 
             // 移除 await，改為 fire-and-forget，加快前端回應速度
