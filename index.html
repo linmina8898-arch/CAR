@@ -763,12 +763,12 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.7.1"; 
+        const APP_VERSION = "v1.7.2"; 
 
         // --- 設定常數 ---
         const LIFF_ID = "2009922945-KmKUgqbg";
         const LINE_OA_LINK = "https://line.me/R/ti/p/@ansing";
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzMLYBvdbo4mkkEUVFcjST44oh7VUXhx7gZjWejm2R8XX549ITaReot0pRAN3mbwA8n/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyHkLho-EhceBtJCSd0Vz5e1NtSDILWH08nD_8jJoJzd4c7unaXiI6q_A0ETgpuYG5x/exec"; 
 
         let DISCOUNT_CODES = {};
         let currentDiscountAmt = 0;
@@ -1300,14 +1300,14 @@
                                 <p style="color:#553f62;font-weight:700;margin:0 0 4px;">可以告訴我們原因嗎？</p>
                                 <p style="margin:0;">這會幫助我們調整報價與服務，填寫後會離開預約畫面。</p>
                             </div>
-                            <select id="rejectReason" class="swal2-select" style="margin:8px 0;width:100%;border-radius:12px;">
+                            <select id="rejectReason" class="swal2-select" style="margin:8px 0;width:100%;border-radius:12px;border:1px solid #f8c7dc;background:#fff;color:#553f62;box-shadow:0 0 0 2px rgba(85,63,98,.08);">
                                 <option value="價格超出預算">價格超出預算</option>
                                 <option value="還在比較其他方案">還在比較其他方案</option>
                                 <option value="時間或行程尚未確定">時間或行程尚未確定</option>
                                 <option value="車型或付款方式不符合需求">車型或付款方式不符合需求</option>
                                 <option value="其他">其他</option>
                             </select>
-                            <textarea id="rejectNote" class="swal2-textarea" style="margin:8px 0;width:100%;border-radius:12px;" placeholder="補充說明（選填）"></textarea>
+                            <textarea id="rejectNote" class="swal2-textarea" style="margin:8px 0;width:100%;border-radius:12px;border:1px solid #f8c7dc;background:#fff;color:#553f62;box-shadow:0 0 0 2px rgba(85,63,98,.08);" placeholder="補充說明（選填）"></textarea>
                         </div>
                     `,
                     focusConfirm: false,
@@ -2087,6 +2087,8 @@
 
             const signStr = document.getElementById('optSign').checked ? document.getElementById('signContent').value : '無';
             const payStr = document.getElementById('payment').value;
+            const isEnterpriseBilling = payStr.includes('月結') || payStr.includes('簽單');
+            const enterpriseLineNotice = isEnterpriseBilling ? `【企業月結簽單提醒】\n本訊息金額為一般預估報價，實際車資依企業簽約金額與客服確認為準。` : '';
             const companyInfo = document.getElementById('companyBillingInfo')?.value.replace(/\D/g, '') || '';
             const companyName = document.getElementById('companyNameDisplay')?.dataset.companyName || '';
             const companyBillingCode = document.getElementById('companyNameDisplay')?.dataset.billingCode || '';
@@ -2226,7 +2228,7 @@
             const msgEnd = `您的預約明細已成功送出！\n\n客服正為您核對訂單，以確保您的行程權益。\n\n📍注意事項\n✦ 限時付款：收到確認後請於 24 小時內付款，逾期自動取消。\n\n✦ 付款方式：客服核對後，將於此處提供專屬付款連結或帳號。\n\n【24小時客服專線】\n➤ ᴘʜᴏɴᴇ 電話：0955311306`;
 
             // 組給後端 GAS 寫入行事曆與表單的字串 (一次包含全部)
-            const fullMsg = msgOut + (hasReturn ? "\n\n────────────────\n\n" + msgRet + "\n\n" + msgPrice : "") + "\n\n" + msgEnd;
+            const fullMsg = msgOut + (hasReturn ? "\n\n────────────────\n\n" + msgRet + "\n\n" + msgPrice : "") + (enterpriseLineNotice ? "\n\n" + enterpriseLineNotice : "") + "\n\n" + msgEnd;
             const t = (v) => "'" + String(v);
 
             setFlowStep(3);
@@ -2315,6 +2317,9 @@
                 if (hasReturn) {
                     lineMessages.push({ type: 'text', text: msgRet });
                     lineMessages.push({ type: 'text', text: msgPrice });
+                }
+                if (enterpriseLineNotice) {
+                    lineMessages.push({ type: 'text', text: enterpriseLineNotice });
                 }
                 
                 // ⭐ 新增：獨立一則訊息傳送注意事項
