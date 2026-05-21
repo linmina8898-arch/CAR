@@ -21,11 +21,16 @@
         .border-primary { border-color: var(--primary); }
         .focus-primary:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px rgba(85, 63, 98, 0.2); }
         .swal-custom-radius { border-radius: 20px !important; }
+        input[type="radio"],
+        input[type="checkbox"] { accent-color: var(--primary); }
         input[type="radio"]:checked { background-color: var(--primary); border-color: var(--primary); }
         input[type="checkbox"]:checked { background-color: var(--primary); border-color: var(--primary); }
         
         /* 專門讓回程加訂的勾選框變成粉紅色 */
-        #needReturnTrip:checked {
+        #needReturnTrip,
+        #returnTripDifferent { accent-color: var(--accent); }
+        #needReturnTrip:checked,
+        #returnTripDifferent:checked {
             background-color: var(--accent) !important;
             border-color: var(--accent) !important;
         }
@@ -45,6 +50,7 @@
         .flow-step { color: #9ca3af; font-weight: 500; white-space: nowrap; }
         .flow-step.active { color: var(--primary); font-weight: 650; }
         .flow-step.done { color: var(--accent); font-weight: 600; }
+        #flowStepHint { color: var(--primary); font-weight: 650; }
         #quoteSummaryWrapper { position: sticky; bottom: 8px; z-index: 30; }
         #quoteListContainer.collapsed { display: none; }
         #bookingForm .font-bold { font-weight: 600; }
@@ -75,6 +81,22 @@
             font-size: 0.8125rem;
             line-height: 1.25rem;
             font-weight: 400;
+            color: #374151;
+        }
+        #bookingForm .compact-option-text {
+            font-size: 0.75rem;
+            line-height: 1.1rem;
+            font-weight: 500;
+        }
+        #bookingForm .monthly-note {
+            background-color: #fff5f8;
+            border-color: #f8c7dc;
+            color: var(--primary);
+        }
+        #bookingForm label:has(#needExtraStop_R) span {
+            font-size: 0.75rem;
+            line-height: 1.1rem;
+            font-weight: 500;
             color: #374151;
         }
     </style>
@@ -184,7 +206,7 @@
                             
                             <label class="flex items-center space-x-2 text-sm mt-2 cursor-pointer bg-white p-2 border rounded shadow-sm hover:bg-gray-100 transition">
                                 <input type="checkbox" id="needExtraStop" class="rounded w-4 h-4 text-primary focus:ring-primary quote-trigger">
-                                <span class="font-bold text-gray-700">需加點服務 (依距離計費，限加一個停靠點)</span>
+                                <span class="compact-option-text text-gray-700">需加點服務 (依距離計費，限加一個停靠點)</span>
                             </label>
                             <div id="extraStopContainer" class="hidden bg-white p-3 rounded border border-purple-200 shadow-inner space-y-3 mt-2">
                                 <div>
@@ -400,7 +422,7 @@
                         <div class="bg-white p-3 rounded-xl border border-pink-200 shadow-sm">
                             <label class="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
                                 <input type="checkbox" id="returnTripDifferent" class="rounded w-4 h-4 text-[#f07cad] focus:ring-[#f07cad] quote-trigger">
-                                <span class="font-bold">回程人數、行李或車型與去程不同</span>
+                                <span class="font-semibold text-[#f07cad]">回程人數、行李或車型與去程不同</span>
                             </label>
                             <p class="text-[11px] text-gray-500 mt-1 pl-6">未勾選時，系統會直接使用去程設定，讓詢價流程更短。</p>
                         </div>
@@ -615,10 +637,11 @@
                                 <option value="刷卡(限街口/全支付)">刷卡(限街口/全支付)</option>
                                 <option value="月結簽單(企業客戶)">月結簽單(企業客戶)</option>
                             </select>
-                            <div id="monthlyBillingNote" class="payment-note mt-2 bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs text-blue-800 leading-relaxed">
+                            <div id="monthlyBillingNote" class="payment-note monthly-note mt-2 rounded-lg p-3 text-xs leading-relaxed">
                                 <p class="font-bold">企業月結簽單</p>
                                 <p class="mt-1">適用已建檔企業客戶，實際車資與月結條件由客服核對後確認。司機端結案時會要求簽單確認。</p>
-                                <input type="text" id="companyBillingInfo" class="mt-2 w-full p-2 border border-blue-100 rounded focus-primary text-sm" placeholder="企業名稱 / 統編 / 月結代碼（選填）">
+                                <input type="text" id="companyBillingInfo" inputmode="numeric" maxlength="8" class="mt-2 w-full p-2 border border-pink-200 rounded focus-primary text-sm bg-white" placeholder="請輸入公司統編8碼">
+                                <p id="companyNameDisplay" class="mt-1 text-[11px] text-[#553f62] font-medium"></p>
                             </div>
                         </div>
 
@@ -705,9 +728,12 @@
                 </div>
 
                 <!-- 按鈕區塊 -->
-                <div id="step1Buttons" class="pt-2">
-                    <button type="button" id="btnNextStep" class="w-full bg-primary text-white font-bold py-4 rounded-xl shadow-lg hover:bg-opacity-90 transition disabled:opacity-50 text-lg flex justify-center items-center">
-                        先取得預估報價 <span class="ml-2">➔</span>
+                <div id="step1Buttons" class="pt-2 grid grid-cols-1 gap-2">
+                    <button type="button" id="btnNextStep" class="w-full bg-primary text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-opacity-90 transition disabled:opacity-50 text-base flex justify-center items-center">
+                        同意，我要預約 <span class="ml-2">➔</span>
+                    </button>
+                    <button type="button" id="btnRejectQuote" class="w-full bg-white text-primary font-semibold py-3 rounded-xl border border-primary/20 shadow-sm hover:bg-gray-50 transition text-sm">
+                        不同意，離開
                     </button>
                 </div>
 
@@ -737,7 +763,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.6.9"; 
+        const APP_VERSION = "v1.7.1"; 
 
         // --- 設定常數 ---
         const LIFF_ID = "2009922945-KmKUgqbg";
@@ -787,7 +813,10 @@
                 el.classList.toggle('active', n === step);
                 el.classList.toggle('done', n < step);
             });
-            document.getElementById('flowStepHint').innerText = hints[step] || hints[1];
+            const hintEl = document.getElementById('flowStepHint');
+            hintEl.innerText = hints[step] || hints[1];
+            hintEl.classList.toggle('text-[#f07cad]', step > 1);
+            hintEl.classList.toggle('text-primary', step === 1);
         }
 
         function setupQuoteDetailsToggle() {
@@ -988,6 +1017,7 @@
             setupPaymentOptions();
             setupAutoFill();
             setupCancelBooking();
+            setupRejectQuote();
         }
 
         function setupDiscountCode() {
@@ -1210,12 +1240,138 @@
         function setupPaymentOptions() {
             const paymentEl = document.getElementById('payment');
             const noteEl = document.getElementById('monthlyBillingNote');
+            const companyEl = document.getElementById('companyBillingInfo');
+            const companyNameEl = document.getElementById('companyNameDisplay');
             const applyPaymentState = () => {
                 const isMonthly = paymentEl.value.includes('月結');
                 noteEl.classList.toggle('active', isMonthly);
+                if (!isMonthly && companyNameEl) {
+                    companyNameEl.innerText = '';
+                    companyNameEl.dataset.companyName = '';
+                    companyNameEl.dataset.billingCode = '';
+                }
             };
             paymentEl.addEventListener('change', applyPaymentState);
+            if (companyEl) {
+                companyEl.addEventListener('input', async () => {
+                    companyEl.value = companyEl.value.replace(/\D/g, '').slice(0, 8);
+                    if (!companyNameEl) return;
+                    companyNameEl.dataset.companyName = '';
+                    companyNameEl.dataset.billingCode = '';
+                    if (companyEl.value.length < 8) {
+                        companyNameEl.innerText = companyEl.value ? '請輸入完整8碼統編。' : '';
+                        return;
+                    }
+                    companyNameEl.innerText = '正在查詢企業資料...';
+                    const company = await fetchCompanyByTaxId(companyEl.value);
+                    if (company && company.name) {
+                        companyNameEl.dataset.companyName = company.name;
+                        companyNameEl.dataset.billingCode = company.billingCode || '';
+                        companyNameEl.innerText = `已帶入：${company.name}`;
+                    } else {
+                        companyNameEl.dataset.billingCode = '';
+                        companyNameEl.innerText = '查無預設公司名稱，客服會依統編協助核對。';
+                    }
+                });
+            }
             applyPaymentState();
+        }
+
+        async function fetchCompanyByTaxId(taxId) {
+            try {
+                const res = await fetch(`${GAS_URL}?action=getCompanyByTaxId&taxId=${encodeURIComponent(taxId)}&t=${Date.now()}`);
+                const data = await res.json();
+                return data.company || null;
+            } catch (err) {
+                return null;
+            }
+        }
+
+        function setupRejectQuote() {
+            const btn = document.getElementById('btnRejectQuote');
+            if (!btn) return;
+            btn.addEventListener('click', async () => {
+                const { value } = await Swal.fire({
+                    title: '暫不預約',
+                    customClass: { popup: 'swal-custom-radius' },
+                    html: `
+                        <div class="text-left text-sm leading-relaxed text-gray-600">
+                            <div style="background:#fff5f8;border:1px solid #f8c7dc;border-radius:14px;padding:12px;margin-bottom:12px;">
+                                <p style="color:#553f62;font-weight:700;margin:0 0 4px;">可以告訴我們原因嗎？</p>
+                                <p style="margin:0;">這會幫助我們調整報價與服務，填寫後會離開預約畫面。</p>
+                            </div>
+                            <select id="rejectReason" class="swal2-select" style="margin:8px 0;width:100%;border-radius:12px;">
+                                <option value="價格超出預算">價格超出預算</option>
+                                <option value="還在比較其他方案">還在比較其他方案</option>
+                                <option value="時間或行程尚未確定">時間或行程尚未確定</option>
+                                <option value="車型或付款方式不符合需求">車型或付款方式不符合需求</option>
+                                <option value="其他">其他</option>
+                            </select>
+                            <textarea id="rejectNote" class="swal2-textarea" style="margin:8px 0;width:100%;border-radius:12px;" placeholder="補充說明（選填）"></textarea>
+                        </div>
+                    `,
+                    focusConfirm: false,
+                    showCancelButton: true,
+                    confirmButtonText: '送出並離開',
+                    cancelButtonText: '返回',
+                    confirmButtonColor: '#f07cad',
+                    cancelButtonColor: '#9ca3af',
+                    preConfirm: () => ({
+                        reason: document.getElementById('rejectReason').value,
+                        note: document.getElementById('rejectNote').value.trim()
+                    })
+                });
+                if (!value) return;
+                await postQuoteRejected(value);
+                if (window.liff && liff.isInClient()) {
+                    liff.closeWindow();
+                } else {
+                    Swal.fire({
+                        title: '已收到回饋',
+                        text: '謝謝您提供原因，歡迎之後再回來預約。',
+                        icon: 'success',
+                        customClass: { popup: 'swal-custom-radius' },
+                        confirmButtonColor: '#553f62'
+                    });
+                }
+            });
+        }
+
+        async function postQuoteRejected(rejectInfo) {
+            const qtEl = document.getElementById('quoteTotal');
+            const payload = {
+                timestamp: new Date().toISOString(),
+                orderId: document.getElementById('orderId')?.value || '',
+                lineId: document.getElementById('sysLineId')?.value || '',
+                lineName: document.getElementById('sysLineName')?.value || '',
+                phone: document.getElementById('ordererPhone')?.value || '',
+                rideDate: document.getElementById('rideDate')?.value || '',
+                rideTime: `${document.getElementById('rideHour')?.value || ''}:${document.getElementById('rideMinute')?.value || ''}`,
+                rideType: document.getElementById('rideType')?.value || '',
+                airport: document.getElementById('airport')?.value || '',
+                address: document.getElementById('address')?.value || '',
+                carType: document.querySelector('input[name="carType"]:checked')?.value || '',
+                paxAdult: document.getElementById('paxAdult')?.value || '',
+                paxChild: document.getElementById('paxChild')?.value || '',
+                paxInfant: document.getElementById('paxInfant')?.value || '',
+                luggageCarry: document.getElementById('luggageCarry')?.value || '',
+                luggageChecked: document.getElementById('luggageChecked')?.value || '',
+                hasReturn: document.getElementById('needReturnTrip')?.checked ? '是' : '否',
+                quoteTotal: qtEl?.getAttribute('data-grand') || '0',
+                quoteOut: qtEl?.getAttribute('data-out') || '0',
+                quoteRet: qtEl?.getAttribute('data-ret') || '0',
+                reason: rejectInfo.reason || '',
+                note: rejectInfo.note || '',
+                appVersion: APP_VERSION
+            };
+            try {
+                await fetch(GAS_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify({ action: 'quoteRejected', data: payload }),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                });
+            } catch (err) {}
         }
 
         function setupCancelBooking() {
@@ -1825,6 +1981,11 @@
             if (hasReturn && !document.getElementById('flightNo_R').value.trim()) errors.push({msg: `回程航班編號`, id: 'flightNo_R'});
 
             if (document.getElementById('optSign').checked && !document.getElementById('signContent').value.trim()) errors.push({msg: "舉牌服務姓名或內容", id: 'signContent'});
+            const paymentForValidation = document.getElementById('payment').value;
+            const companyTaxIdForValidation = document.getElementById('companyBillingInfo')?.value.replace(/\D/g, '') || '';
+            if ((paymentForValidation.includes('月結') || paymentForValidation.includes('簽單')) && companyTaxIdForValidation.length !== 8) {
+                errors.push({msg: "公司統編8碼", id: 'companyBillingInfo'});
+            }
             if (!hasReadDetails) errors.push({msg: "請點擊「詳細說明」閱讀乘車規範", id: 'toggleDetails'});
             else if (!document.getElementById('agreeDisclaimer').checked) errors.push({msg: "請勾選同意【乘車注意事項】聲明", id: 'agreeDisclaimer'});
 
@@ -1926,9 +2087,11 @@
 
             const signStr = document.getElementById('optSign').checked ? document.getElementById('signContent').value : '無';
             const payStr = document.getElementById('payment').value;
-            const companyInfo = document.getElementById('companyBillingInfo')?.value.trim() || '';
+            const companyInfo = document.getElementById('companyBillingInfo')?.value.replace(/\D/g, '') || '';
+            const companyName = document.getElementById('companyNameDisplay')?.dataset.companyName || '';
+            const companyBillingCode = document.getElementById('companyNameDisplay')?.dataset.billingCode || '';
             const baseRemark = document.getElementById('remarks').value.trim();
-            const remarkStr = [companyInfo ? `企業月結資料：${companyInfo}` : '', baseRemark].filter(Boolean).join('\n') || '無';
+            const remarkStr = [companyInfo ? `企業月結資料：統編${companyInfo}${companyName ? ` / ${companyName}` : ''}` : '', baseRemark].filter(Boolean).join('\n') || '無';
             const sysLineId = document.getElementById('sysLineId').value;
             const sysLineName = document.getElementById('sysLineName').value;
             const ordererName = document.getElementById('ordererName').value;
@@ -2086,7 +2249,9 @@
                     paymentMethod: t(payStr), remarks: t(remarkStr), surchargeDetails: t(outT.surcharge), 
                     discountCode: t(hasReturn ? "" : (currentDiscountCode || "")), discountAmt: t(outDiscount), 
                     ordererEmail: t(email), lineId: t(sysLineId),
-                    fullMessage: t(fullMsg), appVersion: t(APP_VERSION)
+                    fullMessage: t(fullMsg), appVersion: t(APP_VERSION),
+                    companyTaxId: t(companyInfo), companyName: t(companyName), companyBillingCode: t(companyBillingCode),
+                    companyBillingNote: t(payStr.includes('月結') ? '企業月結簽單，請客戶簽名確認' : '')
                 };
 
                 Swal.fire({
@@ -2119,7 +2284,9 @@
                         paymentMethod: t(payStr), remarks: t(remarkStr), surchargeDetails: t(retT.surcharge), 
                         discountCode: t(currentDiscountAmt > 0 ? `折扣碼(${currentDiscountCode}) + 預約來回優惠` : "預約來回優惠"), 
                         discountAmt: t(retDiscount), ordererEmail: t(email), lineId: t(sysLineId),
-                        fullMessage: t(fullMsg), appVersion: t(APP_VERSION)
+                        fullMessage: t(fullMsg), appVersion: t(APP_VERSION),
+                        companyTaxId: t(companyInfo), companyName: t(companyName), companyBillingCode: t(companyBillingCode),
+                        companyBillingNote: t(payStr.includes('月結') ? '企業月結簽單，請客戶簽名確認' : '')
                     };
                     await postReservationToGas(retPayload);
                     const retSaved = await waitForReservationSaved(retReservationId);
