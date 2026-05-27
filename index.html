@@ -763,7 +763,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.7.2"; 
+        const APP_VERSION = "v1.9.0"; 
 
         // --- 設定常數 ---
         const LIFF_ID = "2009922945-KmKUgqbg";
@@ -771,6 +771,7 @@
         const GAS_URL = "https://script.google.com/macros/s/AKfycbyHkLho-EhceBtJCSd0Vz5e1NtSDILWH08nD_8jJoJzd4c7unaXiI6q_A0ETgpuYG5x/exec"; 
 
         let DISCOUNT_CODES = {};
+        let DISCOUNT_RULES = {};
         let currentDiscountAmt = 0;
         let currentDiscountCode = '';
         let NEWS_HTML = ""; 
@@ -936,6 +937,7 @@
                 if (data && data.prices) {
                     priceTable = data.prices;
                     DISCOUNT_CODES = data.discounts || {};
+                    DISCOUNT_RULES = data.discountRules || {};
                 } else if (data && Array.isArray(data)) {
                     priceTable = data;
                 }
@@ -1042,6 +1044,12 @@
                     msgEl.innerText = `✅ 已成功套用，面額 $${amt.toLocaleString('en-US')}`;
                 }
                 if (amt > 0) {
+                    if (document.getElementById('needReturnTrip').checked && DISCOUNT_RULES[code] && DISCOUNT_RULES[code].allowReturn === false) {
+                        currentDiscountAmt = 0; currentDiscountCode = '';
+                        msgEl.innerText = '此折扣碼不可與預約來回優惠同時使用，請擇一套用';
+                        msgEl.className = 'text-xs mt-1 font-bold text-red-500 block';
+                        updateLogic(); return;
+                    }
                     currentDiscountAmt = amt; currentDiscountCode = code;
                     msgEl.className = 'text-xs mt-1 font-bold text-[#f07cad] block';
                 } else {
@@ -1090,9 +1098,10 @@
                                     <div><span class="font-bold text-[#f07cad]">${d.code}</span> <span class="text-[10px] text-gray-500">(折$${d.amount})</span></div>
                                     <div class="text-[10px] text-gray-400">效期: ${d.expiry}</div>
                                     <button type="button" class="bg-[#f07cad] text-white px-2 py-1 rounded text-xs use-discount-btn" data-code="${d.code}">使用</button>
-                                </div>`;
-                                DISCOUNT_CODES[d.code] = d.amount;
-                            });
+                                 </div>`;
+                                 DISCOUNT_CODES[d.code] = d.amount;
+                                 DISCOUNT_RULES[d.code] = { allowReturn: d.allowReturn !== false };
+                             });
                             document.getElementById('userDiscountsContainer').innerHTML = html;
                             document.getElementById('userDiscountsContainer').classList.remove('hidden');
                             document.querySelectorAll('.use-discount-btn').forEach(b => {
@@ -1887,6 +1896,14 @@
             if (!outRes) return; 
             let retRes = null;
             let hasReturn = document.getElementById('needReturnTrip').checked;
+            if (hasReturn && currentDiscountCode && DISCOUNT_RULES[currentDiscountCode] && DISCOUNT_RULES[currentDiscountCode].allowReturn === false) {
+                currentDiscountAmt = 0;
+                currentDiscountCode = '';
+                document.getElementById('discountInput').value = '';
+                const msgEl = document.getElementById('discountMsg');
+                msgEl.innerText = '此折扣碼不可與預約來回優惠同時使用，請擇一套用';
+                msgEl.className = 'text-xs mt-1 font-bold text-red-500 block';
+            }
             if (hasReturn) {
                 retRes = processTripData('_R');
                 document.getElementById('quoteList_R').classList.remove('hidden');
@@ -1948,19 +1965,36 @@
 
         async function waitForReservationSaved(reservationId) {
             const cleanId = String(reservationId || '').replace(/^'/, '').trim();
+            let lastResult = { exists: false, reservationId: cleanId, calendarStatus: '' };
             for (let i = 0; i < 6; i++) {
                 await new Promise(resolve => setTimeout(resolve, i === 0 ? 500 : 900));
                 const res = await fetch(`${GAS_URL}?action=checkReservation&reservationId=${encodeURIComponent(cleanId)}&t=${Date.now()}`);
                 const data = await res.json();
-                if (data.exists) return true;
+                if (data.exists) {
+                    lastResult = data;
+                    if (data.calendarStatus === '已同步') return data;
+                }
             }
-            return false;
+            return lastResult;
+        }
+
+        async function sendReservationConfirmationCard(reservationIds) {
+            const res = await fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'sendReservationConfirmation', data: { reservationIds } }),
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+            });
+            return await res.json();
         }
 
         document.getElementById('bookingForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const sameAs = document.getElementById('sameAsOrderer').checked;
             const hasReturn = document.getElementById('needReturnTrip').checked;
+            if (hasReturn && currentDiscountCode && DISCOUNT_RULES[currentDiscountCode] && DISCOUNT_RULES[currentDiscountCode].allowReturn === false) {
+                Swal.fire({ title: '此優惠不可合併', text: '此折扣碼不可與預約來回優惠同時使用，請擇一套用。', confirmButtonColor: '#553f62', customClass: { popup: 'swal-custom-radius' } });
+                return;
+            }
             const isSignSelected = document.getElementById('optSign').checked;
             let errors = [];
 
@@ -2085,6 +2119,39 @@
             const discountedOutTotal = rawOutTotal - outDiscount;
             const discountedRetTotal = rawRetTotal - retDiscount;
 
+            const buildFeeExtras = (text) => {
+                if (!text || text === '無') return [];
+                return text.split('、').map(item => {
+                    const matched = item.match(/^(.+?)\(\+\$(\d+)\)$/);
+                    if (matched) {
+                        return { label: matched[1].replace('安全座椅/增高墊x', '座椅 x'), amount: Number(matched[2]) };
+                    }
+                    return { label: item.replace('(客服報價)', ''), note: item.includes('客服報價') ? '客服報價' : '' };
+                });
+            };
+            const outCardFee = {
+                baseFare: outBase,
+                extras: buildFeeExtras(outT.surcharge),
+                subtotalLabel: hasReturn ? '去程小計' : '',
+                subtotal: rawOutTotal,
+                discounts: !hasReturn && outDiscount > 0 ? [{ label: `折扣碼 ${currentDiscountCode}`, amount: -outDiscount }] : [],
+                totalLabel: hasReturn ? '' : '預估應付總額',
+                total: hasReturn ? 0 : discountedOutTotal
+            };
+            const retUserDiscount = hasReturn ? Math.max(retDiscount - autoReturnDiscount, 0) : 0;
+            const retCardFee = hasReturn ? {
+                baseFare: retBase,
+                extras: buildFeeExtras(retT.surcharge),
+                subtotalLabel: '回程小計',
+                subtotal: rawRetTotal,
+                discounts: [
+                    ...(retUserDiscount > 0 ? [{ label: `折扣碼 ${currentDiscountCode}`, amount: -retUserDiscount }] : []),
+                    ...(autoReturnDiscount > 0 ? [{ label: '預約來回優惠', amount: -autoReturnDiscount }] : [])
+                ],
+                totalLabel: '來回預估應付總額',
+                total: grandTotalAmt
+            } : null;
+
             const signStr = document.getElementById('optSign').checked ? document.getElementById('signContent').value : '無';
             const payStr = document.getElementById('payment').value;
             const isEnterpriseBilling = payStr.includes('月結') || payStr.includes('簽單');
@@ -2140,13 +2207,13 @@
             let outSafetySeatStr = outT.safetySeat !== '無' ? `\n汽座：${outT.safetySeat}` : '';
             let outSignboardStr = signStr !== '無' ? `\n舉牌：${signStr}` : '';
 
-            // 行李轉換為 大(托運)/小(登機) 格式
+            // 行李顯示格式：托運為大、登機箱明確標示登機
             let lugCheckedNum = parseInt(outT.lugChecked) || 0;
             let lugCarryNum = parseInt(outT.lugCarry) || 0;
             let outLugArr = [];
             if (lugCheckedNum > 0) outLugArr.push(`${lugCheckedNum}大`);
-            if (lugCarryNum > 0) outLugArr.push(`${lugCarryNum}小`);
-            let outLugStr = outLugArr.length > 0 ? outLugArr.join('') : '無';
+            if (lugCarryNum > 0) outLugArr.push(`${lugCarryNum}登機`);
+            let outLugStr = outLugArr.length > 0 ? outLugArr.join(' ') : '無';
 
             let msgOut = `安興租車 預約確認\n` +
                          `單號：${hasReturn ? shortOrderId + '-去程' : shortOrderId}\n\n` +
@@ -2184,13 +2251,13 @@
                 let retSafetySeatStr = retT.safetySeat !== '無' ? `\n汽座：${retT.safetySeat}` : '';
                 let retSignboardStr = signStr !== '無' ? `\n舉牌：${signStr}` : '';
 
-                // 回程行李轉換為 大(托運)/小(登機) 格式
+                // 回程行李顯示格式：托運為大、登機箱明確標示登機
                 let rLugCheckedNum = parseInt(retT.lugChecked) || 0;
                 let rLugCarryNum = parseInt(retT.lugCarry) || 0;
                 let retLugArr = [];
                 if (rLugCheckedNum > 0) retLugArr.push(`${rLugCheckedNum}大`);
-                if (rLugCarryNum > 0) retLugArr.push(`${rLugCarryNum}小`);
-                retLugStr = retLugArr.length > 0 ? retLugArr.join('') : '無';
+                if (rLugCarryNum > 0) retLugArr.push(`${rLugCarryNum}登機`);
+                retLugStr = retLugArr.length > 0 ? retLugArr.join(' ') : '無';
 
                 msgRet = `安興租車 預約確認\n` +
                          `單號：${shortOrderId + '-回程'}\n\n` +
@@ -2234,6 +2301,7 @@
             setFlowStep(3);
 
             try {
+                const savedTrips = [];
                 const outReservationId = hasReturn ? baseOrderId + '-去程' : baseOrderId;
                 const outPayload = {
                     timestamp: t(new Date().toLocaleString('zh-TW', {timeZone: 'Asia/Taipei'})), 
@@ -2244,7 +2312,7 @@
                     rideDate: t(outT.rideDate), rideTime: t(outT.rideTime), serviceType: t(outT.rideType), 
                     airport: t(outT.airport), flightNumber: t(outT.flightNo), mainLocation: t(outT.address), 
                     extraLocation: t(outT.extraStop), carType: t(outT.carType), 
-                    paxCount: t(`大${outT.paxAdult} 中${outT.paxChild} 小${outT.paxInfant}`), 
+                    paxCount: t(`${outT.paxAdult}大 ${outT.paxChild}中 ${outT.paxInfant}小`), 
                     luggageCount: t(outLugStr), 
                     sportLuggage: t(outT.sportLuggage), seatDetails: t(outT.safetySeat), 
                     signboard: t(signStr), tripAmt: t(discountedOutTotal), grandTotal: t(grandTotalAmt), 
@@ -2253,7 +2321,8 @@
                     ordererEmail: t(email), lineId: t(sysLineId),
                     fullMessage: t(fullMsg), appVersion: t(APP_VERSION),
                     companyTaxId: t(companyInfo), companyName: t(companyName), companyBillingCode: t(companyBillingCode),
-                    companyBillingNote: t(payStr.includes('月結') ? '企業月結簽單，請客戶簽名確認' : '')
+                    companyBillingNote: t(payStr.includes('月結') ? '企業月結簽單，請客戶簽名確認' : ''),
+                    cardFeeJson: t(JSON.stringify(outCardFee))
                 };
 
                 Swal.fire({
@@ -2266,7 +2335,8 @@
                 });
                 await postReservationToGas(outPayload);
                 const outSaved = await waitForReservationSaved(outReservationId);
-                if (!outSaved) throw new Error('去程預約尚未寫入 Google 試算表');
+                savedTrips.push(outSaved);
+                if (!outSaved.exists) throw { code: 'storage', message: '去程預約尚未寫入 Google 試算表' };
 
                 if (hasReturn) {
                     const retReservationId = baseOrderId + '-回程';
@@ -2279,7 +2349,7 @@
                         rideDate: t(retT.rideDate), rideTime: t(retT.rideTime), serviceType: t(retT.rideType), 
                         airport: t(retT.airport), flightNumber: t(retT.flightNo), mainLocation: t(retT.address), 
                         extraLocation: t(retT.extraStop), carType: t(retT.carType), 
-                        paxCount: t(`大${retT.paxAdult} 中${retT.paxChild} 小${retT.paxInfant}`), 
+                        paxCount: t(`${retT.paxAdult}大 ${retT.paxChild}中 ${retT.paxInfant}小`), 
                         luggageCount: t(retLugStr), 
                         sportLuggage: t(retT.sportLuggage), seatDetails: t(retT.safetySeat), 
                         signboard: t(signStr), tripAmt: t(discountedRetTotal), grandTotal: t(grandTotalAmt), 
@@ -2288,16 +2358,53 @@
                         discountAmt: t(retDiscount), ordererEmail: t(email), lineId: t(sysLineId),
                         fullMessage: t(fullMsg), appVersion: t(APP_VERSION),
                         companyTaxId: t(companyInfo), companyName: t(companyName), companyBillingCode: t(companyBillingCode),
-                        companyBillingNote: t(payStr.includes('月結') ? '企業月結簽單，請客戶簽名確認' : '')
+                        companyBillingNote: t(payStr.includes('月結') ? '企業月結簽單，請客戶簽名確認' : ''),
+                        cardFeeJson: t(JSON.stringify(retCardFee))
                     };
                     await postReservationToGas(retPayload);
                     const retSaved = await waitForReservationSaved(retReservationId);
-                    if (!retSaved) throw new Error('回程預約尚未寫入 Google 試算表');
+                    savedTrips.push(retSaved);
+                    if (!retSaved.exists) throw { code: 'storage', message: '回程預約尚未寫入 Google 試算表' };
+                }
+                if (savedTrips.some(item => item.calendarStatus !== '已同步')) {
+                    throw { code: 'calendar', message: '預約資料已收到，但行事曆尚未同步完成' };
+                }
+                const noticeResult = await sendReservationConfirmationCard(
+                    hasReturn ? [baseOrderId + '-去程', baseOrderId + '-回程'] : [baseOrderId]
+                );
+                if (!noticeResult.success) {
+                    throw { code: 'line', message: noticeResult.error || 'LINE 卡片傳送失敗' };
                 }
             } catch (err) {
                 console.error("預約寫入確認失敗:", err);
                 btn.disabled = false;
                 btn.innerText = '確認送出預約';
+                if (err.code === 'calendar') {
+                    Swal.fire({
+                        title: '預約資料已收到',
+                        html: `<div class="text-sm text-gray-600 leading-relaxed text-left">
+                            <p>您的預約資料已寫入，但系統尚未完成行事曆同步，因此暫不傳送 LINE 預約卡片。</p>
+                            <p class="mt-2 text-[#f07cad] font-bold">請勿重複送出，客服將儘快協助確認。</p>
+                        </div>`,
+                        icon: 'warning',
+                        confirmButtonColor: '#553f62',
+                        customClass: { popup: 'swal-custom-radius' }
+                    });
+                    return;
+                }
+                if (err.code === 'line') {
+                    Swal.fire({
+                        title: '預約已成立',
+                        html: `<div class="text-sm text-gray-600 leading-relaxed text-left">
+                            <p>您的預約與行事曆已建立完成，但 LINE 預約卡片未能送達。</p>
+                            <p class="mt-2 text-[#f07cad] font-bold">請勿重複預約，請聯絡客服協助補發通知。</p>
+                        </div>`,
+                        icon: 'warning',
+                        confirmButtonColor: '#553f62',
+                        customClass: { popup: 'swal-custom-radius' }
+                    });
+                    return;
+                }
                 Swal.fire({
                     title: '預約尚未完成',
                     html: `<div class="text-sm text-gray-600 leading-relaxed text-left">
@@ -2311,38 +2418,19 @@
                 return;
             }
 
-            // 準備 LINE 訊息泡泡 (將提醒事項獨立成一個新泡泡)
+            // 預約卡片已由客戶官方帳號推播；此處僅提示完成並關閉 LIFF。
             if (liff.isInClient()) { 
-                let lineMessages = [{ type: 'text', text: msgOut }];
-                if (hasReturn) {
-                    lineMessages.push({ type: 'text', text: msgRet });
-                    lineMessages.push({ type: 'text', text: msgPrice });
-                }
-                if (enterpriseLineNotice) {
-                    lineMessages.push({ type: 'text', text: enterpriseLineNotice });
-                }
-                
-                // ⭐ 新增：獨立一則訊息傳送注意事項
-                lineMessages.push({ type: 'text', text: msgEnd });
-                
-                try { 
-                    await liff.sendMessages(lineMessages); 
-                    // 加入 1.5 秒的視覺緩衝，保障程式完全執行後才關閉視窗
-                    Swal.fire({
-                        title: '預約單已送出',
-                        text: '請回到聊天室查看訂單明細。',
-                        icon: 'success',
-                        timer: 1500,
-                        showConfirmButton: false
-                    }).then(() => {
-                        liff.closeWindow(); 
-                    });
-                } 
-                catch (lineErr) { 
-                    Swal.fire({ title: '已送出', text: '請等候客服確認，並自行截圖保留畫面。', confirmButtonColor: '#553f62' }).then(() => liff.closeWindow()); 
-                }
+                Swal.fire({
+                    title: '預約單已送出',
+                    text: '請回到聊天室查看預約卡片。',
+                    icon: 'success',
+                    timer: 1500,
+                    showConfirmButton: false
+                }).then(() => {
+                    liff.closeWindow(); 
+                });
             } else {
-                Swal.fire({ title: '已成功送出', text: '請等候客服確認。', confirmButtonColor: '#553f62' }).then(() => window.location.reload());
+                Swal.fire({ title: '已成功送出', text: '預約卡片已傳送至 LINE，請等候客服確認。', confirmButtonColor: '#553f62' }).then(() => window.location.reload());
             }
         });
         
