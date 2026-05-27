@@ -763,7 +763,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.1"; 
+        const APP_VERSION = "v1.9.3"; 
 
         // --- 設定常數 ---
         const LIFF_ID = "2009922945-KmKUgqbg";
@@ -1085,19 +1085,23 @@
                     queryBtn.innerHTML = '查詢中...'; queryBtn.disabled = true;
                     try {
                         const url = `${GAS_URL}?action=getUserDiscounts&phone=${encodeURIComponent(phone)}&lineId=${encodeURIComponent(sysLineId)}&name=${encodeURIComponent(sysLineName)}&t=${Date.now()}`;
-                        const response = await fetch(url);
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 15000);
+                        const response = await fetch(url, { signal: controller.signal });
+                        clearTimeout(timeoutId);
                         const data = await response.json();
                         if (data.error) {
                             Swal.fire({ title: '無法查詢優惠', text: data.error, icon: 'warning', confirmButtonColor: '#553f62' });
                             return;
                         }
                         if (data.discounts && data.discounts.length > 0) {
-                            let html = '<p class="text-xs font-bold text-gray-600">您的專屬優惠碼：</p>';
+                            let html = '<p class="text-[11px] font-normal text-gray-500">您的專屬優惠碼</p>';
                             data.discounts.forEach(d => {
-                                html += `<div class="bg-white border border-pink-300 rounded p-2 flex justify-between items-center">
-                                    <div><span class="font-bold text-[#f07cad]">${d.code}</span> <span class="text-[10px] text-gray-500">(折$${d.amount})</span></div>
-                                    <div class="text-[10px] text-gray-400">效期: ${d.expiry}</div>
-                                    <button type="button" class="bg-[#f07cad] text-white px-2 py-1 rounded text-xs use-discount-btn" data-code="${d.code}">使用</button>
+                                html += `<div class="bg-white border border-pink-200 rounded px-2 py-1.5 flex items-center gap-1.5 text-[10px] whitespace-nowrap overflow-hidden">
+                                    <span class="font-normal text-[#f07cad] shrink-0">${d.code}</span>
+                                    <span class="text-gray-500 shrink-0">-$${d.amount}</span>
+                                    <span class="text-gray-400 shrink-0 ml-auto">${d.expiry}</span>
+                                    <button type="button" class="bg-[#f07cad] text-white px-2 py-1 rounded text-[10px] font-normal shrink-0 use-discount-btn" data-code="${d.code}">使用</button>
                                  </div>`;
                                  DISCOUNT_CODES[d.code] = d.amount;
                                  DISCOUNT_RULES[d.code] = { allowReturn: d.allowReturn !== false };
@@ -1114,7 +1118,7 @@
                             document.getElementById('userDiscountsContainer').innerHTML = '<div class="bg-[#f07cad] text-white p-2.5 rounded-lg text-center text-sm font-bold tracking-wide shadow-md">目前沒有可用的專屬優惠喔！</div>';
                             document.getElementById('userDiscountsContainer').classList.remove('hidden');
                         }
-                    } catch (err) { Swal.fire({ title: '錯誤', text: '查詢失敗，請稍後再試', confirmButtonColor: '#553f62' });
+                    } catch (err) { Swal.fire({ title: '查詢逾時', text: '目前查詢時間較久，請稍後重新查詢優惠。', confirmButtonColor: '#553f62', customClass: { popup: 'swal-custom-radius' } });
                     } finally { queryBtn.innerHTML = '🎁 查詢我的專屬優惠'; queryBtn.disabled = false; }
                 });
             }
@@ -1957,37 +1961,55 @@
         document.getElementById('bookingForm').addEventListener('input', updateLogic);
         document.getElementById('bookingForm').addEventListener('change', updateLogic);
 
-        async function postReservationToGas(data) {
-            await fetch(GAS_URL, {
+        function postReservationToGas(data) {
+            return fetch(GAS_URL, {
                 method: 'POST',
                 mode: 'no-cors',
                 body: JSON.stringify({ action: 'addReservation', data }),
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-            });
+            }).catch(err => console.error('預約送出請求失敗:', err));
         }
 
         async function waitForReservationSaved(reservationId) {
             const cleanId = String(reservationId || '').replace(/^'/, '').trim();
             let lastResult = { exists: false, reservationId: cleanId, calendarStatus: '' };
-            for (let i = 0; i < 6; i++) {
-                await new Promise(resolve => setTimeout(resolve, i === 0 ? 500 : 900));
-                const res = await fetch(`${GAS_URL}?action=checkReservation&reservationId=${encodeURIComponent(cleanId)}&t=${Date.now()}`);
-                const data = await res.json();
-                if (data.exists) {
-                    lastResult = data;
-                    if (data.calendarStatus === '已同步') return data;
+            const deadline = Date.now() + 20000;
+            let attempt = 0;
+            while (Date.now() < deadline) {
+                await new Promise(resolve => setTimeout(resolve, attempt++ === 0 ? 600 : 1000));
+                if (Date.now() >= deadline) break;
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), Math.min(4000, deadline - Date.now()));
+                try {
+                    const res = await fetch(`${GAS_URL}?action=checkReservation&reservationId=${encodeURIComponent(cleanId)}&t=${Date.now()}`, { signal: controller.signal });
+                    const data = await res.json();
+                    if (data.exists) {
+                        lastResult = data;
+                        if (data.calendarStatus === '已同步') return data;
+                    }
+                } catch (err) {
+                    console.warn('確認預約狀態逾時，持續重試', err);
+                } finally {
+                    clearTimeout(timeoutId);
                 }
             }
             return lastResult;
         }
 
         async function sendReservationConfirmationCard(reservationIds) {
-            const res = await fetch(GAS_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: 'sendReservationConfirmation', data: { reservationIds } }),
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-            });
-            return await res.json();
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
+            try {
+                const res = await fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'sendReservationConfirmation', data: { reservationIds } }),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    signal: controller.signal
+                });
+                return await res.json();
+            } finally {
+                clearTimeout(timeoutId);
+            }
         }
 
         document.getElementById('bookingForm').addEventListener('submit', async function(e) {
@@ -2336,7 +2358,7 @@
                     customClass: { popup: 'swal-custom-radius' },
                     didOpen: () => Swal.showLoading()
                 });
-                await postReservationToGas(outPayload);
+                postReservationToGas(outPayload);
                 const outSaved = await waitForReservationSaved(outReservationId);
                 savedTrips.push(outSaved);
                 if (!outSaved.exists) throw { code: 'storage', message: '去程預約尚未寫入 Google 試算表' };
@@ -2364,7 +2386,7 @@
                         companyBillingNote: t(payStr.includes('月結') ? '企業月結簽單，請客戶簽名確認' : ''),
                         cardFeeJson: t(JSON.stringify(retCardFee))
                     };
-                    await postReservationToGas(retPayload);
+                    postReservationToGas(retPayload);
                     const retSaved = await waitForReservationSaved(retReservationId);
                     savedTrips.push(retSaved);
                     if (!retSaved.exists) throw { code: 'storage', message: '回程預約尚未寫入 Google 試算表' };
