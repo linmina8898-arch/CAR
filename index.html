@@ -766,7 +766,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.7"; 
+        const APP_VERSION = "v1.9.8"; 
 
         // --- 設定常數 ---
         const GAS_URL = "https://script.google.com/macros/s/AKfycbyHkLho-EhceBtJCSd0Vz5e1NtSDILWH08nD_8jJoJzd4c7unaXiI6q_A0ETgpuYG5x/exec"; 
@@ -2084,6 +2084,7 @@
             const buildTripPayload = (prefix) => {
                 let infantCount = parseInt(document.getElementById('paxInfant' + prefix).value) || 0;
                 let childCount = parseInt(document.getElementById('paxChild' + prefix).value) || 0;
+                let adultCount = parseInt(document.getElementById('paxAdult' + prefix).value) || 1;
                 let seatDetailsStr = '無';
                 let surchargeArr = [];
                 
@@ -2129,8 +2130,8 @@
                     extraStop: document.getElementById('needExtraStop' + prefix).checked ? stripTaiwan(document.getElementById('extraStopAddress' + prefix).value) : '',
                     rideDate: dDate, rideTime: `${dHr}:${dMin}`, rideType: document.getElementById('rideType' + prefix).value,
                     airport: document.getElementById('airport' + prefix).value, flightNo: document.getElementById('flightNo' + (prefix===''?'':'_R')).value.toUpperCase(),
-                    carType: document.querySelector('input[name="carType' + prefix + '"]:checked').value, paxAdult: document.getElementById('paxAdult' + prefix).value,
-                    paxChild: document.getElementById('paxChild' + prefix).value, paxInfant: document.getElementById('paxInfant' + prefix).value,
+                    carType: document.querySelector('input[name="carType' + prefix + '"]:checked').value, paxAdult: adultCount,
+                    paxChild: childCount, paxInfant: infantCount,
                     lugCarry: document.getElementById('luggageCarry' + prefix).value, lugChecked: document.getElementById('luggageChecked' + prefix).value,
                     sportLuggage: sportLuggage, safetySeat: seatDetailsStr, surcharge: surchargeArr.join('、') || '無'
                 };
