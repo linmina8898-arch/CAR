@@ -763,12 +763,15 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.3"; 
+        const APP_VERSION = "v1.9.5"; 
 
         // --- 設定常數 ---
-        const LIFF_ID = "2009922945-KmKUgqbg";
-        const LINE_OA_LINK = "https://line.me/R/ti/p/@ansing";
         const GAS_URL = "https://script.google.com/macros/s/AKfycbyHkLho-EhceBtJCSd0Vz5e1NtSDILWH08nD_8jJoJzd4c7unaXiI6q_A0ETgpuYG5x/exec"; 
+        const CHANNEL_CONFIGS = {
+            AS: { code: 'AS', name: '安興租車', orderPrefix: 'AS', liffId: '2009922945-KmKUgqbg', lineOaLink: 'https://line.me/R/ti/p/@ansing', paymentOptions: ['轉帳', '刷卡(限街口/全支付)', '月結簽單(企業客戶)'] },
+            AZ: { code: 'AZ', name: '朋友A', orderPrefix: 'AZ', liffId: '2010218931-J293DdSb', lineOaLink: 'https://line.me/R/ti/p/@050hdahs', paymentOptions: ['現金', '轉帳'] }
+        };
+        const CURRENT_CHANNEL = getEntranceChannel();
 
         let DISCOUNT_CODES = {};
         let DISCOUNT_RULES = {};
@@ -968,6 +971,22 @@
             });
         }
 
+        function getEntranceChannel() {
+            const params = new URLSearchParams(window.location.search);
+            const candidates = [params.get('source'), params.get('channel'), params.get('partner')];
+            const liffState = params.get('liff.state');
+            if (liffState) {
+                try {
+                    const decoded = decodeURIComponent(liffState);
+                    const stateQuery = decoded.includes('?') ? decoded.split('?').pop() : decoded.replace(/^\//, '');
+                    const stateParams = new URLSearchParams(stateQuery);
+                    candidates.push(stateParams.get('source'), stateParams.get('channel'), stateParams.get('partner'));
+                } catch (e) {}
+            }
+            const code = candidates.map(v => String(v || '').trim().toUpperCase()).find(v => CHANNEL_CONFIGS[v]) || 'AS';
+            return CHANNEL_CONFIGS[code];
+        }
+
         function generateOrderId() {
             const d = new Date();
             const dateStr = d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
@@ -975,7 +994,7 @@
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
             let rChars = '';
             for(let i=0; i<3; i++) rChars += chars.charAt(Math.floor(Math.random() * chars.length));
-            return `AS-${dateStr}${digits}${rChars}`;
+            return `${CURRENT_CHANNEL.orderPrefix}-${dateStr}${digits}${rChars}`;
         }
 
         function initFormOptions() {
@@ -1255,6 +1274,7 @@
             const noteEl = document.getElementById('monthlyBillingNote');
             const companyEl = document.getElementById('companyBillingInfo');
             const companyNameEl = document.getElementById('companyNameDisplay');
+            paymentEl.innerHTML = CURRENT_CHANNEL.paymentOptions.map(option => `<option value="${option}">${option}</option>`).join('');
             const applyPaymentState = () => {
                 const isMonthly = paymentEl.value.includes('月結');
                 noteEl.classList.toggle('active', isMonthly);
@@ -1611,7 +1631,7 @@
                 await proceedToShowForm(); return; 
             }
             try {
-                await liff.init({ liffId: LIFF_ID });
+                await liff.init({ liffId: CURRENT_CHANNEL.liffId });
                 if (!liff.isLoggedIn()) { liff.login(); return; }
                 const profile = await liff.getProfile();
                 document.getElementById('sysLineId').value = profile.userId;
@@ -1623,10 +1643,12 @@
                 ];
                 if (ADMIN_LINE_IDS.includes(profile.userId)) {
                     const paymentSelect = document.getElementById('payment');
-                    const cashOption = document.createElement('option');
-                    cashOption.value = '現金(限客服代訂)';
-                    cashOption.text = '現金(限客服代訂)';
-                    paymentSelect.appendChild(cashOption);
+                    if (!Array.from(paymentSelect.options).some(option => option.value === '現金(限客服代訂)')) {
+                        const cashOption = document.createElement('option');
+                        cashOption.value = '現金(限客服代訂)';
+                        cashOption.text = '現金(限客服代訂)';
+                        paymentSelect.appendChild(cashOption);
+                    }
                 }
                 
                 const friendStatus = await liff.getFriendship();
@@ -1637,7 +1659,7 @@
                                 <p>為了確保您能收到「預約成功通知」與「派車資訊」，請先加入安興租車官方帳號好友。</p>
                                 <p style="color: #f07cad; font-weight: bold; margin-top: 10px;">加完好友後，請手持「關閉」好友畫面，回到此表單並點擊下方按鈕進入。</p>
                                 <div style="text-align: center; margin-top: 20px;">
-                                    <a href="${LINE_OA_LINK}" target="_blank" style="background-color: #f07cad; color: white; padding: 10px 25px; border-radius: 25px; text-decoration: none; font-weight: bold; display: inline-block;">點我前往加好友</a>
+                                    <a href="${CURRENT_CHANNEL.lineOaLink}" target="_blank" style="background-color: #f07cad; color: white; padding: 10px 25px; border-radius: 25px; text-decoration: none; font-weight: bold; display: inline-block;">點我前往加好友</a>
                                 </div>
                             </div>`,
                         confirmButtonText: '我已加完好友，進入預約', confirmButtonColor: '#553f62', allowOutsideClick: false
@@ -2347,7 +2369,10 @@
                     fullMessage: t(fullMsg), appVersion: t(APP_VERSION),
                     companyTaxId: t(companyInfo), companyName: t(companyName), companyBillingCode: t(companyBillingCode),
                     companyBillingNote: t(payStr.includes('月結') ? '企業月結簽單，請客戶簽名確認' : ''),
-                    cardFeeJson: t(JSON.stringify(outCardFee))
+                    cardFeeJson: t(JSON.stringify(outCardFee)),
+                    channelCode: t(CURRENT_CHANNEL.code),
+                    channelName: t(CURRENT_CHANNEL.name),
+                    channelPaymentOptions: t(CURRENT_CHANNEL.paymentOptions.join('、'))
                 };
 
                 Swal.fire({
@@ -2384,7 +2409,10 @@
                         fullMessage: t(fullMsg), appVersion: t(APP_VERSION),
                         companyTaxId: t(companyInfo), companyName: t(companyName), companyBillingCode: t(companyBillingCode),
                         companyBillingNote: t(payStr.includes('月結') ? '企業月結簽單，請客戶簽名確認' : ''),
-                        cardFeeJson: t(JSON.stringify(retCardFee))
+                        cardFeeJson: t(JSON.stringify(retCardFee)),
+                        channelCode: t(CURRENT_CHANNEL.code),
+                        channelName: t(CURRENT_CHANNEL.name),
+                        channelPaymentOptions: t(CURRENT_CHANNEL.paymentOptions.join('、'))
                     };
                     postReservationToGas(retPayload);
                     const retSaved = await waitForReservationSaved(retReservationId);
