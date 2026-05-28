@@ -766,7 +766,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.6"; 
+        const APP_VERSION = "v1.9.7"; 
 
         // --- 設定常數 ---
         const GAS_URL = "https://script.google.com/macros/s/AKfycbyHkLho-EhceBtJCSd0Vz5e1NtSDILWH08nD_8jJoJzd4c7unaXiI6q_A0ETgpuYG5x/exec"; 
@@ -2460,10 +2460,13 @@
                             <p>您的預約與行事曆已建立完成，但 LINE 預約卡片未能送達。</p>
                             <p class="mt-2 text-[#f07cad] font-bold">請勿重複預約。</p>
                             <p class="mt-2">客服將依系統資料協助確認訂單與補發通知。</p>
+                            <p class="mt-2 text-xs text-gray-400">原因：${err.message || 'LINE 卡片傳送失敗'}</p>
                         </div>`,
                         icon: 'warning',
                         confirmButtonColor: '#553f62',
                         customClass: { popup: 'swal-custom-radius' }
+                    }).then(() => {
+                        if (liff.isInClient()) liff.closeWindow();
                     });
                     return;
                 }
