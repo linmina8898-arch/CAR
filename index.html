@@ -143,12 +143,12 @@
                 <!-- ==================== STEP 1: 報價與行程 ==================== -->
                 <div id="step1Wrapper" class="space-y-6 transition-all duration-500">
                     <!-- 熟客快速帶入區塊 -->
-                    <div class="bg-[#fff5f8] p-5 rounded-xl border-2 border-pink-200 shadow-sm">
-                        <label class="block text-sm font-bold text-[#f07cad] mb-1">聯絡電話</label>
-                        <p class="text-[11px] text-gray-500 mb-2 font-medium">新客請直接輸入；舊客輸入後請點選下方按鈕</p>
+                    <div class="bg-[#f5f1f7] p-5 rounded-xl border-2 border-[#553f62]/25 shadow-sm">
+                        <label class="block text-sm font-bold text-[#553f62] mb-1">聯絡電話</label>
+                        <p class="text-[11px] text-[#553f62]/75 mb-2 font-medium">首次預約請直接輸入；舊客人輸入後請點選下方按鈕</p>
                         <div class="flex flex-col space-y-3">
-                            <input type="tel" id="ordererPhone" maxlength="12" class="w-full p-3 border border-pink-200 rounded-lg focus-primary text-base font-bold text-gray-700 bg-white placeholder:font-normal placeholder:text-sm" placeholder="請輸入聯絡電話">
-                            <button type="button" id="btnAutoFill" class="w-full bg-[#f07cad] text-white font-bold px-4 py-3 rounded-lg shadow-md hover:bg-pink-500 transition text-sm flex justify-center items-center">
+                            <input type="tel" id="ordererPhone" maxlength="12" class="w-full p-3 border border-[#553f62]/25 rounded-lg focus-primary text-base font-bold text-gray-700 bg-white placeholder:font-normal placeholder:text-sm" placeholder="請輸入聯絡電話">
+                            <button type="button" id="btnAutoFill" class="w-full bg-[#553f62] text-white font-bold px-4 py-3 rounded-lg shadow-md hover:bg-[#463252] transition text-sm flex justify-center items-center">
                                 老客戶按此直接帶入上次預約資料
                             </button>
                             <button type="button" id="btnCancelBooking" class="w-full bg-white text-red-500 font-bold px-4 py-2.5 rounded-lg border border-red-100 shadow-sm hover:bg-red-50 transition text-sm">
@@ -753,6 +753,23 @@
         </div>
     </div>
 
+    <div id="bindContainer" class="max-w-2xl mx-auto mt-4 px-4 hidden">
+        <div class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+            <div class="bg-[#553f62] text-white px-5 py-4">
+                <h2 class="text-lg font-bold">預約資料確認</h2>
+                <p class="text-xs text-white/80 mt-1">請確認以下預約是否為您的本人預約</p>
+            </div>
+            <div class="p-5 space-y-4">
+                <div id="bindOrderContent" class="space-y-4"></div>
+                <div class="bg-[#f5f1f7] border border-[#553f62]/15 rounded-xl p-3 text-xs text-[#553f62] leading-relaxed">
+                    完成確認後，系統將可發送預約明細、行前服務資訊與搭乘回饋問卷給您。
+                </div>
+                <button id="btnConfirmBind" type="button" class="w-full bg-[#553f62] text-white py-3 rounded-xl font-bold shadow-md">確認，這是我的預約</button>
+                <button id="btnBindService" type="button" class="w-full bg-white text-[#553f62] py-3 rounded-xl font-bold border border-[#553f62]/20">資料有誤，聯絡客服</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Loading Overlay -->
     <div id="loading" class="fixed inset-0 bg-white bg-opacity-80 z-50 flex flex-col items-center justify-center">
         <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[#553f62]"></div>
@@ -766,7 +783,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.10"; 
+        const APP_VERSION = "v1.9.11"; 
 
         // --- 設定常數 ---
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzMLYBvdbo4mkkEUVFcjST44oh7VUXhx7gZjWejm2R8XX549ITaReot0pRAN3mbwA8n/exec"; 
@@ -988,6 +1005,25 @@
             }
             const code = candidates.map(v => String(v || '').trim().toUpperCase()).find(v => CHANNEL_CONFIGS[v]) || 'AS';
             return CHANNEL_CONFIGS[code];
+        }
+
+        function getStateParams() {
+            const params = new URLSearchParams(window.location.search);
+            const liffState = params.get('liff.state');
+            if (!liffState) return new URLSearchParams();
+            try {
+                const decoded = decodeURIComponent(liffState);
+                const stateQuery = decoded.includes('?') ? decoded.split('?').pop() : decoded.replace(/^\//, '');
+                return new URLSearchParams(stateQuery);
+            } catch (e) {
+                return new URLSearchParams();
+            }
+        }
+
+        function getBindToken() {
+            const params = new URLSearchParams(window.location.search);
+            const stateParams = getStateParams();
+            return (params.get('bindToken') || stateParams.get('bindToken') || '').trim();
         }
 
         function generateOrderId() {
@@ -1642,6 +1678,7 @@
                 const profile = await liff.getProfile();
                 document.getElementById('sysLineId').value = profile.userId;
                 document.getElementById('sysLineName').value = profile.displayName;
+                const bindToken = getBindToken();
                 
                 const ADMIN_LINE_IDS = [
                     "U16aaa105c2d7d2782187ac3e25dfffad",
@@ -1673,15 +1710,90 @@
                         if (result.isConfirmed) {
                             try {
                                 const recheckStatus = await liff.getFriendship();
-                                if (recheckStatus.friendFlag) await proceedToShowForm();
-                                else Swal.fire({ title: '偵測不到狀態', text: '系統目前仍未偵測到您的好友狀態。若您已成功加入，可能是連線延遲，請直接點擊下方進入預約。', confirmButtonText: '進入預約系統', confirmButtonColor: '#553f62', allowOutsideClick: false }).then(async () => { await proceedToShowForm(); });
-                            } catch (e) { await proceedToShowForm(); }
+                                if (recheckStatus.friendFlag) await (bindToken ? showReservationBindPage(bindToken, profile) : proceedToShowForm());
+                                else Swal.fire({ title: '偵測不到狀態', text: '系統目前仍未偵測到您的好友狀態。若您已成功加入，可能是連線延遲，請直接點擊下方進入。', confirmButtonText: bindToken ? '進入確認頁' : '進入預約系統', confirmButtonColor: '#553f62', allowOutsideClick: false }).then(async () => { await (bindToken ? showReservationBindPage(bindToken, profile) : proceedToShowForm()); });
+                            } catch (e) { await (bindToken ? showReservationBindPage(bindToken, profile) : proceedToShowForm()); }
                         }
                     });
                     return; 
                 }
+                if (bindToken) {
+                    await showReservationBindPage(bindToken, profile);
+                    return;
+                }
                 await proceedToShowForm();
             } catch (err) { console.error("LIFF 初始化或檢查失敗", err); await proceedToShowForm(); }
+        }
+
+        function formatBindMoney(value) {
+            const n = Number(value || 0);
+            return `$${n.toLocaleString('en-US')}`;
+        }
+
+        function buildBindTripHtml(order) {
+            const route = order.type === '接機'
+                ? `${order.airport || '-'} → ${order.address || '-'}`
+                : `${order.address || '-'} → ${order.airport || '-'}`;
+            const discountLine = Number(order.discountAmount || 0) > 0
+                ? `<div class="flex justify-between"><span>折扣</span><span>-${formatBindMoney(order.discountAmount).replace('$', '$')}</span></div>`
+                : '';
+            return `<div class="border border-gray-200 rounded-xl p-3">
+                <div class="flex justify-between gap-3 text-[#553f62] font-bold">
+                    <span>${order.date} ${order.time}</span>
+                    <span>${order.type}</span>
+                </div>
+                <div class="text-sm text-gray-700 mt-1">${route}</div>
+                ${order.extraStop && order.extraStop !== '無' ? `<div class="text-xs text-gray-500 mt-1">加點：${order.extraStop}</div>` : ''}
+                <div class="grid grid-cols-[72px_1fr] gap-y-1 mt-3 text-sm">
+                    <div class="text-gray-400">單號</div><div>${order.orderId}</div>
+                    <div class="text-gray-400">車型</div><div>${order.car || '-'}</div>
+                    <div class="text-gray-400">人數</div><div>${order.pax || '-'}</div>
+                    <div class="text-gray-400">行李</div><div>${order.luggage || '-'}</div>
+                    <div class="text-gray-400">付款</div><div>${order.paymentMethod || '-'}</div>
+                </div>
+                <div class="border-t border-gray-100 mt-3 pt-2 text-sm space-y-1">
+                    <div class="flex justify-between"><span>費用</span><span>${formatBindMoney(order.subtotal || order.payableAmount)}</span></div>
+                    ${discountLine}
+                    <div class="flex justify-between font-bold text-[#553f62]"><span>應付金額</span><span>${formatBindMoney(order.payableAmount)}</span></div>
+                </div>
+            </div>`;
+        }
+
+        async function showReservationBindPage(token, profile) {
+            try {
+                document.getElementById('loadingText').innerText = '讀取預約資料...';
+                const res = await fetch(`${GAS_URL}?action=getReservationBindInfo&token=${encodeURIComponent(token)}&t=${Date.now()}`);
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error || '確認連結無法使用');
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('formContainer').classList.add('hidden');
+                document.getElementById('bindContainer').classList.remove('hidden');
+                const customerBlock = `<div class="bg-gray-50 rounded-xl p-3 text-sm grid grid-cols-[72px_1fr] gap-y-1">
+                    <div class="text-gray-400">姓名</div><div>${data.passengerName || data.ordererName || '-'}</div>
+                    <div class="text-gray-400">電話</div><div>${data.passengerPhone || '-'}</div>
+                    <div class="text-gray-400">付款</div><div>${data.paymentMethod || '-'}</div>
+                    <div class="text-gray-400">總額</div><div class="font-bold text-[#553f62]">${formatBindMoney(data.totalAmount)}</div>
+                </div>`;
+                document.getElementById('bindOrderContent').innerHTML = customerBlock + (data.orders || []).map(buildBindTripHtml).join('');
+                document.getElementById('btnBindService').onclick = () => {
+                    Swal.fire({ title: '聯絡客服', text: '請回到 LINE 對話框聯絡客服協助修改預約資料。', confirmButtonColor: '#553f62' });
+                };
+                document.getElementById('btnConfirmBind').onclick = async () => {
+                    Swal.fire({ title: '確認中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                    const result = await fetch(GAS_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: 'confirmCustomerReservationBind', data: { token, lineId: profile.userId, lineName: profile.displayName } }),
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                    }).then(r => r.json());
+                    if (!result.success) return Swal.fire('確認失敗', result.error || '請聯絡客服協助。', 'error');
+                    Swal.fire({ title: '確認完成', text: '預約明細卡片已傳送至 LINE 聊天室。', icon: 'success', confirmButtonColor: '#553f62' }).then(() => {
+                        if (window.liff && liff.isInClient()) liff.closeWindow();
+                    });
+                };
+            } catch (err) {
+                document.getElementById('loading').classList.add('hidden');
+                Swal.fire('無法開啟確認頁', err.message || '請聯絡客服協助。', 'error');
+            }
         }
 
         function showNoticeAndForm() {
@@ -2188,7 +2300,7 @@
                 extras: buildFeeExtras(outT.surcharge),
                 subtotalLabel: hasReturn ? '去程小計' : '',
                 subtotal: rawOutTotal,
-                discounts: !hasReturn && outDiscount > 0 ? [{ label: `折扣碼 ${currentDiscountCode}`, amount: -outDiscount }] : [],
+                discounts: !hasReturn && outDiscount > 0 ? [{ label: `折扣碼(${currentDiscountCode})`, amount: -outDiscount }] : [],
                 totalLabel: hasReturn ? '' : '預估應付總額',
                 total: hasReturn ? 0 : discountedOutTotal
             };
@@ -2199,7 +2311,7 @@
                 subtotalLabel: '回程小計',
                 subtotal: rawRetTotal,
                 discounts: [
-                    ...(retUserDiscount > 0 ? [{ label: `折扣碼 ${currentDiscountCode}`, amount: -retUserDiscount }] : []),
+                    ...(retUserDiscount > 0 ? [{ label: `折扣碼(${currentDiscountCode})`, amount: -retUserDiscount }] : []),
                     ...(autoReturnDiscount > 0 ? [{ label: '預約來回優惠', amount: -autoReturnDiscount }] : [])
                 ],
                 totalLabel: '來回預估應付總額',
