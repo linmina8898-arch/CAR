@@ -173,6 +173,7 @@
                                 <span class="self-center font-bold">:</span>
                                 <select id="rideMinute" class="w-1/2 p-2 border rounded focus-primary quote-trigger"></select>
                             </div>
+                            <p id="rideTimeHint" class="mt-1.5 text-[11px] leading-relaxed text-[#553f62]/80"></p>
                         </div>
 
                         <div class="grid grid-cols-2 gap-3 mb-4">
@@ -375,6 +376,7 @@
                                     <span class="self-center font-bold">:</span>
                                     <select id="rideMinute_R" class="w-1/2 p-2 border rounded focus-primary quote-trigger"></select>
                                 </div>
+                                <p id="rideTimeHint_R" class="mt-1.5 text-[11px] leading-relaxed text-[#553f62]/80"></p>
                             </div>
                             <div class="grid grid-cols-2 gap-3 mb-4">
                                 <div>
@@ -783,7 +785,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.11"; 
+        const APP_VERSION = "v1.9.12"; 
 
         // --- 設定常數 ---
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzMLYBvdbo4mkkEUVFcjST44oh7VUXhx7gZjWejm2R8XX549ITaReot0pRAN3mbwA8n/exec"; 
@@ -1078,6 +1080,27 @@
             setupAutoFill();
             setupCancelBooking();
             setupRejectQuote();
+            setupRideTimeHints();
+        }
+
+        function updateRideTimeHint(prefix = '') {
+            const typeEl = document.getElementById('rideType' + prefix);
+            const hintEl = document.getElementById('rideTimeHint' + prefix);
+            if (!typeEl || !hintEl) return;
+            if (typeEl.value === '接機') {
+                hintEl.innerHTML = '接機提示：請填寫航班表定抵台時間<br><span class="text-[#f07cad]">接機請提供電子機票至官方LINE，客服幫您做訂單的雙重確認。</span>';
+            } else {
+                hintEl.textContent = '送機提示：請填寫家裡/公司出發的時間';
+            }
+        }
+
+        function setupRideTimeHints() {
+            ['', '_R'].forEach(prefix => {
+                const typeEl = document.getElementById('rideType' + prefix);
+                if (!typeEl) return;
+                typeEl.addEventListener('change', () => updateRideTimeHint(prefix));
+                updateRideTimeHint(prefix);
+            });
         }
 
         function setupDiscountCode() {
@@ -1578,6 +1601,7 @@
                     document.getElementById('extraStopAddress_R').value = document.getElementById('extraStopAddress').value;
                     document.getElementById('rideType_R').value = document.getElementById('rideType').value === '送機' ? '接機' : '送機';
                     document.getElementById('airport_R').value = document.getElementById('airport').value;
+                    updateRideTimeHint('_R');
                     syncReturnTripFromOutbound();
 
                     calculateDistanceFee('_R');
