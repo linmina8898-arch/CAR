@@ -785,7 +785,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.13"; 
+        const APP_VERSION = "v1.9.14"; 
 
         // --- 設定常數 ---
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzMLYBvdbo4mkkEUVFcjST44oh7VUXhx7gZjWejm2R8XX549ITaReot0pRAN3mbwA8n/exec"; 
@@ -2375,7 +2375,7 @@
             const companyName = document.getElementById('companyNameDisplay')?.dataset.companyName || '';
             const companyBillingCode = document.getElementById('companyNameDisplay')?.dataset.billingCode || '';
             const baseRemark = document.getElementById('remarks').value.trim();
-            const remarkStr = [companyInfo ? `企業月結資料：統編${companyInfo}${companyName ? ` / ${companyName}` : ''}` : '', baseRemark].filter(Boolean).join('\n') || '無';
+            const remarkStr = baseRemark || '無';
             const sysLineId = document.getElementById('sysLineId').value;
             const sysLineName = document.getElementById('sysLineName').value;
             const ordererName = document.getElementById('ordererName').value;
