@@ -785,7 +785,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.12"; 
+        const APP_VERSION = "v1.9.13"; 
 
         // --- 設定常數 ---
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzMLYBvdbo4mkkEUVFcjST44oh7VUXhx7gZjWejm2R8XX549ITaReot0pRAN3mbwA8n/exec"; 
@@ -2176,6 +2176,31 @@
             }
         }
 
+        async function sendCustomerChatBumpMessage(message) {
+            if (!message || !window.liff || !liff.isInClient()) return;
+            try {
+                await liff.sendMessages([{ type: 'text', text: message }]);
+            } catch (e) {
+                console.warn('客戶對話置頂訊息送出失敗', e);
+            }
+        }
+
+        function buildCustomerChatBumpMessage() {
+            return [
+                '您的預約明細已成功送出！',
+                '',
+                '客服正為您核對訂單，以確保您的行程權益。',
+                '',
+                '📍注意事項',
+                '✦ 限時付款：收到確認後請於 24 小時內付款，逾期自動取消。',
+                '',
+                '✦ 付款方式：客服核對後，將於此處提供專屬付款連結或帳號。',
+                '',
+                '【24小時客服專線】',
+                '➤ ᴘʜᴏɴᴇ 電話：0955311306'
+            ].join('\n');
+        }
+
         document.getElementById('bookingForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const sameAs = document.getElementById('sameAsOrderer').checked;
@@ -2571,6 +2596,7 @@
                 if (!noticeResult.success) {
                     throw { code: 'line', message: noticeResult.error || 'LINE 卡片傳送失敗' };
                 }
+                await sendCustomerChatBumpMessage(buildCustomerChatBumpMessage());
             } catch (err) {
                 console.error("預約寫入確認失敗:", err);
                 btn.disabled = false;
