@@ -47,12 +47,35 @@
         .soft-card { border: 1px solid #e5e7eb; background: #fff; }
         .payment-note { display: none; }
         .payment-note.active { display: block; }
-        .flow-step { color: #9ca3af; font-weight: 500; white-space: nowrap; }
-        .flow-step.active { color: var(--primary); font-weight: 650; }
-        .flow-step.done { color: var(--accent); font-weight: 600; }
-        #flowStepHint { color: var(--primary); font-weight: 650; }
-        #quoteSummaryWrapper { position: sticky; bottom: 8px; z-index: 30; }
+        .flow-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+        .flow-tab {
+            border: 1px solid #e5e7eb;
+            background: #fff;
+            border-radius: 12px;
+            padding: 9px 8px;
+            color: #8d8494;
+            text-align: center;
+            min-height: 58px;
+            transition: border-color .18s ease, background .18s ease, color .18s ease;
+        }
+        .flow-tab.active { border-color: rgba(85,63,98,.42); background: #f7f3f8; color: var(--primary); }
+        .flow-tab.done { border-color: rgba(240,124,173,.28); color: var(--accent); }
+        .flow-tab-kicker { display:block; font-size:10px; line-height:1.1; font-weight:600; letter-spacing:0; }
+        .flow-tab-title { display:block; font-size:13px; line-height:1.25; font-weight:650; margin-top:3px; }
+        .flow-tab-sub { display:block; font-size:10px; line-height:1.25; color:#6b7280; margin-top:3px; font-weight:400; }
+        #flowStepHint { color: var(--primary); font-weight: 500; }
+        #quoteSummaryWrapper {
+            position: fixed;
+            left: 12px;
+            right: 12px;
+            bottom: 10px;
+            z-index: 40;
+            max-width: 640px;
+            margin: 0 auto;
+        }
         #quoteListContainer.collapsed { display: none; }
+        #quoteListContainer, #quoteListContainer * { font-weight: 400 !important; }
+        #bookingForm { padding-bottom: 126px; }
         #bookingForm .font-bold { font-weight: 600; }
         #bookingForm .font-black { font-weight: 700; }
         #bookingForm h2.text-lg, #bookingForm h3.text-lg { font-size: 1rem; line-height: 1.5rem; }
@@ -121,15 +144,25 @@
         </div>
 
         <!-- 文字版流程提示 -->
-        <div class="bg-white/80 border border-gray-200 rounded-xl px-3 py-2 mb-4 text-[11px] shadow-sm">
-            <div class="flex items-center justify-center gap-1.5 text-center overflow-x-auto">
-                <div id="indStep1" class="flow-step active">快速詢價</div>
-                <div class="text-gray-300">→</div>
-                <div id="indStep2" class="flow-step">填寫資料</div>
-                <div class="text-gray-300">→</div>
-                <div id="indStep3" class="flow-step">送出預約</div>
+        <div class="bg-white/80 border border-gray-200 rounded-xl px-2.5 py-2.5 mb-4 text-[11px] shadow-sm">
+            <div class="flow-tabs">
+                <button type="button" id="indStep1" class="flow-tab active" onclick="goToFlowStep(1)">
+                    <span class="flow-tab-kicker">STEP 1</span>
+                    <span class="flow-tab-title">快速估價</span>
+                    <span class="flow-tab-sub">先確認路線與金額</span>
+                </button>
+                <button type="button" id="indStep2" class="flow-tab" onclick="goToFlowStep(2)">
+                    <span class="flow-tab-kicker">STEP 2</span>
+                    <span class="flow-tab-title">乘客資料</span>
+                    <span class="flow-tab-sub">填寫聯絡資料</span>
+                </button>
+                <button type="button" id="indStep3" class="flow-tab" onclick="goToFlowStep(3)">
+                    <span class="flow-tab-kicker">STEP 3</span>
+                    <span class="flow-tab-title">確認送出</span>
+                    <span class="flow-tab-sub">確認內容與聲明</span>
+                </button>
             </div>
-            <p id="flowStepHint" class="text-[10px] text-gray-500 text-center mt-1.5">先看預估車資，再決定是否預約。</p>
+            <p id="flowStepHint" class="text-[10px] text-gray-500 text-center mt-2">先確認路線與金額，再決定是否預約。</p>
         </div>
 
         <div class="bg-white rounded-xl shadow-lg p-4 space-y-6 relative overflow-hidden">
@@ -142,19 +175,19 @@
 
                 <!-- ==================== STEP 1: 報價與行程 ==================== -->
                 <div id="step1Wrapper" class="space-y-6 transition-all duration-500">
-                    <!-- 熟客快速帶入區塊 -->
-                    <div class="bg-[#f5f1f7] p-5 rounded-xl border-2 border-[#553f62]/25 shadow-sm">
-                        <label class="block text-sm font-bold text-[#553f62] mb-1">聯絡電話</label>
-                        <p class="text-[11px] text-[#553f62]/75 mb-2 font-medium">首次預約請直接輸入；舊客人輸入後請點選下方按鈕</p>
-                        <div class="flex flex-col space-y-3">
-                            <input type="tel" id="ordererPhone" maxlength="12" class="w-full p-3 border border-[#553f62]/25 rounded-lg focus-primary text-base font-bold text-gray-700 bg-white placeholder:font-normal placeholder:text-sm" placeholder="請輸入聯絡電話">
-                            <button type="button" id="btnAutoFill" class="w-full bg-[#553f62] text-white font-bold px-4 py-3 rounded-lg shadow-md hover:bg-[#463252] transition text-sm flex justify-center items-center">
-                                老客戶按此直接帶入上次預約資料
-                            </button>
-                            <button type="button" id="btnCancelBooking" class="w-full bg-white text-red-500 font-bold px-4 py-2.5 rounded-lg border border-red-100 shadow-sm hover:bg-red-50 transition text-sm">
-                                我要取消已送出的預約
+                    <!-- 舊客快速帶入 -->
+                    <div class="bg-[#f5f1f7] p-3 rounded-xl border border-[#553f62]/20 shadow-sm">
+                        <label class="block text-xs font-bold text-[#553f62] mb-1">舊客快速帶入</label>
+                        <p class="text-[10px] text-[#553f62]/70 mb-2">輸入手機可帶入上次資料，新客可略過。</p>
+                        <div class="grid grid-cols-[1fr_auto] gap-2">
+                            <input type="tel" id="ordererPhone" maxlength="12" class="w-full p-2.5 border border-[#553f62]/25 rounded-lg focus-primary text-sm text-gray-700 bg-white placeholder:font-normal placeholder:text-xs" placeholder="聯絡電話">
+                            <button type="button" id="btnAutoFill" class="bg-[#553f62] text-white font-bold px-3 rounded-lg shadow-sm hover:bg-[#463252] transition text-xs">
+                                帶入資料
                             </button>
                         </div>
+                        <button type="button" id="btnCancelBooking" class="mt-2 w-full bg-white text-red-500 font-medium px-3 py-2 rounded-lg border border-red-100 shadow-sm hover:bg-red-50 transition text-xs">
+                            我要取消已送出的預約
+                        </button>
                     </div>
 
                     <!-- 去程：行程資訊 -->
@@ -192,6 +225,12 @@
                                     <option value="台中機場">台中機場</option>
                                 </select>
                             </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700">航班編號</label>
+                            <input type="text" id="flightNo" class="mt-1 w-full p-2 border rounded focus-primary uppercase bg-white" placeholder="例如 BR123">
+                            <p class="mt-1 text-[11px] text-[#553f62]/75">送機請填出發航班；接機請填抵台航班。</p>
                         </div>
 
                         <div class="space-y-4">
@@ -395,6 +434,10 @@
                                     </select>
                                 </div>
                             </div>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700">回程航班編號</label>
+                                <input type="text" id="flightNo_R" class="mt-1 w-full p-2 border rounded focus-primary uppercase bg-white" placeholder="例如 BR123">
+                            </div>
                             <div class="mb-4 space-y-4 pt-2 border-t border-gray-200">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700">區碼及區域</label>
@@ -545,8 +588,12 @@
                         </div>
                     </div>
 
-                    <!-- 折扣優惠 (移至第一頁) -->
-                    <div class="bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-sm mt-6">
+                </div> <!-- END STEP 1 WRAPPER -->
+
+                <!-- ==================== STEP 2: 聯絡資訊與確認 ==================== -->
+                <div id="step2Wrapper" class="space-y-6 hidden transition-all duration-500">
+                    <!-- 折扣優惠 -->
+                    <div class="bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-sm">
                         <h2 class="text-lg font-bold text-primary mb-4 flex items-center"><span class="w-1 h-5 bg-primary mr-2 inline-block rounded"></span>專屬優惠與折扣</h2>
                         <div class="mb-2">
                             <label class="block text-sm font-medium text-gray-700">折扣碼 <span class="text-xs text-red-500 ml-1 font-normal">(單筆總折抵上限 500 元)</span></label>
@@ -555,16 +602,11 @@
                                 <button type="button" id="applyDiscountBtn" class="w-1/3 bg-gray-200 text-gray-700 font-bold rounded hover:bg-gray-300 transition">套用</button>
                             </div>
                             <p id="discountMsg" class="text-xs mt-1 font-bold hidden"></p>
-                            <button type="button" id="queryDiscountBtn" class="mt-3 w-full bg-pink-50 text-[#f07cad] font-bold py-2 rounded border border-pink-200 hover:bg-pink-100 transition shadow-sm text-sm">🎁 查詢我的專屬優惠</button>
-                            <p class="text-[12px] text-gray-900 mt-1.5 text-center font-bold tracking-wide">※ 首次查詢將綁定聯絡電話，自動加碼送 100元折扣碼 × 2組</p>
+                            <button type="button" id="queryDiscountBtn" class="mt-3 w-full bg-pink-50 text-[#f07cad] font-bold py-2 rounded border border-pink-200 hover:bg-pink-100 transition shadow-sm text-sm">查詢我的專屬優惠</button>
+                            <p class="text-[12px] text-gray-900 mt-1.5 text-center font-medium tracking-wide">※ 首次查詢將綁定聯絡電話，自動加碼送 100元折扣碼 × 2組</p>
                             <div id="userDiscountsContainer" class="hidden mt-2 space-y-2"></div>
                         </div>
                     </div>
-
-                </div> <!-- END STEP 1 WRAPPER -->
-
-                <!-- ==================== STEP 2: 聯絡資訊與確認 ==================== -->
-                <div id="step2Wrapper" class="space-y-6 hidden transition-all duration-500">
                     
                     <!-- 聯絡人資訊 -->
                     <div class="bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-sm">
@@ -614,17 +656,6 @@
                                 <input type="tel" id="paxPhone" maxlength="12" class="w-full p-2 border rounded focus-primary" placeholder="乘客聯絡電話 (0900-000-000)">
                             </div>
 
-                            <!-- 航班編號區塊 -->
-                            <div class="pt-4 border-t border-gray-200">
-                                <div class="mb-3">
-                                    <label class="block text-sm font-bold text-primary mb-1">【去程】航班編號</label>
-                                    <input type="text" id="flightNo" class="w-full p-2 border-2 border-primary/20 rounded focus-primary uppercase bg-white shadow-sm" placeholder="例如: BR123">
-                                </div>
-                                <div id="flightNoContainer_R" class="hidden">
-                                    <label class="block text-sm font-bold text-[#f07cad] mb-1">【回程】航班編號</label>
-                                    <input type="text" id="flightNo_R" class="w-full p-2 border-2 border-pink-200 rounded focus-primary uppercase bg-white shadow-sm" placeholder="例如: BR123">
-                                </div>
-                            </div>
                         </div>
                     </div>
 
@@ -663,12 +694,12 @@
                                     </div>
                                 </div>
                                 <label id="lblNight" class="flex items-center space-x-2 opacity-60 transition-opacity duration-300">
-                                    <input type="checkbox" id="optNight" value="夜間加成(+$200)" class="rounded w-4 h-4 text-primary focus:ring-primary surcharge-opt quote-trigger" disabled>
-                                    <span>夜間加成 (23:00~04:59) (+$200)</span>
+                                    <input type="checkbox" id="optNight" value="夜間加成(23-05)(+$200)" class="rounded w-4 h-4 text-primary focus:ring-primary surcharge-opt quote-trigger" disabled>
+                                    <span>夜間加成(23-05) (+$200)</span>
                                 </label>
                                 <label id="lblUrgent" class="flex items-center space-x-2 opacity-60 transition-opacity duration-300">
-                                    <input type="checkbox" id="optUrgent" value="急單加價(+$300)" class="rounded w-4 h-4 text-primary focus:ring-primary surcharge-opt quote-trigger" disabled>
-                                    <span>急單加價 (24~48H內) (+$300)</span>
+                                    <input type="checkbox" id="optUrgent" value="24小時內急單服務費(+$300)" class="rounded w-4 h-4 text-primary focus:ring-primary surcharge-opt quote-trigger" disabled>
+                                    <span>24小時內急單服務費 (+$300)</span>
                                 </label>
                             </div>
                         </div>
@@ -680,10 +711,13 @@
                         </div>
                     </div>
 
-                    <!-- 注意事項與詳細說明 -->
+                </div> <!-- END STEP 2 WRAPPER -->
+
+                <!-- ==================== STEP 3: 確認送出與免責聲明 ==================== -->
+                <div id="step3Wrapper" class="space-y-6 hidden transition-all duration-500">
                     <div class="bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-sm">
                         <h3 class="font-bold mb-3 text-primary flex items-center text-lg">
-                            <span class="w-1 h-6 bg-primary mr-2 inline-block rounded"></span>【乘車注意事項】
+                            <span class="w-1 h-6 bg-primary mr-2 inline-block rounded"></span>確認送出前請閱讀
                         </h3>
                         <button type="button" id="toggleDetails" class="w-full text-left py-3 px-4 mb-4 bg-white border-2 border-primary/20 rounded-xl text-sm text-primary font-bold flex justify-between items-center hover:bg-gray-50 transition shadow-sm ring-1 ring-primary/5">
                             <span id="btnText">詳細說明（點擊查看規範）</span>
@@ -704,22 +738,22 @@
                         </label>
                         <p id="readWarning" class="text-[10px] text-red-500 mt-1 font-bold">※ 請先點擊上方「詳細說明」閱讀規範後方可勾選</p>
                     </div>
-
-                </div> <!-- END STEP 2 WRAPPER -->
+                </div> <!-- END STEP 3 WRAPPER -->
 
                 <!-- ==================== 預估報價明細 (固定顯示於底部) ==================== -->
-                <div id="quoteSummaryWrapper" class="bg-[#553f62] p-3 rounded-xl shadow-lg text-[#e9e7ef] mt-6">
+                <div id="quoteSummaryWrapper" class="bg-[#553f62] p-3 rounded-xl shadow-lg text-[#e9e7ef]">
                     <div class="flex items-center justify-between gap-3">
-                        <div>
-                            <p class="text-[11px] text-[#e9e7ef]/70 font-medium">目前預估總額</p>
+                        <div class="min-w-0">
+                            <p class="text-[11px] text-[#e9e7ef]/70 font-medium">預估費用明細</p>
                             <div id="quoteSummary" class="font-semibold text-base">
-                                <div class="flex items-baseline gap-2">
+                                <div class="flex items-baseline gap-2 whitespace-nowrap">
+                                    <span class="text-[12px] text-[#e9e7ef]/80">預估報價</span>
                                     <span id="quoteTotal" class="text-[#e9e7ef] font-bold text-xl drop-shadow-sm" data-out="0" data-ret="0" data-grand="0" data-out-base="0" data-ret-base="0">$0</span>
                                 </div>
                             </div>
                         </div>
-                        <button type="button" id="toggleQuoteDetails" class="shrink-0 bg-white/10 border border-white/20 text-[#e9e7ef] px-3 py-2 rounded-lg text-xs font-semibold">
-                            看明細
+                        <button type="button" id="toggleQuoteDetails" aria-label="展開費用明細" class="shrink-0 w-9 h-9 bg-white/10 border border-white/20 text-[#e9e7ef] rounded-full text-base font-semibold leading-none flex items-center justify-center">
+                            ˄
                         </button>
                     </div>
                     <div id="quoteListContainer" class="collapsed space-y-4 mt-3 pt-3 border-t border-[#e9e7ef]/25">
@@ -743,11 +777,20 @@
                 </div>
 
                 <div id="step2Buttons" class="hidden space-y-3 pt-2">
-                    <button type="submit" id="submitBtn" class="w-full bg-[#f07cad] text-white font-bold py-4 rounded-xl shadow-lg hover:bg-opacity-90 transition disabled:opacity-50 text-lg">
-                        確認送出預約
+                    <button type="button" id="btnToStep3" class="w-full bg-primary text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-opacity-90 transition text-base">
+                        下一步，確認送出
                     </button>
                     <button type="button" id="btnPrevStep" class="w-full bg-white text-gray-500 font-bold py-3 rounded-xl border border-gray-300 shadow-sm hover:bg-gray-50 transition text-sm">
                         ⬅ 返回修改行程
+                    </button>
+                </div>
+
+                <div id="step3Buttons" class="hidden space-y-3 pt-2">
+                    <button type="submit" id="submitBtn" class="w-full bg-[#f07cad] text-white font-bold py-4 rounded-xl shadow-lg hover:bg-opacity-90 transition disabled:opacity-50 text-lg">
+                        確認送出預約
+                    </button>
+                    <button type="button" id="btnBackToStep2" class="w-full bg-white text-gray-500 font-bold py-3 rounded-xl border border-gray-300 shadow-sm hover:bg-gray-50 transition text-sm">
+                        ⬅ 返回修改乘客資料
                     </button>
                 </div>
 
@@ -785,7 +828,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.17"; 
+        const APP_VERSION = "v1.9.23"; 
 
         // --- 設定常數 ---
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzMLYBvdbo4mkkEUVFcjST44oh7VUXhx7gZjWejm2R8XX549ITaReot0pRAN3mbwA8n/exec"; 
@@ -830,9 +873,9 @@
 
         function setFlowStep(step) {
             const hints = {
-                1: '先看預估車資，再決定是否預約。',
-                2: '補上聯絡與航班資料，即可送出。',
-                3: '預約已送出，請回到 LINE 查看明細。'
+                1: '先確認路線與金額，再決定是否預約。',
+                2: '填寫聯絡資料，並確認乘車人資訊。',
+                3: '確認訂單內容與注意事項後送出。'
             };
             [1, 2, 3].forEach(n => {
                 const el = document.getElementById(`indStep${n}`);
@@ -845,22 +888,58 @@
             hintEl.classList.toggle('text-primary', step === 1);
         }
 
+        function goToFlowStep(step) {
+            if (step === 1) {
+                document.getElementById('step2Wrapper').classList.add('hidden');
+                document.getElementById('step2Buttons').classList.add('hidden');
+                document.getElementById('step3Wrapper').classList.add('hidden');
+                document.getElementById('step3Buttons').classList.add('hidden');
+                document.getElementById('step1Wrapper').classList.remove('hidden');
+                document.getElementById('step1Buttons').classList.remove('hidden');
+                setFlowStep(1);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+            if (step === 2) {
+                if (document.getElementById('step2Wrapper').classList.contains('hidden')) {
+                    document.getElementById('btnNextStep').click();
+                } else {
+                    document.getElementById('step3Wrapper').classList.add('hidden');
+                    document.getElementById('step3Buttons').classList.add('hidden');
+                    document.getElementById('step2Wrapper').classList.remove('hidden');
+                    document.getElementById('step2Buttons').classList.remove('hidden');
+                    setFlowStep(2);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+                return;
+            }
+            if (step === 3) {
+                if (document.getElementById('step2Wrapper').classList.contains('hidden')) {
+                    document.getElementById('btnNextStep').click();
+                    return;
+                }
+                document.getElementById('step2Wrapper').classList.add('hidden');
+                document.getElementById('step2Buttons').classList.add('hidden');
+                document.getElementById('step3Wrapper').classList.remove('hidden');
+                document.getElementById('step3Buttons').classList.remove('hidden');
+                setFlowStep(3);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
         function setupQuoteDetailsToggle() {
             const btn = document.getElementById('toggleQuoteDetails');
             const details = document.getElementById('quoteListContainer');
             if (!btn || !details) return;
             btn.addEventListener('click', () => {
                 const collapsed = details.classList.toggle('collapsed');
-                btn.innerText = collapsed ? '看明細' : '收合';
+                btn.innerText = collapsed ? '˄' : '˅';
+                btn.setAttribute('aria-label', collapsed ? '展開費用明細' : '收合費用明細');
             });
         }
 
         document.getElementById('btnNextStep').addEventListener('click', () => {
             let errors = [];
-            
-            // 修正：驗證訂車人電話至少需 10 碼數字，並加上新提示
-            const ordererPhoneRaw = document.getElementById('ordererPhone').value.replace(/\D/g, '');
-            if (ordererPhoneRaw.length < 10) errors.push({msg: "聯絡電話 (如沒有台灣門號，請輸入0000-000-000，並在備註填寫可聯絡的方式，若無請選擇舉牌)", id: 'ordererPhone'});
             
             if (!document.getElementById('rideDate').value) errors.push({msg: "去程乘車日期", id: 'rideDate'});
             if (!document.getElementById('address').value.trim()) errors.push({msg: "去程詳細地址", id: 'address'});
@@ -905,6 +984,8 @@
             document.getElementById('step1Buttons').classList.add('hidden');
             document.getElementById('step2Wrapper').classList.remove('hidden');
             document.getElementById('step2Buttons').classList.remove('hidden');
+            document.getElementById('step3Wrapper').classList.add('hidden');
+            document.getElementById('step3Buttons').classList.add('hidden');
 
             setFlowStep(2);
 
@@ -914,11 +995,45 @@
         document.getElementById('btnPrevStep').addEventListener('click', () => {
             document.getElementById('step2Wrapper').classList.add('hidden');
             document.getElementById('step2Buttons').classList.add('hidden');
+            document.getElementById('step3Wrapper').classList.add('hidden');
+            document.getElementById('step3Buttons').classList.add('hidden');
             document.getElementById('step1Wrapper').classList.remove('hidden');
             document.getElementById('step1Buttons').classList.remove('hidden');
 
             setFlowStep(1);
 
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        document.getElementById('btnToStep3').addEventListener('click', () => {
+            const errors = [];
+            const ordererPhoneRaw = document.getElementById('ordererPhone').value.replace(/\D/g, '');
+            const sameAs = document.getElementById('sameAsOrderer').checked;
+            const isSignSelected = document.getElementById('optSign').checked;
+            if (ordererPhoneRaw.length < 10 && !isSignSelected) errors.push({msg: "訂車人聯絡電話", id: "ordererPhone"});
+            if (!document.getElementById('ordererName').value.trim()) errors.push({msg: "訂車人姓名", id: "ordererName"});
+            if (!sameAs) {
+                if (!document.getElementById('paxName').value.trim()) errors.push({msg: "乘車人姓名", id: "paxName"});
+                const paxPhoneRaw = document.getElementById('paxPhone').value.replace(/\D/g, '');
+                if (paxPhoneRaw.length < 10 && !isSignSelected) errors.push({msg: "乘車人聯絡電話", id: "paxPhone"});
+            }
+            if (!document.getElementById('flightNo').value.trim()) errors.push({msg: "去程航班編號", id: 'flightNo'});
+            if (document.getElementById('needReturnTrip').checked && !document.getElementById('flightNo_R').value.trim()) errors.push({msg: `回程航班編號`, id: 'flightNo_R'});
+            if (errors.length > 0) { showErrors(errors); return; }
+            document.getElementById('step2Wrapper').classList.add('hidden');
+            document.getElementById('step2Buttons').classList.add('hidden');
+            document.getElementById('step3Wrapper').classList.remove('hidden');
+            document.getElementById('step3Buttons').classList.remove('hidden');
+            setFlowStep(3);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        document.getElementById('btnBackToStep2').addEventListener('click', () => {
+            document.getElementById('step3Wrapper').classList.add('hidden');
+            document.getElementById('step3Buttons').classList.add('hidden');
+            document.getElementById('step2Wrapper').classList.remove('hidden');
+            document.getElementById('step2Buttons').classList.remove('hidden');
+            setFlowStep(2);
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
 
@@ -1117,6 +1232,13 @@
                     currentDiscountAmt = 0; currentDiscountCode = '';
                     msgEl.innerText = '❌ 所有的折扣碼/優惠僅限使用「轉帳」支付';
                     msgEl.className = 'text-xs mt-1 font-bold text-red-500 block';
+                    updateLogic(); return;
+                }
+                if (isEarlyBirdReturnEligible()) {
+                    currentDiscountAmt = 0; currentDiscountCode = '';
+                    document.getElementById('discountInput').value = '';
+                    msgEl.innerText = '早鳥優惠需預約來回，已折抵 $300，且不可與其他折扣碼併用。';
+                    msgEl.className = 'text-xs mt-1 font-bold text-[#f07cad] block';
                     updateLogic(); return;
                 }
                 let amt = 0;
@@ -2058,8 +2180,8 @@
                 }
             } else { document.getElementById('seatContainer' + prefix).style.display = 'none'; }
             
-            if (nightFee > 0) { html += `<div class="flex justify-between"><span>└ 夜間加成</span><span>+$200</span></div>`; tripSurchargeTotal += 200; }
-            if (urgentFee > 0) { html += `<div class="flex justify-between"><span>└ 急單加價</span><span>+$300</span></div>`; tripSurchargeTotal += 300; }
+            if (nightFee > 0) { html += `<div class="flex justify-between"><span>└ 夜間加成(23-05)</span><span>+$200</span></div>`; tripSurchargeTotal += 200; }
+            if (urgentFee > 0) { html += `<div class="flex justify-between"><span>└ 24小時內急單服務費</span><span>+$300</span></div>`; tripSurchargeTotal += 300; }
             
             const noLuggage = document.getElementById('noLuggage' + prefix).checked;
             const carryEl = document.getElementById('luggageCarry' + prefix);
@@ -2116,6 +2238,20 @@
             };
         }
 
+        function getDaysUntilRide() {
+            const rideDate = document.getElementById('rideDate')?.value;
+            if (!rideDate) return 0;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const rideAt = new Date(`${rideDate}T00:00:00`);
+            if (Number.isNaN(rideAt.getTime())) return 0;
+            return Math.floor((rideAt - today) / (1000 * 60 * 60 * 24));
+        }
+
+        function isEarlyBirdReturnEligible() {
+            return document.getElementById('needReturnTrip')?.checked && getDaysUntilRide() > 30;
+        }
+
         function updateLogic() {
             [document.getElementById('ordererPhone'), document.getElementById('paxPhone')].forEach(inp => {
                 if (inp) {
@@ -2157,8 +2293,17 @@
                 document.getElementById('quoteList').insertAdjacentHTML('beforeend', `<div class="flex justify-between mt-2 pt-2 border-t border-[#e9e7ef]/20"><span>└ 舉牌服務費</span><span>+$200</span></div>`);
             }
             
-            const autoReturnDiscount = hasReturn ? 100 : 0;
-            let combinedDiscount = currentDiscountAmt + autoReturnDiscount;
+            const earlyBirdReturnDiscount = isEarlyBirdReturnEligible() ? 300 : 0;
+            if (earlyBirdReturnDiscount > 0 && currentDiscountCode) {
+                currentDiscountAmt = 0;
+                currentDiscountCode = '';
+                document.getElementById('discountInput').value = '';
+                const msgEl = document.getElementById('discountMsg');
+                msgEl.innerText = '早鳥優惠不可與其他折扣碼併用，已自動改套早鳥優惠。';
+                msgEl.className = 'text-xs mt-1 font-bold text-[#f07cad] block';
+            }
+            const autoReturnDiscount = hasReturn && earlyBirdReturnDiscount <= 0 ? 100 : 0;
+            let combinedDiscount = earlyBirdReturnDiscount || (currentDiscountAmt + autoReturnDiscount);
             const isCapped = combinedDiscount > 500;
             if (combinedDiscount > 500) combinedDiscount = 500;
             
@@ -2169,8 +2314,9 @@
             if (retRes) {
                 adjustmentHtml += `<div class="flex justify-between items-center"><span>去程小計</span><span>$${(outTotal + globalSurcharge).toLocaleString('en-US')}</span></div>`;
                 adjustmentHtml += `<div class="flex justify-between items-center"><span>回程小計</span><span>$${retTotal.toLocaleString('en-US')}</span></div>`;
+                if (earlyBirdReturnDiscount > 0) adjustmentHtml += `<div class="flex justify-between items-center text-[#f07cad]"><span>早鳥優惠</span><span>-$300</span></div>`;
                 if (autoReturnDiscount > 0) adjustmentHtml += `<div class="flex justify-between items-center text-[#f07cad] font-bold"><span>預約來回優惠</span><span>-$100</span></div>`;
-                if (currentDiscountAmt > 0) {
+                if (currentDiscountAmt > 0 && earlyBirdReturnDiscount <= 0) {
                     let actualUserDiscount = combinedDiscount - autoReturnDiscount;
                     adjustmentHtml += `<div class="flex justify-between items-center text-[#f07cad] font-bold"><span>折扣碼優惠 (${currentDiscountCode})</span><span>-$${actualUserDiscount.toLocaleString('en-US')}</span></div>`;
                 }
@@ -2331,10 +2477,10 @@
                 const dDate = document.getElementById('rideDate' + prefix).value;
                 const dHr = document.getElementById('rideHour' + prefix).value;
                 const dMin = document.getElementById('rideMinute' + prefix).value;
-                if (parseInt(dHr, 10) >= 23 || parseInt(dHr, 10) < 5) surchargeArr.push('夜間加成(+$200)');
+                if (parseInt(dHr, 10) >= 23 || parseInt(dHr, 10) < 5) surchargeArr.push('夜間加成(23-05)(+$200)');
                 if (dDate) {
                     const diffHours = (new Date(`${dDate}T${dHr}:${dMin}:00`) - new Date()) / (1000 * 60 * 60);
-                    if (diffHours >= 24 && diffHours <= 48) surchargeArr.push('急單加價(+$300)');
+                    if (diffHours >= 24 && diffHours <= 48) surchargeArr.push('24小時內急單服務費(+$300)');
                 }
                 
                 const rType = document.getElementById('rideType' + prefix).value;
@@ -2373,8 +2519,9 @@
             const outBase = parseInt(qtEl.getAttribute('data-out-base'), 10) || 0;
             const retBase = parseInt(qtEl.getAttribute('data-ret-base'), 10) || 0;
 
-            const autoReturnDiscount = hasReturn ? 100 : 0;
-            let combinedDiscount = currentDiscountAmt + autoReturnDiscount;
+            const earlyBirdReturnDiscount = isEarlyBirdReturnEligible() ? 300 : 0;
+            const autoReturnDiscount = hasReturn && earlyBirdReturnDiscount <= 0 ? 100 : 0;
+            let combinedDiscount = earlyBirdReturnDiscount || (currentDiscountAmt + autoReturnDiscount);
             if (combinedDiscount > 500) combinedDiscount = 500;
 
             let outDiscount = 0, retDiscount = 0;
@@ -2383,10 +2530,12 @@
             if (hasReturn) {
                 retDiscount = combinedDiscount;
                 let actualUserDiscount = combinedDiscount - autoReturnDiscount;
-                if (currentDiscountAmt > 0) {
+                if (earlyBirdReturnDiscount > 0) {
+                    retDiscountArr.push(`早鳥優惠 -$300`);
+                } else if (currentDiscountAmt > 0) {
                     retDiscountArr.push(`折扣碼(${currentDiscountCode}) -$${actualUserDiscount}`);
                 }
-                retDiscountArr.push(`預約來回優惠 -$100`);
+                if (autoReturnDiscount > 0) retDiscountArr.push(`預約來回優惠 -$100`);
             } else {
                 outDiscount = combinedDiscount;
                 if (currentDiscountAmt > 0) {
@@ -2416,13 +2565,14 @@
                 totalLabel: hasReturn ? '' : '預估應付總額',
                 total: hasReturn ? 0 : discountedOutTotal
             };
-            const retUserDiscount = hasReturn ? Math.max(retDiscount - autoReturnDiscount, 0) : 0;
+            const retUserDiscount = hasReturn && earlyBirdReturnDiscount <= 0 ? Math.max(retDiscount - autoReturnDiscount, 0) : 0;
             const retCardFee = hasReturn ? {
                 baseFare: retBase,
                 extras: buildFeeExtras(retT.surcharge),
                 subtotalLabel: '回程小計',
                 subtotal: rawRetTotal,
                 discounts: [
+                    ...(earlyBirdReturnDiscount > 0 ? [{ label: '早鳥優惠', amount: -earlyBirdReturnDiscount }] : []),
                     ...(retUserDiscount > 0 ? [{ label: `折扣碼(${currentDiscountCode})`, amount: -retUserDiscount }] : []),
                     ...(autoReturnDiscount > 0 ? [{ label: '預約來回優惠', amount: -autoReturnDiscount }] : [])
                 ],
@@ -2560,13 +2710,15 @@
                             `回程：$${rawRetTotal.toLocaleString('en-US')}\n`;
                  
                  let overallDiscountArr = [];
-                 if (currentDiscountAmt > 0) {
+                 if (earlyBirdReturnDiscount > 0) {
+                     overallDiscountArr.push(`早鳥優惠：-$300`);
+                 } else if (currentDiscountAmt > 0) {
                      let actualUserDiscount = combinedDiscount - autoReturnDiscount;
                      overallDiscountArr.push(`折扣碼(${currentDiscountCode})：-$${actualUserDiscount}`);
                  }
-                 overallDiscountArr.push(`預約來回優惠：-$100`);
+                 if (autoReturnDiscount > 0) overallDiscountArr.push(`預約來回優惠：-$100`);
 
-                 msgPrice += `\n折扣金額：\n${overallDiscountArr.join('\n')}\n\n` +
+                 msgPrice += (overallDiscountArr.length ? `\n折扣金額：\n${overallDiscountArr.join('\n')}\n\n` : '\n') +
                              `來回總額：$${grandTotalAmt.toLocaleString('en-US')}`;
             }
 
@@ -2635,7 +2787,7 @@
                         sportLuggage: t(retT.sportLuggage), seatDetails: t(retT.safetySeat), 
                         signboard: t(signStr), tripAmt: t(discountedRetTotal), grandTotal: t(grandTotalAmt), 
                         paymentMethod: t(payStr), remarks: t(remarkStr), surchargeDetails: t(retT.surcharge), 
-                        discountCode: t(currentDiscountAmt > 0 ? `折扣碼(${currentDiscountCode}) + 預約來回優惠` : "預約來回優惠"), 
+                        discountCode: t(earlyBirdReturnDiscount > 0 ? "早鳥優惠" : (currentDiscountAmt > 0 ? `折扣碼(${currentDiscountCode}) + 預約來回優惠` : "預約來回優惠")), 
                         discountAmt: t(retDiscount), ordererEmail: t(email), lineId: t(sysLineId),
                         fullMessage: t(fullMsg), appVersion: t(APP_VERSION),
                         companyTaxId: t(companyInfo), companyName: t(companyName), companyBillingCode: t(companyBillingCode),
