@@ -785,7 +785,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.15"; 
+        const APP_VERSION = "v1.9.16"; 
 
         // --- 設定常數 ---
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzMLYBvdbo4mkkEUVFcjST44oh7VUXhx7gZjWejm2R8XX549ITaReot0pRAN3mbwA8n/exec"; 
@@ -1843,8 +1843,24 @@
                     <div class="text-gray-400">總額</div><div class="font-bold text-[#553f62]">${formatBindMoney(data.totalAmount)}</div>
                 </div>`;
                 document.getElementById('bindOrderContent').innerHTML = customerBlock + (data.orders || []).map(buildBindTripHtml).join('');
-                document.getElementById('btnBindService').onclick = () => {
-                    Swal.fire({ title: '聯絡客服', text: '請回到 LINE 對話框聯絡客服協助修改預約資料。', confirmButtonColor: '#553f62' });
+                document.getElementById('btnBindService').onclick = async () => {
+                    const primaryOrder = data.primaryOrderId || ((data.orders || [])[0] || {}).orderId || '';
+                    const serviceMessage = [
+                        '預約資料有誤，請客服協助確認。',
+                        primaryOrder ? `單號：${primaryOrder}` : '',
+                        '',
+                        '我已開啟預約確認頁，資料內容需要修改。'
+                    ].filter(Boolean).join('\n');
+                    if (window.liff && liff.isInClient()) {
+                        await sendCustomerChatBumpMessage(serviceMessage);
+                        liff.closeWindow();
+                        return;
+                    }
+                    Swal.fire({
+                        title: '請回到 LINE 對話框',
+                        text: '請將「預約資料有誤」傳給客服，我們會協助修改預約資料。',
+                        confirmButtonColor: '#553f62'
+                    });
                 };
                 document.getElementById('btnConfirmBind').onclick = async () => {
                     Swal.fire({ title: '確認中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
