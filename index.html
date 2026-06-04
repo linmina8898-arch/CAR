@@ -785,7 +785,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.14"; 
+        const APP_VERSION = "v1.9.15"; 
 
         // --- 設定常數 ---
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzMLYBvdbo4mkkEUVFcjST44oh7VUXhx7gZjWejm2R8XX549ITaReot0pRAN3mbwA8n/exec"; 
@@ -1754,32 +1754,76 @@
             return `$${n.toLocaleString('en-US')}`;
         }
 
+        function escapeBindHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]));
+        }
+
+        function parseBindDiscounts(order) {
+            const total = Math.abs(Number(order.discountAmount || 0));
+            const labels = String(order.discountCode || '')
+                .replace(/折扣碼\(([^)]+)\)/g, '折扣碼($1)')
+                .split(/\s*\+\s*|、|\n/)
+                .map(item => item.replace(/\s*-\$?[\d,]+\s*$/, '').trim())
+                .filter(Boolean);
+            if (!labels.length) return total ? [{ label: '優惠折扣', amount: total }] : [];
+            const returnIndex = labels.findIndex(label => label.includes('預約來回優惠'));
+            return labels.map((label, index) => {
+                let amount = Math.round(total / labels.length);
+                if (returnIndex !== -1 && label.includes('預約來回優惠')) amount = Math.min(100, total);
+                else if (returnIndex !== -1) amount = total - 100;
+                return { label, amount: Math.max(amount, 0) };
+            }).filter(item => item.amount > 0);
+        }
+
+        function bindMoneyRow(label, amount, extra = false) {
+            const n = Number(amount || 0);
+            const display = (n < 0 ? '-$' : (extra ? '+$' : '$')) + Math.abs(n).toLocaleString('en-US');
+            return `<div class="flex justify-between gap-3 text-gray-600"><span>${escapeBindHtml(label)}</span><span class="text-right">${display}</span></div>`;
+        }
+
+        function buildBindFeeHtml(order) {
+            const fee = order.fee || {};
+            const discounts = parseBindDiscounts(order);
+            let rows = [];
+            if (fee.baseFare !== undefined && fee.baseFare !== null && fee.baseFare !== '') {
+                rows.push(bindMoneyRow('基本車資', Number(fee.baseFare || 0)));
+                (fee.extras || []).forEach(item => {
+                    rows.push(item.note
+                        ? `<div class="flex justify-between gap-3 text-gray-600"><span>${escapeBindHtml(item.label)}</span><span class="text-right">${escapeBindHtml(item.note)}</span></div>`
+                        : bindMoneyRow(item.label, Number(item.amount || 0), true));
+                });
+                if (fee.subtotalLabel) rows.push(`<div class="border-t border-gray-100 mt-2 pt-2">${bindMoneyRow(fee.subtotalLabel, Number(fee.subtotal || 0))}</div>`);
+            } else {
+                rows.push(bindMoneyRow('費用', order.subtotal || order.payableAmount));
+            }
+            if (discounts.length) {
+                rows.push(`<div class="flex justify-between gap-3 text-gray-600"><span>折扣</span><span class="text-right">${discounts.map(item => `<span class="block">${escapeBindHtml(item.label)} -$${Math.abs(Number(item.amount || 0)).toLocaleString('en-US')}</span>`).join('')}</span></div>`);
+            }
+            rows.push(`<div class="border-t border-gray-100 mt-2 pt-2 flex justify-between gap-3 font-bold text-[#553f62]"><span>總額</span><span>${formatBindMoney(order.payableAmount)}</span></div>`);
+            return `<div class="border-t border-gray-100 mt-3 pt-2 text-sm space-y-1">${rows.join('')}</div>`;
+        }
+
         function buildBindTripHtml(order) {
+            const titleType = order.flightNo ? `${order.type || ''} ${order.flightNo}` : (order.type || '');
             const route = order.type === '接機'
                 ? `${order.airport || '-'} → ${order.address || '-'}`
                 : `${order.address || '-'} → ${order.airport || '-'}`;
-            const discountLine = Number(order.discountAmount || 0) > 0
-                ? `<div class="flex justify-between"><span>折扣</span><span>-${formatBindMoney(order.discountAmount).replace('$', '$')}</span></div>`
-                : '';
-            return `<div class="border border-gray-200 rounded-xl p-3">
-                <div class="flex justify-between gap-3 text-[#553f62] font-bold">
-                    <span>${order.date} ${order.time}</span>
-                    <span>${order.type}</span>
+            const rows = [
+                ['單號', order.orderId], ['姓名', order.custName || ''], ['電話', order.custPhone || ''], ['車型', order.car],
+                ['人數', order.pax], ['行李', order.luggage], ['地址', order.address], ['加點', order.extraStop || '無'],
+                ['付款', order.paymentMethod], ['座椅', order.seats || '無'], ['備註', order.remarks || '無']
+            ];
+            if (order.sportLuggage && order.sportLuggage !== '無') rows.splice(7, 0, ['胖箱', order.sportLuggage]);
+            if (order.signboard && order.signboard !== '無') rows.splice(8, 0, ['舉牌', order.signboard]);
+            return `<div class="border border-gray-200 rounded-xl p-3 bg-white shadow-sm">
+                <div class="text-base text-[#1A0B3D] font-bold">${escapeBindHtml(`${order.date} ${order.time}  ${titleType}`)}</div>
+                <div class="text-sm text-gray-700 mt-1">${escapeBindHtml(route)}</div>
+                <div class="mt-3 pt-2 border-t border-gray-100 text-sm text-[#7A6A82]">預約資訊</div>
+                <div class="grid grid-cols-[56px_1fr] gap-y-1 mt-2 text-sm">
+                    ${rows.map(row => `<div class="text-gray-400">${escapeBindHtml(row[0])}</div><div class="break-words">${escapeBindHtml(row[1] || '-')}</div>`).join('')}
                 </div>
-                <div class="text-sm text-gray-700 mt-1">${route}</div>
-                ${order.extraStop && order.extraStop !== '無' ? `<div class="text-xs text-gray-500 mt-1">加點：${order.extraStop}</div>` : ''}
-                <div class="grid grid-cols-[72px_1fr] gap-y-1 mt-3 text-sm">
-                    <div class="text-gray-400">單號</div><div>${order.orderId}</div>
-                    <div class="text-gray-400">車型</div><div>${order.car || '-'}</div>
-                    <div class="text-gray-400">人數</div><div>${order.pax || '-'}</div>
-                    <div class="text-gray-400">行李</div><div>${order.luggage || '-'}</div>
-                    <div class="text-gray-400">付款</div><div>${order.paymentMethod || '-'}</div>
-                </div>
-                <div class="border-t border-gray-100 mt-3 pt-2 text-sm space-y-1">
-                    <div class="flex justify-between"><span>費用</span><span>${formatBindMoney(order.subtotal || order.payableAmount)}</span></div>
-                    ${discountLine}
-                    <div class="flex justify-between font-bold text-[#553f62]"><span>應付金額</span><span>${formatBindMoney(order.payableAmount)}</span></div>
-                </div>
+                <div class="text-sm text-[#7A6A82] mt-3">費用明細</div>
+                ${buildBindFeeHtml(order)}
             </div>`;
         }
 
