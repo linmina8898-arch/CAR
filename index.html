@@ -74,7 +74,7 @@
             margin: 0 auto;
         }
         #quoteListContainer.collapsed { display: none; }
-        #quoteListContainer, #quoteListContainer * { font-weight: 400 !important; }
+        #quoteSummaryWrapper, #quoteSummaryWrapper * { font-weight: 400 !important; }
         #bookingForm { padding-bottom: 126px; }
         #bookingForm .font-bold { font-weight: 600; }
         #bookingForm .font-black { font-weight: 700; }
@@ -744,15 +744,15 @@
                 <div id="quoteSummaryWrapper" class="bg-[#553f62] p-3 rounded-xl shadow-lg text-[#e9e7ef]">
                     <div class="flex items-center justify-between gap-3">
                         <div class="min-w-0">
-                            <p class="text-[11px] text-[#e9e7ef]/70 font-medium">預估費用明細</p>
-                            <div id="quoteSummary" class="font-semibold text-base">
+                            <p class="text-[11px] text-[#e9e7ef]/70">預估費用明細/總額</p>
+                            <div id="quoteSummary" class="text-base">
                                 <div class="flex items-baseline gap-2 whitespace-nowrap">
                                     <span class="text-[12px] text-[#e9e7ef]/80">預估報價</span>
-                                    <span id="quoteTotal" class="text-[#e9e7ef] font-bold text-xl drop-shadow-sm" data-out="0" data-ret="0" data-grand="0" data-out-base="0" data-ret-base="0">$0</span>
+                                    <span id="quoteTotal" class="text-[#e9e7ef] text-xl drop-shadow-sm" data-out="0" data-ret="0" data-grand="0" data-out-base="0" data-ret-base="0">$0</span>
                                 </div>
                             </div>
                         </div>
-                        <button type="button" id="toggleQuoteDetails" aria-label="展開費用明細" class="shrink-0 w-9 h-9 bg-white/10 border border-white/20 text-[#e9e7ef] rounded-full text-base font-semibold leading-none flex items-center justify-center">
+                        <button type="button" id="toggleQuoteDetails" aria-label="展開費用明細" class="shrink-0 w-9 h-9 bg-white/10 border border-white/20 text-[#e9e7ef] rounded-full text-base leading-none flex items-center justify-center">
                             ˄
                         </button>
                     </div>
@@ -828,7 +828,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.23"; 
+        const APP_VERSION = "v1.9.25"; 
 
         // --- 設定常數 ---
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzMLYBvdbo4mkkEUVFcjST44oh7VUXhx7gZjWejm2R8XX549ITaReot0pRAN3mbwA8n/exec"; 
@@ -942,6 +942,7 @@
             let errors = [];
             
             if (!document.getElementById('rideDate').value) errors.push({msg: "去程乘車日期", id: 'rideDate'});
+            if (!document.getElementById('flightNo').value.trim()) errors.push({msg: "去程航班編號", id: 'flightNo'});
             if (!document.getElementById('address').value.trim()) errors.push({msg: "去程詳細地址", id: 'address'});
             if (document.getElementById('needExtraStop').checked && !document.getElementById('extraStopAddress').value.trim()) errors.push({msg: "加點詳細地址", id: 'extraStopAddress'});
 
@@ -953,12 +954,14 @@
 
             const sportRadio = Array.from(document.getElementsByName('sportLuggageRadio')).find(r => r.checked)?.value;
             if (sportRadio === "是" && !document.getElementById('sportLuggageSize').value.trim()) errors.push({msg: "胖胖箱尺寸/大小", id: 'sportLuggageSize'});
+            if (!isLuggageConfirmed('')) errors.push({msg: "去程行李件數，若沒有行李請勾選「我沒有行李」", id: 'noLuggage'});
 
             const hasReturn = document.getElementById('needReturnTrip').checked;
             syncReturnTripFromOutbound();
             if (hasReturn) {
                 const prefix = '_R';
                 if (!document.getElementById('rideDate' + prefix).value) errors.push({msg: `回程乘車日期`, id: 'rideDate' + prefix});
+                if (!document.getElementById('flightNo_R').value.trim()) errors.push({msg: `回程航班編號`, id: 'flightNo_R'});
                 if (!document.getElementById('address' + prefix).value.trim()) errors.push({msg: `回程主要詳細地址`, id: 'address' + prefix});
                 if (document.getElementById('needExtraStop' + prefix).checked && !document.getElementById('extraStopAddress' + prefix).value.trim()) errors.push({msg: `回程加點詳細地址`, id: 'extraStopAddress' + prefix});
                 
@@ -970,6 +973,7 @@
                 
                 const sportRadio_R = Array.from(document.getElementsByName('sportLuggageRadio' + prefix)).find(r => r.checked)?.value;
                 if (sportRadio_R === "是" && !document.getElementById('sportLuggageSize' + prefix).value.trim()) errors.push({msg: `回程胖胖箱尺寸/大小`, id: 'sportLuggageSize' + prefix});
+                if (!isLuggageConfirmed(prefix)) errors.push({msg: `回程行李件數，若沒有行李請勾選「我沒有行李」`, id: 'noLuggage' + prefix});
             }
 
             if (errors.length > 0) { showErrors(errors); return; }
@@ -1017,8 +1021,6 @@
                 const paxPhoneRaw = document.getElementById('paxPhone').value.replace(/\D/g, '');
                 if (paxPhoneRaw.length < 10 && !isSignSelected) errors.push({msg: "乘車人聯絡電話", id: "paxPhone"});
             }
-            if (!document.getElementById('flightNo').value.trim()) errors.push({msg: "去程航班編號", id: 'flightNo'});
-            if (document.getElementById('needReturnTrip').checked && !document.getElementById('flightNo_R').value.trim()) errors.push({msg: `回程航班編號`, id: 'flightNo_R'});
             if (errors.length > 0) { showErrors(errors); return; }
             document.getElementById('step2Wrapper').classList.add('hidden');
             document.getElementById('step2Buttons').classList.add('hidden');
@@ -1038,6 +1040,13 @@
         });
 
         function stripTaiwan(str) { return str ? str.replace(/台灣|臺灣/g, "").trim() : ""; }
+
+        function isLuggageConfirmed(prefix = '') {
+            const noLuggage = document.getElementById('noLuggage' + prefix)?.checked;
+            const carry = parseInt(document.getElementById('luggageCarry' + prefix)?.value, 10) || 0;
+            const checked = parseInt(document.getElementById('luggageChecked' + prefix)?.value, 10) || 0;
+            return noLuggage || carry > 0 || checked > 0;
+        }
 
         function parseZoneInfo(place) {
             let zip = '', city = '', dist = '';
@@ -2315,20 +2324,20 @@
                 adjustmentHtml += `<div class="flex justify-between items-center"><span>去程小計</span><span>$${(outTotal + globalSurcharge).toLocaleString('en-US')}</span></div>`;
                 adjustmentHtml += `<div class="flex justify-between items-center"><span>回程小計</span><span>$${retTotal.toLocaleString('en-US')}</span></div>`;
                 if (earlyBirdReturnDiscount > 0) adjustmentHtml += `<div class="flex justify-between items-center text-[#f07cad]"><span>早鳥優惠</span><span>-$300</span></div>`;
-                if (autoReturnDiscount > 0) adjustmentHtml += `<div class="flex justify-between items-center text-[#f07cad] font-bold"><span>預約來回優惠</span><span>-$100</span></div>`;
+                if (autoReturnDiscount > 0) adjustmentHtml += `<div class="flex justify-between items-center text-[#f07cad]"><span>預約來回優惠</span><span>-$100</span></div>`;
                 if (currentDiscountAmt > 0 && earlyBirdReturnDiscount <= 0) {
                     let actualUserDiscount = combinedDiscount - autoReturnDiscount;
-                    adjustmentHtml += `<div class="flex justify-between items-center text-[#f07cad] font-bold"><span>折扣碼優惠 (${currentDiscountCode})</span><span>-$${actualUserDiscount.toLocaleString('en-US')}</span></div>`;
+                    adjustmentHtml += `<div class="flex justify-between items-center text-[#f07cad]"><span>折扣碼優惠 (${currentDiscountCode})</span><span>-$${actualUserDiscount.toLocaleString('en-US')}</span></div>`;
                 }
             } else {
                 adjustmentHtml += `<div class="flex justify-between items-center"><span>小計</span><span>$${(outTotal + globalSurcharge).toLocaleString('en-US')}</span></div>`;
                 if (currentDiscountAmt > 0) {
-                    adjustmentHtml += `<div class="flex justify-between items-center text-[#f07cad] font-bold"><span>折扣碼優惠 (${currentDiscountCode})</span><span>-$${combinedDiscount.toLocaleString('en-US')}</span></div>`;
+                    adjustmentHtml += `<div class="flex justify-between items-center text-[#f07cad]"><span>折扣碼優惠 (${currentDiscountCode})</span><span>-$${combinedDiscount.toLocaleString('en-US')}</span></div>`;
                 }
             }
             document.getElementById('quoteAdjustments').innerHTML = adjustmentHtml;
             document.getElementById('quoteAdjustments').classList.toggle('hidden', adjustmentHtml === '');
-            document.getElementById('quoteSummary').innerHTML = `<div class="flex items-baseline gap-2"><span id="quoteTotal" class="text-[#e9e7ef] font-bold text-xl drop-shadow-sm" data-out="${outTotal + globalSurcharge}" data-ret="${retRes ? retTotal : 0}" data-grand="${grandTotal}" data-out-base="${outRes.base}" data-ret-base="${retRes ? retRes.base : 0}">$${grandTotal.toLocaleString('en-US')}</span></div>`;
+            document.getElementById('quoteSummary').innerHTML = `<div class="flex items-baseline gap-2"><span id="quoteTotal" class="text-[#e9e7ef] text-xl drop-shadow-sm" data-out="${outTotal + globalSurcharge}" data-ret="${retRes ? retTotal : 0}" data-grand="${grandTotal}" data-out-base="${outRes.base}" data-ret-base="${retRes ? retRes.base : 0}">$${grandTotal.toLocaleString('en-US')}</span></div>`;
         }
 
         document.getElementById('bookingForm').addEventListener('input', updateLogic);
@@ -2569,15 +2578,20 @@
             const retCardFee = hasReturn ? {
                 baseFare: retBase,
                 extras: buildFeeExtras(retT.surcharge),
-                subtotalLabel: '回程小計',
-                subtotal: rawRetTotal,
+                subtotalLabel: '',
+                subtotal: 0,
                 discounts: [
                     ...(earlyBirdReturnDiscount > 0 ? [{ label: '早鳥優惠', amount: -earlyBirdReturnDiscount }] : []),
                     ...(retUserDiscount > 0 ? [{ label: `折扣碼(${currentDiscountCode})`, amount: -retUserDiscount }] : []),
                     ...(autoReturnDiscount > 0 ? [{ label: '預約來回優惠', amount: -autoReturnDiscount }] : [])
                 ],
-                totalLabel: '來回預估應付總額',
-                total: grandTotalAmt
+                totalLabel: '回程小計',
+                total: discountedRetTotal,
+                roundTripSummary: {
+                    outboundSubtotal: discountedOutTotal,
+                    returnSubtotal: discountedRetTotal,
+                    total: grandTotalAmt
+                }
             } : null;
 
             const signStr = document.getElementById('optSign').checked ? document.getElementById('signContent').value : '無';
