@@ -785,7 +785,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.16"; 
+        const APP_VERSION = "v1.9.17"; 
 
         // --- 設定常數 ---
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzMLYBvdbo4mkkEUVFcjST44oh7VUXhx7gZjWejm2R8XX549ITaReot0pRAN3mbwA8n/exec"; 
@@ -1870,7 +1870,10 @@
                         headers: { 'Content-Type': 'text/plain;charset=utf-8' }
                     }).then(r => r.json());
                     if (!result.success) return Swal.fire('確認失敗', result.error || '請聯絡客服協助。', 'error');
-                    Swal.fire({ title: '確認完成', text: '預約明細卡片已傳送至 LINE 聊天室。', icon: 'success', confirmButtonColor: '#553f62' }).then(() => {
+                    const doneText = result.cardSent === false
+                        ? '預約資料已完成確認，客服將協助補發預約明細通知。'
+                        : '預約明細卡片已傳送至 LINE 聊天室。';
+                    Swal.fire({ title: '確認完成', text: doneText, icon: 'success', confirmButtonColor: '#553f62' }).then(() => {
                         if (window.liff && liff.isInClient()) liff.closeWindow();
                     });
                 };
