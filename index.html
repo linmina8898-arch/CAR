@@ -602,7 +602,7 @@
                                 <button type="button" id="applyDiscountBtn" class="w-1/3 bg-gray-200 text-gray-700 font-bold rounded hover:bg-gray-300 transition">套用</button>
                             </div>
                             <p id="discountMsg" class="text-xs mt-1 font-bold hidden"></p>
-                            <button type="button" id="queryDiscountBtn" class="mt-3 w-full bg-pink-50 text-[#f07cad] font-bold py-2 rounded border border-pink-200 hover:bg-pink-100 transition shadow-sm text-sm">查詢我的專屬優惠</button>
+                            <button type="button" id="queryDiscountBtn" class="mt-3 w-full bg-[#f5f1f7] text-[#553f62] font-bold py-2 rounded border border-[#553f62]/20 hover:bg-[#ece4ef] transition shadow-sm text-sm">查詢專屬折扣碼</button>
                             <p class="text-[12px] text-gray-900 mt-1.5 text-center font-medium tracking-wide">※ 首次查詢將綁定聯絡電話，自動加碼送 100元折扣碼 × 2組</p>
                             <div id="userDiscountsContainer" class="hidden mt-2 space-y-2"></div>
                         </div>
@@ -639,7 +639,7 @@
                                     <label class="block text-sm font-medium text-gray-700">乘車人資訊</label>
                                     <label class="flex items-center space-x-1 cursor-pointer bg-white px-2 py-1 rounded border border-gray-300 text-xs text-gray-600 shadow-sm hover:bg-gray-100 transition">
                                         <input type="checkbox" id="sameAsOrderer" class="rounded w-3 h-3">
-                                        <span class="font-bold">同訂車人資訊</span>
+                                        <span class="font-bold">同訂車人</span>
                                     </label>
                                 </div>
                                 <div class="grid grid-cols-3 gap-3 mb-4">
@@ -828,7 +828,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.28";
+        const APP_VERSION = "v1.9.29";
 
         // --- 設定常數 ---
         const GAS_URL = "https://script.google.com/macros/s/AKfycbyHkLho-EhceBtJCSd0Vz5e1NtSDILWH08nD_8jJoJzd4c7unaXiI6q_A0ETgpuYG5x/exec"; 
@@ -1014,12 +1014,12 @@
             const ordererPhoneRaw = document.getElementById('ordererPhone').value.replace(/\D/g, '');
             const sameAs = document.getElementById('sameAsOrderer').checked;
             const isSignSelected = document.getElementById('optSign').checked;
-            if (ordererPhoneRaw.length < 10 && !isSignSelected) errors.push({msg: "訂車人聯絡電話", id: "ordererPhone"});
             if (!document.getElementById('ordererName').value.trim()) errors.push({msg: "訂車人姓名", id: "ordererName"});
-            if (!sameAs) {
-                if (!document.getElementById('paxName').value.trim()) errors.push({msg: "乘車人姓名", id: "paxName"});
-                const paxPhoneRaw = document.getElementById('paxPhone').value.replace(/\D/g, '');
-                if (paxPhoneRaw.length < 10 && !isSignSelected) errors.push({msg: "乘車人聯絡電話", id: "paxPhone"});
+            if (!document.getElementById('paxName').value.trim()) errors.push({msg: "乘車人姓名", id: "paxName"});
+            const paxPhoneRaw = document.getElementById('paxPhone').value.replace(/\D/g, '');
+            if (paxPhoneRaw.length < 10 && !isSignSelected) errors.push({msg: "乘車人聯絡電話", id: "paxPhone"});
+            if (ordererPhoneRaw.length < 10 && paxPhoneRaw.length >= 10) {
+                document.getElementById('ordererPhone').value = document.getElementById('paxPhone').value;
             }
             if (errors.length > 0) { showErrors(errors); return; }
             document.getElementById('step2Wrapper').classList.add('hidden');
@@ -1253,7 +1253,7 @@
                 let amt = 0;
                 if (DISCOUNT_CODES[code]) {
                     amt = DISCOUNT_CODES[code];
-                    msgEl.innerText = `✅ 已成功套用，面額 $${amt.toLocaleString('en-US')}`;
+                    msgEl.innerText = `已成功套用，面額 $${amt.toLocaleString('en-US')}`;
                 }
                 if (amt > 0) {
                     if (document.getElementById('needReturnTrip').checked && DISCOUNT_RULES[code] && DISCOUNT_RULES[code].allowReturn === false) {
@@ -1263,7 +1263,7 @@
                         updateLogic(); return;
                     }
                     currentDiscountAmt = amt; currentDiscountCode = code;
-                    msgEl.className = 'text-xs mt-1 font-bold text-[#f07cad] block';
+                    msgEl.className = 'text-xs mt-1 font-bold text-[#553f62] block';
                 } else {
                     currentDiscountAmt = 0; currentDiscountCode = '';
                     msgEl.innerText = '❌ 無效的折扣碼或已過期';
@@ -1309,11 +1309,11 @@
                         if (data.discounts && data.discounts.length > 0) {
                             let html = '<p class="text-[11px] font-normal text-gray-500">您的專屬優惠碼</p>';
                             data.discounts.forEach(d => {
-                                html += `<div class="bg-white border border-pink-200 rounded px-2 py-1.5 flex items-center gap-1.5 text-[10px] whitespace-nowrap overflow-hidden">
-                                    <span class="font-normal text-[#f07cad] shrink-0">${d.code}</span>
+                                html += `<div class="bg-white border border-[#553f62]/20 rounded px-2 py-1.5 flex items-center gap-1.5 text-[10px] whitespace-nowrap overflow-hidden">
+                                    <span class="font-normal text-[#553f62] shrink-0">${d.code}</span>
                                     <span class="text-gray-500 shrink-0">-$${d.amount}</span>
                                     <span class="text-gray-400 shrink-0 ml-auto">${d.expiry}</span>
-                                    <button type="button" class="bg-[#f07cad] text-white px-2 py-1 rounded text-[10px] font-normal shrink-0 use-discount-btn" data-code="${d.code}">使用</button>
+                                    <button type="button" class="bg-[#553f62] text-white px-2 py-1 rounded text-[10px] font-normal shrink-0 use-discount-btn" data-code="${d.code}">使用</button>
                                  </div>`;
                                  DISCOUNT_CODES[d.code] = d.amount;
                                  DISCOUNT_RULES[d.code] = { allowReturn: d.allowReturn !== false };
@@ -1331,7 +1331,7 @@
                             document.getElementById('userDiscountsContainer').classList.remove('hidden');
                         }
                     } catch (err) { Swal.fire({ title: '查詢逾時', text: '目前查詢時間較久，請稍後重新查詢優惠。', confirmButtonColor: '#553f62', customClass: { popup: 'swal-custom-radius' } });
-                    } finally { queryBtn.innerHTML = '🎁 查詢我的專屬優惠'; queryBtn.disabled = false; }
+                    } finally { queryBtn.innerHTML = '查詢專屬折扣碼'; queryBtn.disabled = false; }
                 });
             }
         }
@@ -2431,17 +2431,15 @@
             let errors = [];
 
             const ordererPhoneRaw = document.getElementById('ordererPhone').value.replace(/\D/g, '');
-            if (ordererPhoneRaw.length < 10 && !isSignSelected) {
-                errors.push({msg: "訂車人聯絡電話 (如沒有台灣門號請輸入0000-000-000，並在備註填寫聯絡方式，或選擇舉牌)", id: "ordererPhone"});
-            }
             
             if (!document.getElementById('ordererName').value.trim()) errors.push({msg: "訂車人姓名", id: "ordererName"});
-            if (!sameAs) {
-                if (!document.getElementById('paxName').value.trim()) errors.push({msg: "乘客姓名", id: "paxName"});
-                const paxPhoneRaw = document.getElementById('paxPhone').value.replace(/\D/g, '');
-                if (paxPhoneRaw.length < 10 && !isSignSelected) {
-                    errors.push({msg: "乘車人聯絡電話 (如沒有台灣門號請輸入0000-000-000，並在備註填寫聯絡方式，或選擇舉牌)", id: "paxPhone"});
-                }
+            if (!document.getElementById('paxName').value.trim()) errors.push({msg: "乘客姓名", id: "paxName"});
+            const paxPhoneRaw = document.getElementById('paxPhone').value.replace(/\D/g, '');
+            if (paxPhoneRaw.length < 10 && !isSignSelected) {
+                errors.push({msg: "乘車人聯絡電話 (如沒有台灣門號請輸入0000-000-000，並在備註填寫聯絡方式，或選擇舉牌)", id: "paxPhone"});
+            }
+            if (ordererPhoneRaw.length < 10 && paxPhoneRaw.length >= 10) {
+                document.getElementById('ordererPhone').value = document.getElementById('paxPhone').value;
             }
             if (!document.getElementById('flightNo').value.trim()) errors.push({msg: "去程航班編號", id: 'flightNo'});
             if (hasReturn && !document.getElementById('flightNo_R').value.trim()) errors.push({msg: `回程航班編號`, id: 'flightNo_R'});
