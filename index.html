@@ -828,7 +828,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.27"; 
+        const APP_VERSION = "v1.9.28";
 
         // --- 設定常數 ---
         const GAS_URL = "https://script.google.com/macros/s/AKfycbyHkLho-EhceBtJCSd0Vz5e1NtSDILWH08nD_8jJoJzd4c7unaXiI6q_A0ETgpuYG5x/exec"; 
@@ -1077,7 +1077,7 @@
 
         async function fetchPriceTable() {
             try {
-                const url = `${GAS_URL}?action=getPrices&t=${Date.now()}`;
+                const url = `${GAS_URL}?action=getPrices&channelCode=${encodeURIComponent(CURRENT_CHANNEL.code)}&t=${Date.now()}`;
                 const response = await fetch(url, { method: 'GET', redirect: 'follow' });
                 if (!response.ok) throw new Error('Network error');
                 const data = await response.json();
@@ -1296,7 +1296,7 @@
                     }
                     queryBtn.innerHTML = '查詢中...'; queryBtn.disabled = true;
                     try {
-                        const url = `${GAS_URL}?action=getUserDiscounts&phone=${encodeURIComponent(phone)}&lineId=${encodeURIComponent(sysLineId)}&name=${encodeURIComponent(sysLineName)}&t=${Date.now()}`;
+                        const url = `${GAS_URL}?action=getUserDiscounts&phone=${encodeURIComponent(phone)}&lineId=${encodeURIComponent(sysLineId)}&name=${encodeURIComponent(sysLineName)}&channelCode=${encodeURIComponent(CURRENT_CHANNEL.code)}&t=${Date.now()}`;
                         const controller = new AbortController();
                         const timeoutId = setTimeout(() => controller.abort(), 15000);
                         const response = await fetch(url, { signal: controller.signal });
