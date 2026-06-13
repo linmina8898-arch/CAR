@@ -828,7 +828,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.29";
+        const APP_VERSION = "v1.9.30";
 
         // --- 設定常數 ---
         const GAS_URL = "https://script.google.com/macros/s/AKfycbyHkLho-EhceBtJCSd0Vz5e1NtSDILWH08nD_8jJoJzd4c7unaXiI6q_A0ETgpuYG5x/exec"; 
@@ -1251,17 +1251,18 @@
                     updateLogic(); return;
                 }
                 let amt = 0;
+                const ruleCheck = validateDiscountRuleForCurrentTrip(code);
+                if (!ruleCheck.ok) {
+                    currentDiscountAmt = 0; currentDiscountCode = '';
+                    msgEl.innerText = ruleCheck.message;
+                    msgEl.className = 'text-xs mt-1 font-bold text-red-500 block';
+                    updateLogic(); return;
+                }
                 if (DISCOUNT_CODES[code]) {
-                    amt = DISCOUNT_CODES[code];
+                    amt = getDiscountAmountForCurrentTrip(code);
                     msgEl.innerText = `已成功套用，面額 $${amt.toLocaleString('en-US')}`;
                 }
                 if (amt > 0) {
-                    if (document.getElementById('needReturnTrip').checked && DISCOUNT_RULES[code] && DISCOUNT_RULES[code].allowReturn === false) {
-                        currentDiscountAmt = 0; currentDiscountCode = '';
-                        msgEl.innerText = '此折扣碼不可與預約來回優惠同時使用，請擇一套用';
-                        msgEl.className = 'text-xs mt-1 font-bold text-red-500 block';
-                        updateLogic(); return;
-                    }
                     currentDiscountAmt = amt; currentDiscountCode = code;
                     msgEl.className = 'text-xs mt-1 font-bold text-[#553f62] block';
                 } else {
@@ -1309,14 +1310,15 @@
                         if (data.discounts && data.discounts.length > 0) {
                             let html = '<p class="text-[11px] font-normal text-gray-500">您的專屬優惠碼</p>';
                             data.discounts.forEach(d => {
+                                const amountText = d.displayAmount && d.displayAmount !== String(d.amount) ? d.displayAmount : `-$${d.amount}`;
                                 html += `<div class="bg-white border border-[#553f62]/20 rounded px-2 py-1.5 flex items-center gap-1.5 text-[10px] whitespace-nowrap overflow-hidden">
                                     <span class="font-normal text-[#553f62] shrink-0">${d.code}</span>
-                                    <span class="text-gray-500 shrink-0">-$${d.amount}</span>
+                                    <span class="text-gray-500 shrink-0">${amountText}</span>
                                     <span class="text-gray-400 shrink-0 ml-auto">${d.expiry}</span>
                                     <button type="button" class="bg-[#553f62] text-white px-2 py-1 rounded text-[10px] font-normal shrink-0 use-discount-btn" data-code="${d.code}">使用</button>
                                  </div>`;
                                  DISCOUNT_CODES[d.code] = d.amount;
-                                 DISCOUNT_RULES[d.code] = { allowReturn: d.allowReturn !== false };
+                                 DISCOUNT_RULES[d.code] = { allowReturn: d.allowReturn !== false, requiresReturn: d.requiresReturn === true, vehicleDiscounts: d.vehicleDiscounts || {} };
                              });
                             document.getElementById('userDiscountsContainer').innerHTML = html;
                             document.getElementById('userDiscountsContainer').classList.remove('hidden');
@@ -2261,6 +2263,35 @@
             return document.getElementById('needReturnTrip')?.checked && getDaysUntilRide() > 30;
         }
 
+        function getDiscountAmountForCurrentTrip(code) {
+            const normalizedCode = String(code || '').trim().toUpperCase();
+            const rule = DISCOUNT_RULES[normalizedCode] || {};
+            const carType = document.querySelector('input[name="carType_R"]:checked')?.value
+                || document.querySelector('input[name="carType"]:checked')?.value
+                || '小車';
+            const vehicleDiscounts = rule.vehicleDiscounts || {};
+            const keys = Object.keys(vehicleDiscounts);
+            for (const key of keys) {
+                if (carType === key || carType.includes(key) || key.includes(carType)) return Number(vehicleDiscounts[key]) || 0;
+            }
+            if (carType !== '小車') {
+                return Number(vehicleDiscounts['大車'] || vehicleDiscounts['進口商務車'] || vehicleDiscounts['New Alphard'] || DISCOUNT_CODES[normalizedCode] || 0);
+            }
+            return Number(vehicleDiscounts['小車'] || DISCOUNT_CODES[normalizedCode] || 0);
+        }
+
+        function validateDiscountRuleForCurrentTrip(code) {
+            const normalizedCode = String(code || '').trim().toUpperCase();
+            const rule = DISCOUNT_RULES[normalizedCode] || {};
+            if (rule.requiresReturn && !document.getElementById('needReturnTrip').checked) {
+                return { ok: false, message: '此折扣碼限預約來回使用。' };
+            }
+            if (document.getElementById('needReturnTrip').checked && rule.allowReturn === false) {
+                return { ok: false, message: '此折扣碼不可與預約來回優惠同時使用，請擇一套用' };
+            }
+            return { ok: true };
+        }
+
         function updateLogic() {
             [document.getElementById('ordererPhone'), document.getElementById('paxPhone')].forEach(inp => {
                 if (inp) {
@@ -2275,6 +2306,17 @@
             if (!outRes) return; 
             let retRes = null;
             let hasReturn = document.getElementById('needReturnTrip').checked;
+            if (currentDiscountCode) {
+                const ruleCheck = validateDiscountRuleForCurrentTrip(currentDiscountCode);
+                if (!ruleCheck.ok) {
+                    currentDiscountAmt = 0;
+                    currentDiscountCode = '';
+                    document.getElementById('discountInput').value = '';
+                    const msgEl = document.getElementById('discountMsg');
+                    msgEl.innerText = ruleCheck.message;
+                    msgEl.className = 'text-xs mt-1 font-bold text-red-500 block';
+                }
+            }
             if (hasReturn && currentDiscountCode && DISCOUNT_RULES[currentDiscountCode] && DISCOUNT_RULES[currentDiscountCode].allowReturn === false) {
                 currentDiscountAmt = 0;
                 currentDiscountCode = '';
@@ -2310,6 +2352,14 @@
                 const msgEl = document.getElementById('discountMsg');
                 msgEl.innerText = '早鳥優惠不可與其他折扣碼併用，已自動改套早鳥優惠。';
                 msgEl.className = 'text-xs mt-1 font-bold text-[#f07cad] block';
+            }
+            if (currentDiscountCode) {
+                currentDiscountAmt = getDiscountAmountForCurrentTrip(currentDiscountCode);
+                const msgEl = document.getElementById('discountMsg');
+                if (msgEl && currentDiscountAmt > 0) {
+                    msgEl.innerText = `已成功套用，面額 $${currentDiscountAmt.toLocaleString('en-US')}`;
+                    msgEl.className = 'text-xs mt-1 font-bold text-[#553f62] block';
+                }
             }
             const autoReturnDiscount = hasReturn && earlyBirdReturnDiscount <= 0 ? 100 : 0;
             let combinedDiscount = earlyBirdReturnDiscount || (currentDiscountAmt + autoReturnDiscount);
@@ -2423,6 +2473,14 @@
             e.preventDefault();
             const sameAs = document.getElementById('sameAsOrderer').checked;
             const hasReturn = document.getElementById('needReturnTrip').checked;
+            if (currentDiscountCode) {
+                const ruleCheck = validateDiscountRuleForCurrentTrip(currentDiscountCode);
+                if (!ruleCheck.ok) {
+                    Swal.fire({ title: '優惠不適用', text: ruleCheck.message, confirmButtonColor: '#553f62', customClass: { popup: 'swal-custom-radius' } });
+                    return;
+                }
+                currentDiscountAmt = getDiscountAmountForCurrentTrip(currentDiscountCode);
+            }
             if (hasReturn && currentDiscountCode && DISCOUNT_RULES[currentDiscountCode] && DISCOUNT_RULES[currentDiscountCode].allowReturn === false) {
                 Swal.fire({ title: '此優惠不可合併', text: '此折扣碼不可與預約來回優惠同時使用，請擇一套用。', confirmButtonColor: '#553f62', customClass: { popup: 'swal-custom-radius' } });
                 return;
