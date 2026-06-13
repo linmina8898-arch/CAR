@@ -122,9 +122,38 @@
             font-weight: 500;
             color: #374151;
         }
+        .ui-test #bookingForm h2.text-lg,
+        .ui-test #bookingForm h3.text-lg {
+            font-size: 0.95rem;
+            line-height: 1.35rem;
+            color: #1A0B3D;
+        }
+        .ui-test #bookingForm .field-label,
+        .ui-test #bookingForm .subsection-label {
+            font-size: 0.8rem;
+            color: #7A6A82;
+        }
+        .ui-test #bookingForm select,
+        .ui-test #bookingForm input,
+        .ui-test #bookingForm textarea,
+        .ui-test #bookingForm .choice-text,
+        .ui-test #bookingForm p {
+            font-size: 0.82rem;
+            font-weight: 400;
+        }
+        .ui-test #bookingForm select {
+            min-height: 2.5rem;
+        }
+        .ui-test .flow-tab-title {
+            font-size: 0.82rem;
+        }
+        .ui-test .flow-tab-sub,
+        .ui-test .flow-tab-kicker {
+            font-size: 0.72rem;
+        }
     </style>
 </head>
-<body class="pb-10">
+<body class="pb-10 ui-test">
 
     <!-- Header -->
     <div class="max-w-2xl mx-auto pt-4 px-4">
@@ -137,8 +166,8 @@
     <!-- Form Container -->
     <div id="formContainer" class="max-w-2xl mx-auto mt-4 px-4 hidden">
         
-        <!-- 精簡版預約編號 -->
-        <div class="bg-[#fff5f8] px-4 py-2 mb-4 rounded-lg flex justify-between items-center">
+        <!-- 精簡版預約編號：送出後才顯示 -->
+        <div class="hidden bg-[#fff5f8] px-4 py-2 mb-4 rounded-lg justify-between items-center">
             <span class="text-xs font-bold text-[#f07cad] tracking-wider">預約編號</span>
             <span id="displayOrderId" class="text-sm font-black text-[#f07cad] order-id-font tracking-tight">AS-產生中...</span>
         </div>
@@ -828,7 +857,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.30";
+        const APP_VERSION = "v1.9.31";
 
         // --- 設定常數 ---
         const GAS_URL = "https://script.google.com/macros/s/AKfycbyHkLho-EhceBtJCSd0Vz5e1NtSDILWH08nD_8jJoJzd4c7unaXiI6q_A0ETgpuYG5x/exec"; 
@@ -938,6 +967,44 @@
             });
         }
 
+        function validatePassengerAndLuggageStep(errors, prefix = '', label = '去程') {
+            let infantCount = parseInt(document.getElementById('paxInfant' + prefix)?.value) || 0;
+            let sR = parseInt(document.getElementById('seatRear' + prefix)?.value) || 0;
+            let sF = parseInt(document.getElementById('seatForward' + prefix)?.value) || 0;
+            let sB = parseInt(document.getElementById('seatBooster' + prefix)?.value) || 0;
+            if (infantCount > 0 && (sR + sF + sB) < infantCount) {
+                errors.push({msg: `${label}幼童安全座椅 (數量需 ≥ 幼童人數)`, id: 'seatRear' + prefix});
+            }
+
+            const sportName = prefix ? 'sportLuggageRadio' + prefix : 'sportLuggageRadio';
+            const sportRadio = Array.from(document.getElementsByName(sportName)).find(r => r.checked)?.value;
+            if (sportRadio === "是" && !document.getElementById('sportLuggageSize' + prefix)?.value.trim()) {
+                errors.push({msg: `${label}胖胖箱尺寸/大小`, id: 'sportLuggageSize' + prefix});
+            }
+            if (!isLuggageConfirmed(prefix)) {
+                errors.push({msg: `${label}行李件數，若沒有行李請勾選「我沒有行李」`, id: 'noLuggage' + prefix});
+            }
+        }
+
+        function movePassengerSectionToStep2ForUiTest() {
+            const step2 = document.getElementById('step2Wrapper');
+            const carInput = document.querySelector('input[name="carType"]');
+            const carSection = carInput?.closest('.mt-4');
+            const originalCard = carSection?.parentElement;
+            const discountCard = document.getElementById('discountInput')?.closest('.bg-gray-50');
+            if (!step2 || !carSection || !originalCard || document.getElementById('uiTestPassengerCard')) return;
+
+            const passengerCard = document.createElement('div');
+            passengerCard.id = 'uiTestPassengerCard';
+            passengerCard.className = 'bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-sm';
+            while (originalCard.firstChild && originalCard.firstChild !== carSection) {
+                passengerCard.appendChild(originalCard.firstChild);
+            }
+            step2.insertBefore(passengerCard, step2.firstChild);
+            if (discountCard) step2.appendChild(discountCard);
+            originalCard.className = 'bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-sm';
+        }
+
         document.getElementById('btnNextStep').addEventListener('click', () => {
             let errors = [];
             
@@ -945,16 +1012,6 @@
             if (!document.getElementById('flightNo').value.trim()) errors.push({msg: "去程航班編號", id: 'flightNo'});
             if (!document.getElementById('address').value.trim()) errors.push({msg: "去程詳細地址", id: 'address'});
             if (document.getElementById('needExtraStop').checked && !document.getElementById('extraStopAddress').value.trim()) errors.push({msg: "加點詳細地址", id: 'extraStopAddress'});
-
-            let infantCount = parseInt(document.getElementById('paxInfant').value) || 0;
-            let sR = parseInt(document.getElementById('seatRear').value) || 0;
-            let sF = parseInt(document.getElementById('seatForward').value) || 0;
-            let sB = parseInt(document.getElementById('seatBooster').value) || 0;
-            if (infantCount > 0 && (sR + sF + sB) < infantCount) errors.push({msg: "幼童安全座椅 (數量需 ≥ 幼童人數)", id: 'seatRear'});
-
-            const sportRadio = Array.from(document.getElementsByName('sportLuggageRadio')).find(r => r.checked)?.value;
-            if (sportRadio === "是" && !document.getElementById('sportLuggageSize').value.trim()) errors.push({msg: "胖胖箱尺寸/大小", id: 'sportLuggageSize'});
-            if (!isLuggageConfirmed('')) errors.push({msg: "去程行李件數，若沒有行李請勾選「我沒有行李」", id: 'noLuggage'});
 
             const hasReturn = document.getElementById('needReturnTrip').checked;
             syncReturnTripFromOutbound();
@@ -965,15 +1022,6 @@
                 if (!document.getElementById('address' + prefix).value.trim()) errors.push({msg: `回程主要詳細地址`, id: 'address' + prefix});
                 if (document.getElementById('needExtraStop' + prefix).checked && !document.getElementById('extraStopAddress' + prefix).value.trim()) errors.push({msg: `回程加點詳細地址`, id: 'extraStopAddress' + prefix});
                 
-                let infantCount_R = parseInt(document.getElementById('paxInfant' + prefix).value) || 0;
-                let sR_R = parseInt(document.getElementById('seatRear' + prefix).value) || 0;
-                let sF_R = parseInt(document.getElementById('seatForward' + prefix).value) || 0;
-                let sB_R = parseInt(document.getElementById('seatBooster' + prefix).value) || 0;
-                if (infantCount_R > 0 && (sR_R + sF_R + sB_R) < infantCount_R) errors.push({msg: `回程幼童安全座椅 (數量需 ≥ 幼童人數)`, id: 'seatRear' + prefix});
-                
-                const sportRadio_R = Array.from(document.getElementsByName('sportLuggageRadio' + prefix)).find(r => r.checked)?.value;
-                if (sportRadio_R === "是" && !document.getElementById('sportLuggageSize' + prefix).value.trim()) errors.push({msg: `回程胖胖箱尺寸/大小`, id: 'sportLuggageSize' + prefix});
-                if (!isLuggageConfirmed(prefix)) errors.push({msg: `回程行李件數，若沒有行李請勾選「我沒有行李」`, id: 'noLuggage' + prefix});
             }
 
             if (errors.length > 0) { showErrors(errors); return; }
@@ -1011,6 +1059,10 @@
 
         document.getElementById('btnToStep3').addEventListener('click', () => {
             const errors = [];
+            validatePassengerAndLuggageStep(errors, '', '去程');
+            if (document.getElementById('needReturnTrip').checked) {
+                validatePassengerAndLuggageStep(errors, '_R', '回程');
+            }
             const ordererPhoneRaw = document.getElementById('ordererPhone').value.replace(/\D/g, '');
             const sameAs = document.getElementById('sameAsOrderer').checked;
             const isSignSelected = document.getElementById('optSign').checked;
@@ -2950,6 +3002,7 @@
         window.onload = async () => { 
             document.getElementById('versionDisplay').innerText = APP_VERSION;
             initFormOptions(); 
+            movePassengerSectionToStep2ForUiTest();
             priceFetchPromise = fetchPriceTable(); 
             await initializeLiff(); 
         };
