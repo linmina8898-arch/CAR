@@ -294,11 +294,13 @@
             right: auto;
             width: min(406px, calc(100vw - 24px));
             transform: translateX(-50%);
-            border-radius: 14px;
+            bottom: 8px;
+            border-radius: 16px 16px 12px 12px;
             background: #fff !important;
             color: #1A0B3D !important;
             border: 1px solid #e7dde8;
-            box-shadow: 0 8px 22px rgba(85, 63, 98, .18);
+            border-top: 4px solid #553f62;
+            box-shadow: 0 -8px 24px rgba(85, 63, 98, .18), 0 4px 10px rgba(85, 63, 98, .08);
         }
         .ui-flow-v2 #quoteSummaryWrapper,
         .ui-flow-v2 #quoteSummaryWrapper * {
@@ -360,10 +362,10 @@
             align-items: center;
             justify-content: space-between;
             gap: 8px;
-            min-height: 34px;
-            padding: 7px 10px;
+            min-height: 40px;
+            padding: 8px 10px;
             border: 1px solid #d9cedd;
-            border-radius: 999px;
+            border-radius: 10px;
             background: #fff;
             color: #553f62 !important;
             font-size: 11px !important;
@@ -1102,7 +1104,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.35-ui-flow";
+        const APP_VERSION = "v1.9.36-ui-flow";
 
         // --- 設定常數 ---
         const GAS_URL = "https://script.google.com/macros/s/AKfycbyHkLho-EhceBtJCSd0Vz5e1NtSDILWH08nD_8jJoJzd4c7unaXiI6q_A0ETgpuYG5x/exec"; 
