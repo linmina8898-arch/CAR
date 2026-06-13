@@ -346,6 +346,45 @@
             color: #7A6A82 !important;
             opacity: 1 !important;
         }
+        .ui-flow-v2 .identity-options-card {
+            padding-top: 10px !important;
+            padding-bottom: 10px !important;
+        }
+        .ui-flow-v2 .identity-option-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .ui-flow-v2 .identity-option-pill {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            min-height: 34px;
+            padding: 7px 10px;
+            border: 1px solid #d9cedd;
+            border-radius: 999px;
+            background: #fff;
+            color: #553f62 !important;
+            font-size: 11px !important;
+            font-weight: 600 !important;
+            cursor: pointer;
+        }
+        .ui-flow-v2 .identity-option-pill input {
+            width: 16px;
+            height: 16px;
+            min-height: 16px;
+            margin: 0;
+        }
+        .ui-flow-v2 .identity-option-pill:has(input:checked) {
+            background: #f8f3f7;
+            border-color: #553f62;
+        }
+        .ui-flow-v2 .identity-panel {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #e7dde8;
+        }
     </style>
 </head>
 <body class="pb-10 ui-flow-v2">
@@ -399,16 +438,20 @@
 
                 <!-- ==================== STEP 1: 報價與行程 ==================== -->
                 <div id="step1Wrapper" class="space-y-6 transition-all duration-500">
-                    <!-- 舊客快速帶入 -->
-                    <div class="returning-customer-box bg-white p-3 rounded-xl border border-[#553f62]/20 shadow-sm">
-                        <label class="flex items-start gap-2 cursor-pointer mb-0">
-                            <input type="checkbox" id="returningCustomerToggle" class="mt-0.5 rounded w-4 h-4 text-primary focus:ring-primary accent-[#553f62]">
-                            <span>
-                                <span class="block text-xs font-bold text-[#553f62]">我有預約過，快速帶入資料</span>
-                                <span class="block text-[10px] text-[#553f62]/70 mt-1">輸入手機可帶入上次地址與乘車資料；日期、時間與航班請重新填寫。</span>
-                            </span>
-                        </label>
-                        <div id="returningCustomerPanel" class="returning-customer-panel hidden mt-3">
+                    <!-- 輔助身分選項 -->
+                    <div class="identity-options-card bg-white p-3 rounded-xl border border-[#553f62]/20 shadow-sm">
+                        <div class="identity-option-row">
+                            <label class="identity-option-pill mb-0">
+                                <span>我有預約過</span>
+                                <input type="checkbox" id="returningCustomerToggle" class="rounded text-primary focus:ring-primary accent-[#553f62]">
+                            </label>
+                            <label id="companyQuickBox" class="identity-option-pill mb-0">
+                                <span>月結/特約廠商</span>
+                                <input type="checkbox" id="companyQuickToggle" class="rounded text-primary focus:ring-primary accent-[#553f62]">
+                            </label>
+                        </div>
+                        <div id="returningCustomerPanel" class="returning-customer-panel identity-panel hidden">
+                            <p class="text-[10px] text-[#553f62]/70 mb-2">輸入手機可帶入上次地址與乘車資料；日期、時間與航班請重新填寫。</p>
                             <div class="grid grid-cols-[1fr_auto] gap-2">
                                 <input type="tel" id="ordererPhone" maxlength="12" class="w-full p-2.5 border border-[#553f62]/25 rounded-lg focus-primary text-sm text-gray-700 bg-white placeholder:font-normal placeholder:text-xs" placeholder="聯絡電話">
                                 <button type="button" id="btnAutoFill" class="bg-[#553f62] text-white font-bold px-3 rounded-lg shadow-sm hover:bg-[#463252] transition text-xs">
@@ -416,21 +459,9 @@
                                 </button>
                             </div>
                         </div>
-                        <button type="button" id="btnCancelBooking" class="mt-2 w-full bg-white text-red-500 font-medium px-3 py-2 rounded-lg border border-red-100 shadow-sm hover:bg-red-50 transition text-xs">
-                            我要取消已送出的預約
-                        </button>
-                    </div>
-
-                    <!-- 月結簽約廠商 -->
-                    <div id="companyQuickBox" class="bg-white p-3 rounded-xl border border-[#553f62]/20 shadow-sm">
-                        <label class="flex items-start gap-2 cursor-pointer mb-0">
-                            <input type="checkbox" id="companyQuickToggle" class="mt-0.5 rounded w-4 h-4 text-primary focus:ring-primary accent-[#553f62]">
-                            <span>
-                                <span class="block text-xs font-bold text-[#553f62]">月結簽約廠商</span>
-                                <span class="block text-[10px] text-[#553f62]/70 mt-1">輸入公司統編或公司名稱，實際金額依簽約內容與客服確認為準。</span>
-                            </span>
-                        </label>
-                        <div id="companyQuickPanel" class="company-quick-panel hidden mt-3"></div>
+                        <div id="companyQuickPanel" class="company-quick-panel identity-panel hidden">
+                            <p class="text-[10px] text-[#553f62]/70 mb-2">輸入公司統編或公司名稱，實際金額依簽約內容與客服確認為準。</p>
+                        </div>
                     </div>
 
                     <!-- 去程：行程資訊 -->
@@ -1071,7 +1102,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.34-ui-flow";
+        const APP_VERSION = "v1.9.35-ui-flow";
 
         // --- 設定常數 ---
         const GAS_URL = "https://script.google.com/macros/s/AKfycbyHkLho-EhceBtJCSd0Vz5e1NtSDILWH08nD_8jJoJzd4c7unaXiI6q_A0ETgpuYG5x/exec"; 
