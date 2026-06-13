@@ -151,15 +151,160 @@
         .ui-test .flow-tab-kicker {
             font-size: 0.72rem;
         }
+
+        /* v1.9.32 customer UI flow redesign */
+        .ui-flow-v2 {
+            background: #f6f3f7;
+            color: #172033;
+        }
+        .ui-flow-v2 .top-brand {
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            width: min(430px, 100%);
+            margin: 0 auto;
+            background: rgba(255, 255, 255, .96);
+            border-bottom: 1px solid #e7dde8;
+            padding: 14px 16px 12px;
+            backdrop-filter: blur(10px);
+        }
+        .ui-flow-v2 .brand-title {
+            color: #1A0B3D;
+            font-size: 17px;
+            line-height: 1.35;
+            font-weight: 700;
+            letter-spacing: 0;
+        }
+        .ui-flow-v2 #formContainer {
+            max-width: 430px;
+            margin-top: 0;
+            padding-left: 0;
+            padding-right: 0;
+            background: #fff;
+            min-height: 100vh;
+            box-shadow: 0 0 0 1px rgba(85, 63, 98, .08);
+        }
+        .ui-flow-v2 #formContainer > .bg-white {
+            border-radius: 0;
+            box-shadow: none;
+            padding: 0;
+            overflow: visible;
+        }
+        .ui-flow-v2 .flow-shell {
+            background: #fff;
+            padding: 12px 16px;
+            border-bottom: 1px solid #e7dde8;
+        }
+        .ui-flow-v2 .flow-tabs {
+            gap: 6px;
+        }
+        .ui-flow-v2 .flow-tab {
+            border: 1px solid #e7dde8;
+            border-radius: 10px;
+            min-height: 52px;
+            padding: 8px 7px;
+            color: #7A6A82;
+            text-align: left;
+            background: #fff;
+        }
+        .ui-flow-v2 .flow-tab.active {
+            background: #553f62;
+            border-color: #553f62;
+            color: #fff;
+            box-shadow: 0 6px 16px rgba(85, 63, 98, .18);
+        }
+        .ui-flow-v2 .flow-tab.done {
+            border-color: rgba(240, 124, 173, .34);
+            color: #f07cad;
+        }
+        .ui-flow-v2 .flow-tab-title {
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .ui-flow-v2 .flow-tab-sub {
+            color: inherit;
+            opacity: .72;
+            font-size: 10px;
+        }
+        .ui-flow-v2 #bookingForm {
+            padding-bottom: 126px;
+        }
+        .ui-flow-v2 #bookingForm > div[id$="Wrapper"] {
+            padding: 0;
+        }
+        .ui-flow-v2 #bookingForm > div[id$="Wrapper"] > div {
+            background: #fff !important;
+            border: 0 !important;
+            border-top: 1px solid #e7dde8 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            padding: 14px 16px !important;
+        }
+        .ui-flow-v2 #bookingForm > div[id$="Wrapper"] > div:first-child {
+            border-top: 0 !important;
+        }
+        .ui-flow-v2 #bookingForm h2.text-lg,
+        .ui-flow-v2 #bookingForm h3.text-lg {
+            color: #1A0B3D !important;
+            font-size: 13px !important;
+            line-height: 1.35rem !important;
+            font-weight: 700 !important;
+            margin-bottom: 9px !important;
+        }
+        .ui-flow-v2 #bookingForm h2.text-lg > span.w-1,
+        .ui-flow-v2 #bookingForm h3.text-lg > span.w-1 {
+            display: none;
+        }
+        .ui-flow-v2 #bookingForm label,
+        .ui-flow-v2 #bookingForm .field-label,
+        .ui-flow-v2 #bookingForm .subsection-label {
+            color: #7A6A82 !important;
+            font-size: 11px !important;
+            line-height: 1.35 !important;
+            font-weight: 600 !important;
+        }
+        .ui-flow-v2 #bookingForm input,
+        .ui-flow-v2 #bookingForm select,
+        .ui-flow-v2 #bookingForm textarea {
+            min-height: 40px;
+            border-color: #d9cedd;
+            border-radius: 10px;
+            color: #172033;
+            font-size: 12px !important;
+            font-weight: 400 !important;
+        }
+        .ui-flow-v2 #bookingForm p,
+        .ui-flow-v2 #bookingForm .choice-text,
+        .ui-flow-v2 #bookingForm .compact-option-text {
+            font-size: 12px !important;
+            font-weight: 400 !important;
+        }
+        .ui-flow-v2 .car-radio-label {
+            border-width: 1px !important;
+            border-color: #e7dde8 !important;
+            border-radius: 10px !important;
+            padding: 10px !important;
+        }
+        .ui-flow-v2 .car-radio-label:has(input[type="radio"]:checked) {
+            background: #f8f3f7 !important;
+            border-color: #553f62 !important;
+        }
+        .ui-flow-v2 #quoteSummaryWrapper {
+            left: 50%;
+            right: auto;
+            width: min(406px, calc(100vw - 24px));
+            transform: translateX(-50%);
+            border-radius: 14px;
+        }
     </style>
 </head>
-<body class="pb-10 ui-test">
+<body class="pb-10 ui-flow-v2">
 
     <!-- Header -->
-    <div class="max-w-2xl mx-auto pt-4 px-4">
-        <img src="預約單表頭.jpg" alt="安興租車預約/詢價 系統" class="w-full h-auto rounded-xl shadow-md" onerror="this.style.display='none'; document.getElementById('text-header').style.display='block';">
-        <div id="text-header" class="bg-primary text-white text-center py-4 rounded-xl shadow-md" style="display: none;">
-            <h1 class="text-xl font-bold tracking-wider">安興租車預約/詢價 系統</h1>
+    <div class="top-brand">
+        <img src="預約單表頭.jpg" alt="安興租車預約/詢價 系統" class="hidden" onerror="this.style.display='none';">
+        <div id="text-header">
+            <h1 class="brand-title">安興租車︱詢價/預約系統</h1>
         </div>
     </div>
 
@@ -173,7 +318,7 @@
         </div>
 
         <!-- 文字版流程提示 -->
-        <div class="bg-white/80 border border-gray-200 rounded-xl px-2.5 py-2.5 mb-4 text-[11px] shadow-sm">
+        <div class="flow-shell text-[11px]">
             <div class="flow-tabs">
                 <button type="button" id="indStep1" class="flow-tab active" onclick="goToFlowStep(1)">
                     <span class="flow-tab-kicker">STEP 1</span>
@@ -194,7 +339,7 @@
             <p id="flowStepHint" class="text-[10px] text-gray-500 text-center mt-2">先確認路線與金額，再決定是否預約。</p>
         </div>
 
-        <div class="bg-white rounded-xl shadow-lg p-4 space-y-6 relative overflow-hidden">
+        <div class="bg-white space-y-6 relative overflow-hidden">
             <form id="bookingForm" class="space-y-6">
                 
                 <!-- Hidden Fields -->
@@ -857,7 +1002,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.31";
+        const APP_VERSION = "v1.9.32-ui-flow";
 
         // --- 設定常數 ---
         const GAS_URL = "https://script.google.com/macros/s/AKfycbyHkLho-EhceBtJCSd0Vz5e1NtSDILWH08nD_8jJoJzd4c7unaXiI6q_A0ETgpuYG5x/exec"; 
