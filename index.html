@@ -295,11 +295,12 @@
             width: min(406px, calc(100vw - 24px));
             transform: translateX(-50%);
             bottom: 8px;
-            border-radius: 16px;
+            border-radius: 18px !important;
             background: #fff !important;
             color: #1A0B3D !important;
-            border: 1px solid #e7dde8;
-            box-shadow: 0 -8px 24px rgba(85, 63, 98, .14), 0 4px 10px rgba(85, 63, 98, .06);
+            border: 1px solid #e7dde8 !important;
+            box-shadow: 0 -8px 22px rgba(85, 63, 98, .10), 0 4px 12px rgba(85, 63, 98, .06) !important;
+            overflow: hidden;
         }
         .ui-flow-v2 #quoteSummaryWrapper,
         .ui-flow-v2 #quoteSummaryWrapper * {
@@ -357,6 +358,42 @@
         .ui-flow-v2 .identity-options-card {
             padding-top: 10px !important;
             padding-bottom: 10px !important;
+        }
+        .ui-flow-v2 .final-review-card {
+            background: #fff !important;
+            border: 1px solid #e7dde8 !important;
+            border-radius: 14px !important;
+            box-shadow: 0 4px 14px rgba(85, 63, 98, .06) !important;
+            padding: 16px !important;
+        }
+        .ui-flow-v2 .final-review-title {
+            color: #1A0B3D !important;
+            font-size: 14px !important;
+            font-weight: 700 !important;
+        }
+        .ui-flow-v2 .final-review-section-title {
+            color: #7A6A82 !important;
+            font-size: 12px !important;
+            font-weight: 700 !important;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #f0e8f1;
+        }
+        .ui-flow-v2 .final-review-grid {
+            display: grid;
+            grid-template-columns: 64px minmax(0, 1fr);
+            column-gap: 10px;
+            row-gap: 6px;
+            font-size: 12px;
+            line-height: 1.45;
+            margin-top: 8px;
+        }
+        .ui-flow-v2 .final-review-grid .review-label {
+            color: #8b8190;
+        }
+        .ui-flow-v2 .final-review-grid .review-value {
+            color: #172033;
+            word-break: break-word;
         }
         .ui-flow-v2 .identity-option-row {
             display: grid;
@@ -997,6 +1034,11 @@
 
                 <!-- ==================== STEP 3: 確認送出與免責聲明 ==================== -->
                 <div id="step3Wrapper" class="space-y-6 hidden transition-all duration-500">
+                    <div id="finalReviewCard" class="final-review-card">
+                        <div class="final-review-title">預約資訊確認</div>
+                        <p class="text-[11px] text-gray-500 mt-1">請再次確認以下資料是否正確，再送出預約。</p>
+                        <div id="finalReviewContent"></div>
+                    </div>
                     <div class="bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-sm">
                         <h3 class="font-bold mb-3 text-primary flex items-center text-lg">
                             <span class="w-1 h-6 bg-primary mr-2 inline-block rounded"></span>確認送出前請閱讀
@@ -1023,18 +1065,18 @@
                 </div> <!-- END STEP 3 WRAPPER -->
 
                 <!-- ==================== 預估報價明細 (固定顯示於底部) ==================== -->
-                <div id="quoteSummaryWrapper" class="bg-[#553f62] p-3 rounded-xl shadow-lg text-[#e9e7ef]">
+                <div id="quoteSummaryWrapper" class="p-3">
                     <div class="flex items-center justify-between gap-3">
                         <div class="min-w-0">
-                            <p class="text-[11px] text-[#e9e7ef]/70">預估費用明細/總額</p>
+                            <p class="text-[11px] text-[#7A6A82]">預估費用明細/總額</p>
                             <div id="quoteSummary" class="text-base">
                                 <div class="flex items-baseline gap-2 whitespace-nowrap">
-                                    <span class="text-[12px] text-[#e9e7ef]/80">預估報價</span>
-                                    <span id="quoteTotal" class="text-[#e9e7ef] text-xl drop-shadow-sm" data-out="0" data-ret="0" data-grand="0" data-out-base="0" data-ret-base="0">$0</span>
+                                    <span class="text-[12px] text-[#1A0B3D]">預估報價</span>
+                                    <span id="quoteTotal" class="text-[#553f62] text-xl" data-out="0" data-ret="0" data-grand="0" data-out-base="0" data-ret-base="0">$0</span>
                                 </div>
                             </div>
                         </div>
-                        <button type="button" id="toggleQuoteDetails" aria-label="展開費用明細" class="shrink-0 w-9 h-9 bg-white/10 border border-white/20 text-[#e9e7ef] rounded-full text-base leading-none flex items-center justify-center">
+                        <button type="button" id="toggleQuoteDetails" aria-label="展開費用明細" class="shrink-0 w-9 h-9 bg-[#f8f3f7] border border-[#e7dde8] text-[#553f62] rounded-full text-base leading-none flex items-center justify-center">
                             ˄
                         </button>
                     </div>
@@ -1110,7 +1152,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.37-ui-flow";
+        const APP_VERSION = "v1.9.38-ui-flow";
 
         // --- 設定常數 ---
         const GAS_URL = "https://script.google.com/macros/s/AKfycbyHkLho-EhceBtJCSd0Vz5e1NtSDILWH08nD_8jJoJzd4c7unaXiI6q_A0ETgpuYG5x/exec"; 
@@ -1200,6 +1242,7 @@
                     document.getElementById('btnNextStep').click();
                     return;
                 }
+                renderFinalReviewCard();
                 document.getElementById('step2Wrapper').classList.add('hidden');
                 document.getElementById('step2Buttons').classList.add('hidden');
                 document.getElementById('step3Wrapper').classList.remove('hidden');
@@ -1375,6 +1418,7 @@
                 document.getElementById('ordererPhone').value = document.getElementById('paxPhone').value;
             }
             if (errors.length > 0) { showErrors(errors); return; }
+            renderFinalReviewCard();
             document.getElementById('step2Wrapper').classList.add('hidden');
             document.getElementById('step2Buttons').classList.add('hidden');
             document.getElementById('step3Wrapper').classList.remove('hidden');
@@ -1399,6 +1443,93 @@
             const carry = parseInt(document.getElementById('luggageCarry' + prefix)?.value, 10) || 0;
             const checked = parseInt(document.getElementById('luggageChecked' + prefix)?.value, 10) || 0;
             return noLuggage || carry > 0 || checked > 0;
+        }
+
+        function getFinalReviewValue(id) {
+            return (document.getElementById(id)?.value || '').trim();
+        }
+
+        function getFinalReviewTrip(prefix = '', label = '去程') {
+            const rideType = getFinalReviewValue('rideType' + prefix);
+            const airport = getFinalReviewValue('airport' + prefix);
+            const flightId = prefix ? 'flightNo_R' : 'flightNo';
+            const flightNo = getFinalReviewValue(flightId).toUpperCase();
+            const date = getFinalReviewValue('rideDate' + prefix);
+            const hour = getFinalReviewValue('rideHour' + prefix);
+            const minute = getFinalReviewValue('rideMinute' + prefix);
+            const address = stripTaiwan(getFinalReviewValue('address' + prefix));
+            const needStop = document.getElementById('needExtraStop' + prefix)?.checked;
+            const extraStop = needStop ? stripTaiwan(getFinalReviewValue('extraStopAddress' + prefix)) : '無';
+            const carType = document.querySelector(`input[name="carType${prefix}"]:checked`)?.value || '-';
+            const adult = parseInt(getFinalReviewValue('paxAdult' + prefix), 10) || 0;
+            const child = parseInt(getFinalReviewValue('paxChild' + prefix), 10) || 0;
+            const infant = parseInt(getFinalReviewValue('paxInfant' + prefix), 10) || 0;
+            const noLuggage = document.getElementById('noLuggage' + prefix)?.checked;
+            const carry = parseInt(getFinalReviewValue('luggageCarry' + prefix), 10) || 0;
+            const checked = parseInt(getFinalReviewValue('luggageChecked' + prefix), 10) || 0;
+            const seatRear = parseInt(getFinalReviewValue('seatRear' + prefix), 10) || 0;
+            const seatForward = parseInt(getFinalReviewValue('seatForward' + prefix), 10) || 0;
+            const seatBooster = parseInt(getFinalReviewValue('seatBooster' + prefix), 10) || 0;
+            const seats = [
+                seatRear ? `後向${seatRear}` : '',
+                seatForward ? `前向${seatForward}` : '',
+                seatBooster ? `增高墊${seatBooster}` : ''
+            ].filter(Boolean).join('、') || '無';
+            const sportRadio = Array.from(document.getElementsByName('sportLuggageRadio' + prefix)).find(r => r.checked)?.value;
+            const sportLuggage = sportRadio === '是'
+                ? `有 ${getFinalReviewValue('sportLuggageQty' + prefix)}件，${getFinalReviewValue('sportLuggageSize' + prefix)}`
+                : '無';
+            const route = rideType === '接機'
+                ? `${airport}${flightNo ? ' ' + flightNo : ''} → ${address || '-'}`
+                : `${address || '-'} → ${airport}${flightNo ? ' ' + flightNo : ''}`;
+            return {
+                label,
+                rows: [
+                    ['日期時間', `${date || '-'} ${hour || '--'}:${minute || '--'} ${rideType || ''}`.trim()],
+                    ['行程', route],
+                    ['加點', extraStop],
+                    ['車型', carType],
+                    ['人數', `${adult}大 ${child}中 ${infant}小`],
+                    ['行李', noLuggage ? '無' : `${checked}大 ${carry}登機`],
+                    ['座椅', seats],
+                    ['胖箱', sportLuggage]
+                ]
+            };
+        }
+
+        function renderFinalReviewCard() {
+            const container = document.getElementById('finalReviewContent');
+            if (!container) return;
+            const trips = [getFinalReviewTrip('', '去程')];
+            if (document.getElementById('needReturnTrip')?.checked) trips.push(getFinalReviewTrip('_R', '回程'));
+            const payment = getFinalReviewValue('payment') || '-';
+            const signboard = document.getElementById('optSign')?.checked ? (getFinalReviewValue('signContent') || '需舉牌') : '無';
+            const remarks = getFinalReviewValue('remarks') || '無';
+            const total = document.getElementById('quoteTotal')?.textContent?.trim() || '$0';
+
+            const tripHtml = trips.map(trip => `
+                <div class="final-review-section-title">${escapeBindHtml(trip.label)}</div>
+                <div class="final-review-grid">
+                    ${trip.rows.map(([label, value]) => `
+                        <div class="review-label">${escapeBindHtml(label)}</div>
+                        <div class="review-value">${escapeBindHtml(value || '-')}</div>
+                    `).join('')}
+                </div>
+            `).join('');
+
+            container.innerHTML = `
+                ${tripHtml}
+                <div class="final-review-section-title">聯絡與需求</div>
+                <div class="final-review-grid">
+                    <div class="review-label">訂車人</div><div class="review-value">${escapeBindHtml(getFinalReviewValue('ordererName') || '-')}</div>
+                    <div class="review-label">乘客</div><div class="review-value">${escapeBindHtml(getFinalReviewValue('paxName') || '-')}</div>
+                    <div class="review-label">電話</div><div class="review-value">${escapeBindHtml(getFinalReviewValue('paxPhone') || getFinalReviewValue('ordererPhone') || '-')}</div>
+                    <div class="review-label">付款</div><div class="review-value">${escapeBindHtml(payment)}</div>
+                    <div class="review-label">舉牌</div><div class="review-value">${escapeBindHtml(signboard)}</div>
+                    <div class="review-label">備註</div><div class="review-value">${escapeBindHtml(remarks)}</div>
+                    <div class="review-label">總額</div><div class="review-value text-[#553f62] font-bold">${escapeBindHtml(total)}</div>
+                </div>
+            `;
         }
 
         function parseZoneInfo(place) {
