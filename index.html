@@ -394,6 +394,7 @@
         .ui-flow-v2 .final-review-grid .review-value {
             color: #172033;
             word-break: break-word;
+            white-space: pre-line;
         }
         .ui-flow-v2 .identity-option-row {
             display: grid;
@@ -1152,7 +1153,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.39-ui-flow";
+        const APP_VERSION = "v1.9.40-ui-flow";
 
         // --- 設定常數 ---
         const GAS_URL = "https://script.google.com/macros/s/AKfycbyHkLho-EhceBtJCSd0Vz5e1NtSDILWH08nD_8jJoJzd4c7unaXiI6q_A0ETgpuYG5x/exec"; 
@@ -1453,9 +1454,9 @@
             if (!dateValue) return '-';
             const days = ['日', '一', '二', '三', '四', '五', '六'];
             const dateObj = new Date(`${dateValue}T00:00:00`);
-            const monthDay = dateValue.slice(5).replace('-', '/');
+            const displayDate = dateValue.replace(/-/g, '/');
             const day = Number.isNaN(dateObj.getTime()) ? '' : `（${days[dateObj.getDay()]}）`;
-            return `${monthDay}${day}`;
+            return `${displayDate}${day}`;
         }
 
         function getFinalReviewTrip(prefix = '', label = '去程') {
@@ -1489,8 +1490,8 @@
                 ? `有 ${getFinalReviewValue('sportLuggageQty' + prefix)}件，${getFinalReviewValue('sportLuggageSize' + prefix)}`
                 : '無';
             const route = rideType === '接機'
-                ? `${airport} → ${address || '-'}`
-                : `${address || '-'} → ${airport}`;
+                ? `${airport}\n→ ${address || '-'}`
+                : `${address || '-'}\n→ ${airport}`;
             const dateTimeTitle = `${formatFinalReviewDate(date)} ${hour || '--'}:${minute || '--'} ${rideType || ''}${flightNo ? ' ' + flightNo : ''}`.trim();
             return {
                 label,
