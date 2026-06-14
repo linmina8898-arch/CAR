@@ -298,8 +298,8 @@
             border-radius: 18px !important;
             background: #fff !important;
             color: #1A0B3D !important;
-            border: 1px solid #e7dde8 !important;
-            box-shadow: 0 -8px 22px rgba(85, 63, 98, .10), 0 4px 12px rgba(85, 63, 98, .06) !important;
+            border: 1px solid #d8c8dc !important;
+            box-shadow: 0 -8px 22px rgba(85, 63, 98, .12), 0 4px 14px rgba(85, 63, 98, .08) !important;
             overflow: hidden;
         }
         .ui-flow-v2 #quoteSummaryWrapper,
@@ -1152,7 +1152,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.38-ui-flow";
+        const APP_VERSION = "v1.9.39-ui-flow";
 
         // --- 設定常數 ---
         const GAS_URL = "https://script.google.com/macros/s/AKfycbyHkLho-EhceBtJCSd0Vz5e1NtSDILWH08nD_8jJoJzd4c7unaXiI6q_A0ETgpuYG5x/exec"; 
@@ -1449,6 +1449,15 @@
             return (document.getElementById(id)?.value || '').trim();
         }
 
+        function formatFinalReviewDate(dateValue) {
+            if (!dateValue) return '-';
+            const days = ['日', '一', '二', '三', '四', '五', '六'];
+            const dateObj = new Date(`${dateValue}T00:00:00`);
+            const monthDay = dateValue.slice(5).replace('-', '/');
+            const day = Number.isNaN(dateObj.getTime()) ? '' : `（${days[dateObj.getDay()]}）`;
+            return `${monthDay}${day}`;
+        }
+
         function getFinalReviewTrip(prefix = '', label = '去程') {
             const rideType = getFinalReviewValue('rideType' + prefix);
             const airport = getFinalReviewValue('airport' + prefix);
@@ -1480,12 +1489,13 @@
                 ? `有 ${getFinalReviewValue('sportLuggageQty' + prefix)}件，${getFinalReviewValue('sportLuggageSize' + prefix)}`
                 : '無';
             const route = rideType === '接機'
-                ? `${airport}${flightNo ? ' ' + flightNo : ''} → ${address || '-'}`
-                : `${address || '-'} → ${airport}${flightNo ? ' ' + flightNo : ''}`;
+                ? `${airport} → ${address || '-'}`
+                : `${address || '-'} → ${airport}`;
+            const dateTimeTitle = `${formatFinalReviewDate(date)} ${hour || '--'}:${minute || '--'} ${rideType || ''}${flightNo ? ' ' + flightNo : ''}`.trim();
             return {
                 label,
                 rows: [
-                    ['日期時間', `${date || '-'} ${hour || '--'}:${minute || '--'} ${rideType || ''}`.trim()],
+                    ['日期時間', dateTimeTitle],
                     ['行程', route],
                     ['加點', extraStop],
                     ['車型', carType],
