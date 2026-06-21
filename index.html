@@ -1153,7 +1153,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.40-ui-flow";
+        const APP_VERSION = "v1.9.41-ui-flow";
 
         // --- 設定常數 ---
         const GAS_URL = "https://script.google.com/macros/s/AKfycby9KWdatRfDZY5g2DkieUkAhyEJDDCnKcMb_l8o2_J4JCaOtKYfEEkvzk-1sW-oZWIF/exec"; 
@@ -2778,11 +2778,9 @@
         function validateDiscountRuleForCurrentTrip(code) {
             const normalizedCode = String(code || '').trim().toUpperCase();
             const rule = DISCOUNT_RULES[normalizedCode] || {};
-            if (rule.requiresReturn && !document.getElementById('needReturnTrip').checked) {
+            const hasReturn = document.getElementById('needReturnTrip').checked;
+            if (rule.requiresReturn && !hasReturn) {
                 return { ok: false, message: '此折扣碼限預約來回使用。' };
-            }
-            if (document.getElementById('needReturnTrip').checked && rule.allowReturn === false) {
-                return { ok: false, message: '此折扣碼不可與預約來回優惠同時使用，請擇一套用' };
             }
             return { ok: true };
         }
@@ -2811,14 +2809,6 @@
                     msgEl.innerText = ruleCheck.message;
                     msgEl.className = 'text-xs mt-1 font-bold text-red-500 block';
                 }
-            }
-            if (hasReturn && currentDiscountCode && DISCOUNT_RULES[currentDiscountCode] && DISCOUNT_RULES[currentDiscountCode].allowReturn === false) {
-                currentDiscountAmt = 0;
-                currentDiscountCode = '';
-                document.getElementById('discountInput').value = '';
-                const msgEl = document.getElementById('discountMsg');
-                msgEl.innerText = '此折扣碼不可與預約來回優惠同時使用，請擇一套用';
-                msgEl.className = 'text-xs mt-1 font-bold text-red-500 block';
             }
             if (hasReturn) {
                 retRes = processTripData('_R');
@@ -2856,7 +2846,9 @@
                     msgEl.className = 'text-xs mt-1 font-bold text-[#553f62] block';
                 }
             }
-            const autoReturnDiscount = hasReturn && earlyBirdReturnDiscount <= 0 ? 100 : 0;
+            const currentDiscountRule = currentDiscountCode ? (DISCOUNT_RULES[currentDiscountCode] || {}) : {};
+            const discountBlocksReturnDiscount = Boolean(currentDiscountCode && currentDiscountRule.allowReturn === false);
+            const autoReturnDiscount = hasReturn && earlyBirdReturnDiscount <= 0 && !discountBlocksReturnDiscount ? 100 : 0;
             let combinedDiscount = earlyBirdReturnDiscount || (currentDiscountAmt + autoReturnDiscount);
             const isCapped = combinedDiscount > 500;
             if (combinedDiscount > 500) combinedDiscount = 500;
@@ -2976,10 +2968,6 @@
                 }
                 currentDiscountAmt = getDiscountAmountForCurrentTrip(currentDiscountCode);
             }
-            if (hasReturn && currentDiscountCode && DISCOUNT_RULES[currentDiscountCode] && DISCOUNT_RULES[currentDiscountCode].allowReturn === false) {
-                Swal.fire({ title: '此優惠不可合併', text: '此折扣碼不可與預約來回優惠同時使用，請擇一套用。', confirmButtonColor: '#553f62', customClass: { popup: 'swal-custom-radius' } });
-                return;
-            }
             const isSignSelected = document.getElementById('optSign').checked;
             let errors = [];
 
@@ -3080,7 +3068,9 @@
             const retBase = parseInt(qtEl.getAttribute('data-ret-base'), 10) || 0;
 
             const earlyBirdReturnDiscount = isEarlyBirdReturnEligible() ? 300 : 0;
-            const autoReturnDiscount = hasReturn && earlyBirdReturnDiscount <= 0 ? 100 : 0;
+            const currentDiscountRule = currentDiscountCode ? (DISCOUNT_RULES[currentDiscountCode] || {}) : {};
+            const discountBlocksReturnDiscount = Boolean(currentDiscountCode && currentDiscountRule.allowReturn === false);
+            const autoReturnDiscount = hasReturn && earlyBirdReturnDiscount <= 0 && !discountBlocksReturnDiscount ? 100 : 0;
             let combinedDiscount = earlyBirdReturnDiscount || (currentDiscountAmt + autoReturnDiscount);
             if (combinedDiscount > 500) combinedDiscount = 500;
 
@@ -3352,7 +3342,7 @@
                         sportLuggage: t(retT.sportLuggage), seatDetails: t(retT.safetySeat), 
                         signboard: t(signStr), tripAmt: t(discountedRetTotal), grandTotal: t(grandTotalAmt), 
                         paymentMethod: t(payStr), remarks: t(remarkStr), surchargeDetails: t(retT.surcharge), 
-                        discountCode: t(earlyBirdReturnDiscount > 0 ? "早鳥優惠" : (currentDiscountAmt > 0 ? `折扣碼(${currentDiscountCode}) + 預約來回優惠` : "預約來回優惠")), 
+                        discountCode: t(earlyBirdReturnDiscount > 0 ? "早鳥優惠" : (currentDiscountAmt > 0 ? (autoReturnDiscount > 0 ? `折扣碼(${currentDiscountCode}) + 預約來回優惠` : `折扣碼(${currentDiscountCode})`) : (autoReturnDiscount > 0 ? "預約來回優惠" : ""))), 
                         discountAmt: t(retDiscount), ordererEmail: t(email), lineId: t(sysLineId),
                         fullMessage: t(fullMsg), appVersion: t(APP_VERSION),
                         companyTaxId: t(companyInfo), companyName: t(companyName), companyBillingCode: t(companyBillingCode),
