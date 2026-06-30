@@ -1153,7 +1153,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.41-ui-flow";
+        const APP_VERSION = "v1.9.42-ui-flow";
 
         // --- 設定常數 ---
         const GAS_URL = "https://script.google.com/macros/s/AKfycby9KWdatRfDZY5g2DkieUkAhyEJDDCnKcMb_l8o2_J4JCaOtKYfEEkvzk-1sW-oZWIF/exec"; 
@@ -1571,11 +1571,12 @@
         }
 
         async function fetchPriceTable() {
+            let data = null;
             try {
                 const url = `${GAS_URL}?action=getPrices&channelCode=${encodeURIComponent(CURRENT_CHANNEL.code)}&t=${Date.now()}`;
                 const response = await fetch(url, { method: 'GET', redirect: 'follow' });
                 if (!response.ok) throw new Error('Network error');
-                const data = await response.json();
+                data = await response.json();
                 
                 if (data && data.newsHtml) NEWS_HTML = data.newsHtml;
                 if (data && data.prices) {
@@ -1585,13 +1586,18 @@
                 } else if (data && Array.isArray(data)) {
                     priceTable = data;
                 }
-                updateLogic();
             } catch (err) { 
                 Swal.fire({
                     title: '資料庫連線異常',
                     html: `<div style="text-align: left; font-size: 14px;">系統將暫時以「人工報價」模式運行。</div>`,
                     icon: 'warning', confirmButtonColor: '#553f62'
                 });
+                return;
+            }
+            try {
+                updateLogic();
+            } catch (err) {
+                console.error('報價資料已載入，但畫面計算初始化失敗', err, data);
             }
         }
 
@@ -2874,7 +2880,7 @@
             }
             document.getElementById('quoteAdjustments').innerHTML = adjustmentHtml;
             document.getElementById('quoteAdjustments').classList.toggle('hidden', adjustmentHtml === '');
-            document.getElementById('quoteSummary').innerHTML = `<div class="flex items-baseline gap-2"><span id="quoteTotal" class="text-[#e9e7ef] text-xl drop-shadow-sm" data-out="${outTotal + globalSurcharge}" data-ret="${retRes ? retTotal : 0}" data-grand="${grandTotal}" data-out-base="${outRes.base}" data-ret-base="${retRes ? retRes.base : 0}">$${grandTotal.toLocaleString('en-US')}</span></div>`;
+            document.getElementById('quoteSummary').innerHTML = `<div class="flex items-baseline gap-2"><span class="text-[12px] text-[#1A0B3D]">預估報價</span><span id="quoteTotal" class="text-[#553f62] text-xl" data-out="${outTotal + globalSurcharge}" data-ret="${retRes ? retTotal : 0}" data-grand="${grandTotal}" data-out-base="${outRes.base}" data-ret-base="${retRes ? retRes.base : 0}">$${grandTotal.toLocaleString('en-US')}</span></div>`;
         }
 
         document.getElementById('bookingForm').addEventListener('input', updateLogic);
