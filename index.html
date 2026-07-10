@@ -488,7 +488,7 @@
                     <div class="identity-options-card bg-white p-3 rounded-xl border border-[#553f62]/20 shadow-sm">
                         <div class="identity-option-row">
                             <label class="identity-option-pill mb-0">
-                                <span>我有預約過</span>
+                                <span>2026/05/01起有預約過</span>
                                 <input type="checkbox" id="returningCustomerToggle" class="rounded text-primary focus:ring-primary accent-[#553f62]">
                             </label>
                             <label id="companyQuickBox" class="identity-option-pill mb-0">
@@ -1018,8 +1018,8 @@
                                     <span>夜間加成(23-05) (+$200)</span>
                                 </label>
                                 <label id="lblUrgent" class="flex items-center space-x-2 opacity-60 transition-opacity duration-300">
-                                    <input type="checkbox" id="optUrgent" value="24小時內急單服務費(+$300)" class="rounded w-4 h-4 text-primary focus:ring-primary surcharge-opt quote-trigger" disabled>
-                                    <span>24小時內急單服務費 (+$300)</span>
+                                    <input type="checkbox" id="optUrgent" value="24小時內急單服務費(+$500，需客服確認有車輛提供才算完成預約)" class="rounded w-4 h-4 text-primary focus:ring-primary surcharge-opt quote-trigger" disabled>
+                                    <span>24小時內急單服務費 (+$500)</span>
                                 </label>
                             </div>
                         </div>
@@ -1153,7 +1153,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.42-ui-flow";
+        const APP_VERSION = "v1.9.44-ui-flow";
 
         // --- 設定常數 ---
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzMLYBvdbo4mkkEUVFcjST44oh7VUXhx7gZjWejm2R8XX549ITaReot0pRAN3mbwA8n/exec"; 
@@ -2523,10 +2523,10 @@
             if (!sessionStorage.getItem('hasSeenNotice')) {
                 const fallbackNews = `<p style="text-align: center; color: #f07cad; font-weight: bold; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; font-size: 13px;">** 請滑至底部點擊「確認送出」，即可開始預約。**</p>
                     <div style="margin-bottom: 20px;">
-                        <div style="color: #553f62; font-weight: bold; font-size: 18px; margin-bottom: 8px;">【24小時內無法線上預約】</div>
-                        <p>為確保您的行程順利及安排合適車款，線上預約需於出發時間前 <strong>24 小時</strong> 完成。</p><br>
+                        <div style="color: #553f62; font-weight: bold; font-size: 18px; margin-bottom: 8px;">【24小時內急單預約】</div>
+                        <p>預約時間 24 小時內仍可線上預約，系統將加收 <strong>$500 急單服務費</strong>。</p><br>
                         <span style="color: #f07cad; font-weight: bold;">【急單處理】</span><br>
-                        24 小時內之緊急用車需求，請直撥客服專線：<br>
+                        急單需客服確認有車輛提供，才算完成預約。若需即時確認，也可直撥客服專線：<br>
                         <div style="text-align: center; margin-top: 10px; margin-bottom: 5px;">
                             <a href="tel:0955311306" style="color: #f07cad; font-size: 22px; font-weight: bold; text-decoration: none; display: inline-block; padding: 5px 15px; border: 2px solid #f07cad; border-radius: 25px; letter-spacing: 1px;">0955-311-306</a>
                         </div>
@@ -2579,11 +2579,11 @@
                 const now = new Date();
                 const rideDateTime = new Date(`${rideDateEl.value}T${rideHourVal}:${rideMinuteVal}:00`);
                 const diffHours = (rideDateTime - now) / (1000 * 60 * 60);
-                if (diffHours < 24) { 
-                    Swal.fire({ title: '無法線上預約', html: `<div style="text-align: left; line-height: 1.6;">線上預約需於出發前 24 小時完成。<br><br><span style="color: #f07cad; font-weight: bold;">【緊急叫車】</span>請直撥客服專線：<div style="text-align: center; margin-top: 15px;"><a href="tel:0955311306" style="color: #f07cad; font-size: 26px; font-weight: bold; text-decoration: none; display: inline-block; padding: 5px 15px; border: 2px solid #f07cad; border-radius: 25px;">0955-311-306</a></div></div>`, confirmButtonColor: '#553f62' });
+                if (diffHours < 0) {
+                    Swal.fire({ title: '預約時間已過', html: `<div style="text-align: left; line-height: 1.6;">請重新選擇尚未出發的日期與時間。</div>`, confirmButtonColor: '#553f62' });
                     rideDateEl.value = ""; rideDateEl.type = "text"; return null;
                 }
-                if (diffHours >= 24 && diffHours <= 48) urgentFee = 300;
+                urgentFee = diffHours <= 24 ? 500 : 0;
             }
 
             const nightHour = parseInt(rideHourVal, 10);
@@ -2693,7 +2693,11 @@
             } else { document.getElementById('seatContainer' + prefix).style.display = 'none'; }
             
             if (nightFee > 0) { html += `<div class="flex justify-between"><span>└ 夜間加成(23-05)</span><span>+$200</span></div>`; tripSurchargeTotal += 200; }
-            if (urgentFee > 0) { html += `<div class="flex justify-between"><span>└ 24小時內急單服務費</span><span>+$300</span></div>`; tripSurchargeTotal += 300; }
+            if (urgentFee > 0) {
+                html += `<div class="flex justify-between"><span>└ 24小時內急單服務費</span><span>+$500</span></div>`;
+                html += `<div class="text-[11px] text-[#7A6A82] pl-4">需客服確認有車輛提供才算完成預約</div>`;
+                tripSurchargeTotal += 500;
+            }
             
             const noLuggage = document.getElementById('noLuggage' + prefix).checked;
             const carryEl = document.getElementById('luggageCarry' + prefix);
@@ -3034,7 +3038,7 @@
                 if (parseInt(dHr, 10) >= 23 || parseInt(dHr, 10) < 5) surchargeArr.push('夜間加成(23-05)(+$200)');
                 if (dDate) {
                     const diffHours = (new Date(`${dDate}T${dHr}:${dMin}:00`) - new Date()) / (1000 * 60 * 60);
-                    if (diffHours >= 24 && diffHours <= 48) surchargeArr.push('24小時內急單服務費(+$300)');
+                    if (diffHours >= 0 && diffHours <= 24) surchargeArr.push('24小時內急單服務費(+$500，需客服確認有車輛提供才算完成預約)');
                 }
                 
                 const rType = document.getElementById('rideType' + prefix).value;
