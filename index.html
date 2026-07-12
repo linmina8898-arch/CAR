@@ -949,6 +949,11 @@
                                 </div>
                             </div>
                             <div>
+                                <label class="block text-sm font-medium text-gray-700">訂車人聯絡電話</label>
+                                <input type="tel" id="ordererPhoneStep2" maxlength="12" class="mt-1 w-full p-2 border rounded focus-primary" placeholder="訂車人聯絡電話 (0900-000-000)">
+                                <p class="text-[11px] text-gray-500 mt-1">查詢專屬折扣碼與訂單通知會優先使用此電話。</p>
+                            </div>
+                            <div>
                                 <label class="block text-sm font-medium text-gray-700">電子信箱 (MAIL)</label>
                                 <input type="email" id="email" class="mt-1 w-full p-2 border rounded focus-primary" placeholder="方便接收系統通知">
                             </div>
@@ -1153,10 +1158,10 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.44-ui-flow";
+        const APP_VERSION = "v1.9.45-ui-flow";
 
         // --- 設定常數 ---
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzMLYBvdbo4mkkEUVFcjST44oh7VUXhx7gZjWejm2R8XX549ITaReot0pRAN3mbwA8n/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycby9KWdatRfDZY5g2DkieUkAhyEJDDCnKcMb_l8o2_J4JCaOtKYfEEkvzk-1sW-oZWIF/exec"; 
         const CHANNEL_CONFIGS = {
             AS: { code: 'AS', name: '安興租車', orderPrefix: 'AS', liffId: '2009922945-KmKUgqbg', lineOaLink: 'https://line.me/R/ti/p/@ansing', paymentOptions: ['轉帳', '刷卡(限街口/全支付)', '月結簽單(企業客戶)'] },
             AZ: { code: 'AZ', name: '安興竹北', orderPrefix: 'AZ', liffId: '2010218931-J293DdSb', lineOaLink: 'https://line.me/R/ti/p/@050hdahs', paymentOptions: ['現金', '轉帳'] }
@@ -1262,6 +1267,38 @@
                 btn.innerText = collapsed ? '˄' : '˅';
                 btn.setAttribute('aria-label', collapsed ? '展開費用明細' : '收合費用明細');
             });
+        }
+
+        function formatPhoneInputValue(value) {
+            let val = String(value || '').replace(/\D/g, '');
+            if (val.length > 4) {
+                val = val.replace(/(\d{4})(\d{3})?(\d{0,3})?/, (m, p1, p2, p3) => p1 + (p2 ? '-' + p2 : '') + (p3 ? '-' + p3 : ''));
+            }
+            return val;
+        }
+
+        function getOrdererPhoneValue() {
+            const step2Phone = document.getElementById('ordererPhoneStep2')?.value.trim() || '';
+            const quickPhone = document.getElementById('ordererPhone')?.value.trim() || '';
+            return step2Phone || quickPhone;
+        }
+
+        function syncOrdererPhoneFields(options = {}) {
+            const quickPhoneEl = document.getElementById('ordererPhone');
+            const step2PhoneEl = document.getElementById('ordererPhoneStep2');
+            const paxPhoneEl = document.getElementById('paxPhone');
+            const quickPhone = quickPhoneEl?.value.trim() || '';
+            const step2Phone = step2PhoneEl?.value.trim() || '';
+            const paxPhone = paxPhoneEl?.value.trim() || '';
+            const fallback = step2Phone || quickPhone || (options.allowPassengerFallback ? paxPhone : '');
+            if (quickPhoneEl && !quickPhone && fallback) quickPhoneEl.value = formatPhoneInputValue(fallback);
+            if (step2PhoneEl && !step2Phone && fallback) step2PhoneEl.value = formatPhoneInputValue(fallback);
+            return fallback;
+        }
+
+        function getDiscountLookupPhone() {
+            syncOrdererPhoneFields({ allowPassengerFallback: true });
+            return getOrdererPhoneValue() || document.getElementById('paxPhone')?.value.trim() || '';
         }
 
         function setupReturningCustomerToggle() {
@@ -1383,6 +1420,7 @@
             document.getElementById('step2Buttons').classList.remove('hidden');
             document.getElementById('step3Wrapper').classList.add('hidden');
             document.getElementById('step3Buttons').classList.add('hidden');
+            syncOrdererPhoneFields();
 
             setFlowStep(2);
 
@@ -1408,7 +1446,8 @@
             if (document.getElementById('needReturnTrip').checked) {
                 validatePassengerAndLuggageStep(errors, '_R', '回程');
             }
-            const ordererPhoneRaw = document.getElementById('ordererPhone').value.replace(/\D/g, '');
+            syncOrdererPhoneFields({ allowPassengerFallback: true });
+            const ordererPhoneRaw = getOrdererPhoneValue().replace(/\D/g, '');
             const sameAs = document.getElementById('sameAsOrderer').checked;
             const isSignSelected = document.getElementById('optSign').checked;
             if (!document.getElementById('ordererName').value.trim()) errors.push({msg: "訂車人姓名", id: "ordererName"});
@@ -1416,7 +1455,7 @@
             const paxPhoneRaw = document.getElementById('paxPhone').value.replace(/\D/g, '');
             if (paxPhoneRaw.length < 10 && !isSignSelected) errors.push({msg: "乘車人聯絡電話", id: "paxPhone"});
             if (ordererPhoneRaw.length < 10 && paxPhoneRaw.length >= 10) {
-                document.getElementById('ordererPhone').value = document.getElementById('paxPhone').value;
+                syncOrdererPhoneFields({ allowPassengerFallback: true });
             }
             if (errors.length > 0) { showErrors(errors); return; }
             renderFinalReviewCard();
@@ -1790,11 +1829,11 @@
             const queryBtn = document.getElementById('queryDiscountBtn');
             if (queryBtn) {
                 queryBtn.addEventListener('click', async () => {
-                    const phone = document.getElementById('ordererPhone').value.trim();
+                    const phone = getDiscountLookupPhone();
                     const sysLineId = document.getElementById('sysLineId').value;
                     const sysLineName = document.getElementById('sysLineName').value;
-                    if (!phone) {
-                        Swal.fire({ title: '請先填寫', text: '請先填寫上方的「聯絡電話」才能查詢專屬優惠喔！', confirmButtonColor: '#553f62' }); return;
+                    if (phone.replace(/\D/g, '').length < 10) {
+                        Swal.fire({ title: '請先填寫電話', text: '請先填寫訂車人或乘車人的聯絡電話，才能查詢專屬折扣碼。', confirmButtonColor: '#553f62' }); return;
                     }
                     queryBtn.innerHTML = '查詢中...'; queryBtn.disabled = true;
                     try {
@@ -1864,12 +1903,14 @@
             const oName = document.getElementById('ordererName');
             const oTitle = document.getElementById('ordererTitle');
             const oPhone = document.getElementById('ordererPhone');
+            const oPhoneStep2 = document.getElementById('ordererPhoneStep2');
             const pName = document.getElementById('paxName');
             const pTitle = document.getElementById('paxTitle');
             const pPhone = document.getElementById('paxPhone');
             function syncData() {
+                syncOrdererPhoneFields();
                 if (sameCheck.checked) {
-                    pName.value = oName.value; pTitle.value = oTitle.value; pPhone.value = oPhone.value;
+                    pName.value = oName.value; pTitle.value = oTitle.value; pPhone.value = getOrdererPhoneValue();
                     pName.disabled = true; pTitle.disabled = true; pPhone.disabled = true;
                     pName.classList.add('bg-gray-100'); pPhone.classList.add('bg-gray-100');
                 } else {
@@ -1878,7 +1919,10 @@
                 }
             }
             sameCheck.addEventListener('change', syncData);
-            [oName, oTitle, oPhone].forEach(el => el.addEventListener('input', () => { if (sameCheck.checked) syncData(); }));
+            [oName, oTitle, oPhone, oPhoneStep2].forEach(el => el?.addEventListener('input', () => {
+                syncOrdererPhoneFields();
+                if (sameCheck.checked) syncData();
+            }));
         }
 
         function setupAutoFill() {
@@ -1928,6 +1972,8 @@
                             document.getElementById('paxTitle').value = titleInput.value;
                             document.getElementById('paxPhone').value = phoneInput.value;
                         }
+                        const step2PhoneInput = document.getElementById('ordererPhoneStep2');
+                        if (step2PhoneInput && !step2PhoneInput.value) step2PhoneInput.value = phoneInput.value;
                         Swal.fire({ title: '載入成功', text: '已為您帶入歷史聯絡資料與地址', icon: 'success', timer: 1500, showConfirmButton: false });
                     } else if (data.error === "mismatch") {
                         Swal.fire({ title: '資料不相符', text: '為確保個資安全，無法自動顯示。', icon: 'warning', confirmButtonColor: '#553f62' });
@@ -2796,11 +2842,9 @@
         }
 
         function updateLogic() {
-            [document.getElementById('ordererPhone'), document.getElementById('paxPhone')].forEach(inp => {
+            [document.getElementById('ordererPhone'), document.getElementById('ordererPhoneStep2'), document.getElementById('paxPhone')].forEach(inp => {
                 if (inp) {
-                    let val = inp.value.replace(/\D/g, '');
-                    if(val.length > 4) val = val.replace(/(\d{4})(\d{3})?(\d{0,3})?/, (m, p1, p2, p3) => p1 + (p2 ? '-' + p2 : '') + (p3 ? '-' + p3 : ''));
-                    inp.value = val;
+                    inp.value = formatPhoneInputValue(inp.value);
                 }
             });
             document.getElementById('signContentContainer').style.display = document.getElementById('optSign').checked ? 'block' : 'none';
@@ -2981,7 +3025,8 @@
             const isSignSelected = document.getElementById('optSign').checked;
             let errors = [];
 
-            const ordererPhoneRaw = document.getElementById('ordererPhone').value.replace(/\D/g, '');
+            syncOrdererPhoneFields({ allowPassengerFallback: true });
+            const ordererPhoneRaw = getOrdererPhoneValue().replace(/\D/g, '');
             
             if (!document.getElementById('ordererName').value.trim()) errors.push({msg: "訂車人姓名", id: "ordererName"});
             if (!document.getElementById('paxName').value.trim()) errors.push({msg: "乘客姓名", id: "paxName"});
@@ -2990,7 +3035,7 @@
                 errors.push({msg: "乘車人聯絡電話 (如沒有台灣門號請輸入0000-000-000，並在備註填寫聯絡方式，或選擇舉牌)", id: "paxPhone"});
             }
             if (ordererPhoneRaw.length < 10 && paxPhoneRaw.length >= 10) {
-                document.getElementById('ordererPhone').value = document.getElementById('paxPhone').value;
+                syncOrdererPhoneFields({ allowPassengerFallback: true });
             }
             if (!document.getElementById('flightNo').value.trim()) errors.push({msg: "去程航班編號", id: 'flightNo'});
             if (hasReturn && !document.getElementById('flightNo_R').value.trim()) errors.push({msg: `回程航班編號`, id: 'flightNo_R'});
@@ -3157,7 +3202,8 @@
             const sysLineId = document.getElementById('sysLineId').value;
             const sysLineName = document.getElementById('sysLineName').value;
             const ordererName = document.getElementById('ordererName').value;
-            const ordererPhone = document.getElementById('ordererPhone').value;
+            syncOrdererPhoneFields({ allowPassengerFallback: true });
+            const ordererPhone = getOrdererPhoneValue();
             const paxFullName = document.getElementById('paxName').value + document.getElementById('paxTitle').value;
             const paxPhone = document.getElementById('paxPhone').value;
             const email = document.getElementById('email').value;
