@@ -1158,7 +1158,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.45-ui-flow";
+        const APP_VERSION = "v1.9.46-ui-flow";
 
         // --- 設定常數 ---
         const GAS_URL = "https://script.google.com/macros/s/AKfycby9KWdatRfDZY5g2DkieUkAhyEJDDCnKcMb_l8o2_J4JCaOtKYfEEkvzk-1sW-oZWIF/exec"; 
@@ -3255,7 +3255,7 @@
             let outLugStr = outLugArr.length > 0 ? outLugArr.join(' ') : '無';
 
             let msgOut = `安興租車 預約確認\n` +
-                         `單號：${hasReturn ? shortOrderId + '-去程' : shortOrderId}\n\n` +
+                         `單號：${hasReturn ? shortOrderId + '-A' : shortOrderId}\n\n` +
                          `${routeTitleOut}` + outFlightStr + `\n` +
                          `時間：${outDisplayDate} ${outT.rideTime}\n` +
                          `地址：${outT.address}` + outExtraStopStr + `\n\n` +
@@ -3299,7 +3299,7 @@
                 retLugStr = retLugArr.length > 0 ? retLugArr.join(' ') : '無';
 
                 msgRet = `安興租車 預約確認\n` +
-                         `單號：${shortOrderId + '-回程'}\n\n` +
+                         `單號：${shortOrderId + '-B'}\n\n` +
                          `${routeTitleRet}` + retFlightStr + `\n` +
                          `時間：${retDisplayDate} ${retT.rideTime}\n` +
                          `地址：${retT.address}` + retExtraStopStr + `\n\n` +
@@ -3343,7 +3343,7 @@
 
             try {
                 const savedTrips = [];
-                const outReservationId = hasReturn ? baseOrderId + '-去程' : baseOrderId;
+                const outReservationId = hasReturn ? baseOrderId + '-A' : baseOrderId;
                 const outPayload = {
                     timestamp: t(new Date().toLocaleString('zh-TW', {timeZone: 'Asia/Taipei'})), 
                     ordererName: t(ordererName), ordererTitle: t(document.getElementById('ordererTitle').value), 
@@ -3383,7 +3383,7 @@
                 if (!outSaved.exists) throw { code: 'storage', message: '去程預約尚未寫入 Google 試算表' };
 
                 if (hasReturn) {
-                    const retReservationId = baseOrderId + '-回程';
+                    const retReservationId = baseOrderId + '-B';
                     const retPayload = {
                         timestamp: t(new Date().toLocaleString('zh-TW', {timeZone: 'Asia/Taipei'})), 
                         ordererName: t(ordererName), ordererTitle: t(document.getElementById('ordererTitle').value), 
@@ -3417,7 +3417,7 @@
                     throw { code: 'calendar', message: '預約資料已收到，但行事曆尚未同步完成' };
                 }
                 const noticeResult = await sendReservationConfirmationCard(
-                    hasReturn ? [baseOrderId + '-去程', baseOrderId + '-回程'] : [baseOrderId]
+                    hasReturn ? [baseOrderId + '-A', baseOrderId + '-B'] : [baseOrderId]
                 );
                 if (!noticeResult.success) {
                     throw { code: 'line', message: noticeResult.error || 'LINE 卡片傳送失敗' };
