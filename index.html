@@ -1158,7 +1158,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.46-ui-flow";
+        const APP_VERSION = "v1.9.47-address-guard";
 
         // --- 設定常數 ---
         const GAS_URL = "https://script.google.com/macros/s/AKfycby9KWdatRfDZY5g2DkieUkAhyEJDDCnKcMb_l8o2_J4JCaOtKYfEEkvzk-1sW-oZWIF/exec"; 
@@ -1368,6 +1368,64 @@
             }
         }
 
+        function validateAddressZone(errors, prefix = '', label = '去程') {
+            const addressEl = document.getElementById('address' + prefix);
+            const zipEl = document.getElementById('zipcode' + prefix);
+            const address = addressEl?.value.trim() || '';
+            const zip = zipEl?.value.trim() || '';
+            if (address && !zip) {
+                errors.push({ msg: `${label}地址請從 Google 地址建議選取，讓系統帶入區碼及區域`, id: 'address' + prefix });
+            }
+
+            const needExtraStop = document.getElementById('needExtraStop' + prefix)?.checked;
+            const extraAddressEl = document.getElementById('extraStopAddress' + prefix);
+            const extraZipEl = document.getElementById('extraZipcode' + prefix);
+            const extraAddress = extraAddressEl?.value.trim() || '';
+            const extraZip = extraZipEl?.value.trim() || '';
+            if (needExtraStop && extraAddress && !extraZip) {
+                errors.push({ msg: `${label}加點地址請從 Google 地址建議選取，讓系統帶入區碼及區域`, id: 'extraStopAddress' + prefix });
+            }
+        }
+
+        function geocodeAddressToZip(inputId, zipId, prefix = '') {
+            const addressEl = document.getElementById(inputId);
+            const zipEl = document.getElementById(zipId);
+            const address = addressEl?.value.trim() || '';
+            if (!address || zipEl?.value.trim()) return Promise.resolve(true);
+            if (!window.google?.maps?.Geocoder) return Promise.resolve(false);
+
+            return new Promise(resolve => {
+                const geocoder = new google.maps.Geocoder();
+                geocoder.geocode({ address, componentRestrictions: { country: 'TW' } }, (results, status) => {
+                    if (status === 'OK' && results[0]) {
+                        addressEl.value = stripTaiwan(results[0].formatted_address || address);
+                        if (zipEl) zipEl.value = parseZoneInfo(results[0]);
+                        calculateDistanceFee(prefix);
+                        resolve(true);
+                    } else {
+                        updateLogic();
+                        resolve(false);
+                    }
+                });
+            });
+        }
+
+        async function resolveAddressZonesBeforeValidate(hasReturn = false) {
+            const jobs = [
+                geocodeAddressToZip('address', 'zipcode', '')
+            ];
+            if (document.getElementById('needExtraStop')?.checked) {
+                jobs.push(geocodeAddressToZip('extraStopAddress', 'extraZipcode', ''));
+            }
+            if (hasReturn) {
+                jobs.push(geocodeAddressToZip('address_R', 'zipcode_R', '_R'));
+                if (document.getElementById('needExtraStop_R')?.checked) {
+                    jobs.push(geocodeAddressToZip('extraStopAddress_R', 'extraZipcode_R', '_R'));
+                }
+            }
+            await Promise.all(jobs);
+        }
+
         function movePassengerSectionToStep2ForUiTest() {
             const step2 = document.getElementById('step2Wrapper');
             const carInput = document.querySelector('input[name="carType"]');
@@ -1387,21 +1445,24 @@
             originalCard.className = 'bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-sm';
         }
 
-        document.getElementById('btnNextStep').addEventListener('click', () => {
+        document.getElementById('btnNextStep').addEventListener('click', async () => {
             let errors = [];
+            const hasReturn = document.getElementById('needReturnTrip').checked;
+            syncReturnTripFromOutbound();
+            await resolveAddressZonesBeforeValidate(hasReturn);
             
             if (!document.getElementById('rideDate').value) errors.push({msg: "去程乘車日期", id: 'rideDate'});
             if (!document.getElementById('flightNo').value.trim()) errors.push({msg: "去程航班編號", id: 'flightNo'});
             if (!document.getElementById('address').value.trim()) errors.push({msg: "去程詳細地址", id: 'address'});
+            validateAddressZone(errors, '', '去程');
             if (document.getElementById('needExtraStop').checked && !document.getElementById('extraStopAddress').value.trim()) errors.push({msg: "加點詳細地址", id: 'extraStopAddress'});
 
-            const hasReturn = document.getElementById('needReturnTrip').checked;
-            syncReturnTripFromOutbound();
             if (hasReturn) {
                 const prefix = '_R';
                 if (!document.getElementById('rideDate' + prefix).value) errors.push({msg: `回程乘車日期`, id: 'rideDate' + prefix});
                 if (!document.getElementById('flightNo_R').value.trim()) errors.push({msg: `回程航班編號`, id: 'flightNo_R'});
                 if (!document.getElementById('address' + prefix).value.trim()) errors.push({msg: `回程主要詳細地址`, id: 'address' + prefix});
+                validateAddressZone(errors, prefix, '回程');
                 if (document.getElementById('needExtraStop' + prefix).checked && !document.getElementById('extraStopAddress' + prefix).value.trim()) errors.push({msg: `回程加點詳細地址`, id: 'extraStopAddress' + prefix});
                 
             }
@@ -2321,11 +2382,17 @@
             const bindAutocomplete = (inputId, zipId, prefix) => {
                 const el = document.getElementById(inputId);
                 if (!el) return;
+                const zipEl = document.getElementById(zipId);
+                el.addEventListener('input', () => {
+                    if (zipEl) zipEl.value = '';
+                    updateLogic();
+                });
+                el.addEventListener('blur', () => geocodeAddressToZip(inputId, zipId, prefix));
                 let ac = new google.maps.places.Autocomplete(el, { componentRestrictions: { country: "tw" }, fields: ["address_components", "formatted_address"] });
                 ac.addListener('place_changed', () => {
                     const place = ac.getPlace();
                     el.value = stripTaiwan(place.formatted_address);
-                    document.getElementById(zipId).value = parseZoneInfo(place);
+                    if (zipEl) zipEl.value = parseZoneInfo(place);
                     calculateDistanceFee(prefix);
                 });
             };
@@ -3026,6 +3093,7 @@
             let errors = [];
 
             syncOrdererPhoneFields({ allowPassengerFallback: true });
+            await resolveAddressZonesBeforeValidate(hasReturn);
             const ordererPhoneRaw = getOrdererPhoneValue().replace(/\D/g, '');
             
             if (!document.getElementById('ordererName').value.trim()) errors.push({msg: "訂車人姓名", id: "ordererName"});
@@ -3039,6 +3107,8 @@
             }
             if (!document.getElementById('flightNo').value.trim()) errors.push({msg: "去程航班編號", id: 'flightNo'});
             if (hasReturn && !document.getElementById('flightNo_R').value.trim()) errors.push({msg: `回程航班編號`, id: 'flightNo_R'});
+            validateAddressZone(errors, '', '去程');
+            if (hasReturn) validateAddressZone(errors, '_R', '回程');
 
             if (document.getElementById('optSign').checked && !document.getElementById('signContent').value.trim()) errors.push({msg: "舉牌服務姓名或內容", id: 'signContent'});
             const paymentForValidation = document.getElementById('payment').value;
