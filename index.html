@@ -1381,6 +1381,23 @@
             });
         }
 
+        // Address entry must remain usable even when Google Maps fails to load.
+        function unlockBookingAddressInputs() {
+            ensureAddressInputsEditable();
+            ['address', 'extraStopAddress', 'address_R', 'extraStopAddress_R'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.disabled = false;
+                el.readOnly = false;
+                el.removeAttribute('disabled');
+                el.removeAttribute('readonly');
+                el.style.setProperty('pointer-events', 'auto', 'important');
+                el.style.setProperty('user-select', 'text', 'important');
+                el.style.setProperty('touch-action', 'manipulation', 'important');
+                el.tabIndex = 0;
+            });
+        }
+
         function inferZoneInfoFromAddressText(address) {
             const text = String(address || '').replace(/\s+/g, '').replace(/^台灣/, '').replace(/^臺灣/, '');
             if (!text) return '';
@@ -1428,11 +1445,17 @@
         }
 
         function geocodeAddressToZip(inputId, zipId, prefix = '') {
-            ensureAddressInputsEditable();
+            unlockBookingAddressInputs();
             const addressEl = document.getElementById(inputId);
             const zipEl = document.getElementById(zipId);
             const address = addressEl?.value.trim() || '';
             if (!address || zipEl?.value.trim()) return Promise.resolve(true);
+            const inferred = inferZoneInfoFromAddressText(address);
+            if (inferred) {
+                if (zipEl) zipEl.value = inferred;
+                updateLogic();
+                return Promise.resolve(true);
+            }
             if (!window.google?.maps?.Geocoder) return Promise.resolve(fillInferredZone(inputId, zipId));
 
             return new Promise(resolve => {
@@ -2420,7 +2443,7 @@
         }
 
         function initMapAutocomplete() {
-            ensureAddressInputsEditable();
+            unlockBookingAddressInputs();
             const bindAutocomplete = (inputId, zipId, prefix) => {
                 const el = document.getElementById(inputId);
                 if (!el) return;
@@ -2428,7 +2451,8 @@
                 el.disabled = false;
                 el.readOnly = false;
                 el.addEventListener('input', () => {
-                    if (zipEl) zipEl.value = '';
+                    const inferred = inferZoneInfoFromAddressText(el.value);
+                    if (zipEl) zipEl.value = inferred || '';
                     updateLogic();
                 });
                 el.addEventListener('blur', () => geocodeAddressToZip(inputId, zipId, prefix));
@@ -2451,6 +2475,9 @@
             bindAutocomplete('extraStopAddress_R', 'extraZipcode_R', '_R');
         }
         window.initMapAutocomplete = initMapAutocomplete;
+        document.addEventListener('DOMContentLoaded', unlockBookingAddressInputs);
+        window.addEventListener('pageshow', unlockBookingAddressInputs);
+        window.addEventListener('load', unlockBookingAddressInputs);
 
         function calculateDistanceFee(prefix = '') {
             let addr1 = document.getElementById('address' + prefix).value;
