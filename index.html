@@ -1158,7 +1158,7 @@
 
     <script>
         // --- 系統版本記錄 ---
-        const APP_VERSION = "v1.9.49-address-fallback";
+        const APP_VERSION = "v1.9.50-retry-real-status-check";
 
         // --- 設定常數 ---
         const GAS_URL = "https://script.google.com/macros/s/AKfycby9KWdatRfDZY5g2DkieUkAhyEJDDCnKcMb_l8o2_J4JCaOtKYfEEkvzk-1sW-oZWIF/exec"; 
@@ -3114,6 +3114,22 @@
             return lastResult;
         }
 
+        async function checkReservationOnce(reservationId) {
+            const cleanId = String(reservationId || '').replace(/^'/, '').trim();
+            if (!cleanId) return { exists: false, reservationId: cleanId };
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            try {
+                const res = await fetch(`${GAS_URL}?action=checkReservation&reservationId=${encodeURIComponent(cleanId)}&t=${Date.now()}`, { signal: controller.signal });
+                return await res.json();
+            } catch (err) {
+                console.warn('查詢預約真實狀態失敗:', err);
+                return { exists: null, reservationId: cleanId }; // null = 查不到，不代表不存在
+            } finally {
+                clearTimeout(timeoutId);
+            }
+        }
+
         async function sendReservationConfirmationCard(reservationIds) {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 15000);
@@ -3489,9 +3505,11 @@
 
             setFlowStep(3);
 
+            let attemptedReservationIds = [];
             try {
                 const savedTrips = [];
                 const outReservationId = hasReturn ? baseOrderId + '-A' : baseOrderId;
+                attemptedReservationIds.push(outReservationId);
                 const outPayload = {
                     timestamp: t(new Date().toLocaleString('zh-TW', {timeZone: 'Asia/Taipei'})), 
                     ordererName: t(ordererName), ordererTitle: t(document.getElementById('ordererTitle').value), 
@@ -3532,6 +3550,7 @@
 
                 if (hasReturn) {
                     const retReservationId = baseOrderId + '-B';
+                    attemptedReservationIds.push(retReservationId);
                     const retPayload = {
                         timestamp: t(new Date().toLocaleString('zh-TW', {timeZone: 'Asia/Taipei'})), 
                         ordererName: t(ordererName), ordererTitle: t(document.getElementById('ordererTitle').value), 
@@ -3607,11 +3626,38 @@
                     });
                     return;
                 }
+                const realStatuses = await Promise.all(attemptedReservationIds.map(checkReservationOnce));
+                const anyConfirmedSaved = realStatuses.some(s => s && s.exists === true);
+
+                if (anyConfirmedSaved) {
+                    // 後端其實已經收到並寫入了，只是前端輪詢逾時沒等到而已。
+                    // 千萬不能讓客人用新單號再送一次，那會變成兩筆真的不同的預約。
+                    Swal.fire({
+                        title: '預約資料其實已經送達',
+                        html: `<div class="text-sm text-gray-600 leading-relaxed text-left">
+                            <p>系統確認資料已寫入，只是稍早畫面等候回應逾時，沒有即時顯示成功。</p>
+                            <p class="mt-2 text-[#f07cad] font-bold">請勿使用新單號再次送出，避免建立重複預約。</p>
+                            <p class="mt-2">客服將儘快協助確認並補發 LINE 明細卡片。</p>
+                        </div>`,
+                        icon: 'info',
+                        confirmButtonColor: '#553f62',
+                        customClass: { popup: 'swal-custom-radius' }
+                    });
+                    btn.disabled = true;
+                    btn.innerText = '預約已建立完成';
+                    return;
+                }
+
+                // 確認過真的沒存到，才重新產生一組新單號，避免下一次送出被後端擋成重複單號。
+                const freshOrderId = generateOrderId();
+                document.getElementById('orderId').value = freshOrderId;
+                document.getElementById('displayOrderId').innerText = freshOrderId;
+
                 Swal.fire({
                     title: '預約尚未完成',
                     html: `<div class="text-sm text-gray-600 leading-relaxed text-left">
                         <p>系統尚未確認預約資料已寫入 Google 試算表，因此不會傳送 LINE 明細，避免您誤以為預約完成。</p>
-                        <p class="mt-2 text-[#f07cad] font-bold">請稍後再送一次，或直接聯絡客服協助。</p>
+                        <p class="mt-2 text-[#f07cad] font-bold">已為您重新產生新的預約單號，請稍後再送一次，或直接聯絡客服協助。</p>
                     </div>`,
                     icon: 'warning',
                     confirmButtonColor: '#553f62',
