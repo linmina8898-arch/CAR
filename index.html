@@ -1161,7 +1161,23 @@
         const APP_VERSION = "v1.9.50-retry-real-status-check";
 
         // --- 設定常數 ---
-        const GAS_URL = "https://script.google.com/macros/s/AKfycby9KWdatRfDZY5g2DkieUkAhyEJDDCnKcMb_l8o2_J4JCaOtKYfEEkvzk-1sW-oZWIF/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbww3Pr0IcOABPvTteIWHo9j6MWRQvNjpf_MZRE7NgDp3Nt69Upx8VhVnCVMcbUvjJwI/exec"; 
+
+        /**
+         * 安全解析後端回應：GAS 額度不足、逾時、或服務忙碌時，Google 會回一頁 HTML 錯誤頁而不是 JSON，
+         * 直接 r.json() 會丟出 "Unexpected token '<'" 這種看不懂的錯誤。這裡先讀成文字，
+         * 解析失敗就丟出看得懂的訊息，客人畫面才會顯示「請稍後再試」而不是原始的 JS 錯誤。
+         */
+        async function safeJsonParse(r) {
+            const text = await r.text();
+            try {
+                return JSON.parse(text);
+            } catch (err) {
+                console.error("後端回應非 JSON 格式（可能是 Google 額度不足或服務忙碌），原始內容前200字：", text.slice(0, 200));
+                throw new Error("系統忙碌中或連線異常，請稍後再試一次。");
+            }
+        }
+
         const CHANNEL_CONFIGS = {
             AS: { code: 'AS', name: '安興租車', orderPrefix: 'AS', liffId: '2009922945-KmKUgqbg', lineOaLink: 'https://line.me/R/ti/p/@ansing', paymentOptions: ['轉帳', '刷卡(限街口/全支付)', '月結簽單(企業客戶)'] },
             AZ: { code: 'AZ', name: '安興竹北', orderPrefix: 'AZ', liffId: '2010218931-J293DdSb', lineOaLink: 'https://line.me/R/ti/p/@050hdahs', paymentOptions: ['現金', '轉帳'] }
@@ -1740,7 +1756,7 @@
                 const url = `${GAS_URL}?action=getPrices&channelCode=${encodeURIComponent(CURRENT_CHANNEL.code)}&t=${Date.now()}`;
                 const response = await fetch(url, { method: 'GET', redirect: 'follow' });
                 if (!response.ok) throw new Error('Network error');
-                data = await response.json();
+                data = await safeJsonParse(response);
                 
                 if (data && data.newsHtml) NEWS_HTML = data.newsHtml;
                 if (data && data.prices) {
@@ -1967,7 +1983,7 @@
                         const timeoutId = setTimeout(() => controller.abort(), 15000);
                         const response = await fetch(url, { signal: controller.signal });
                         clearTimeout(timeoutId);
-                        const data = await response.json();
+                        const data = await safeJsonParse(response);
                         if (data.error) {
                             Swal.fire({ title: '無法查詢優惠', text: data.error, icon: 'warning', confirmButtonColor: '#553f62' });
                             return;
@@ -2065,7 +2081,7 @@
                 try {
                     const url = `${GAS_URL}?action=getLastUser&phone=${encodeURIComponent(phone)}&lineId=${encodeURIComponent(sysLineId)}&t=${Date.now()}`;
                     const response = await fetch(url);
-                    const data = await response.json();
+                    const data = await safeJsonParse(response);
                     if (data.user) {
                         const titleInput = document.getElementById('ordererTitle');
                         const emailInput = document.getElementById('email');
@@ -2183,7 +2199,7 @@
         async function fetchCompanyByTaxId(taxId) {
             try {
                 const res = await fetch(`${GAS_URL}?action=getCompanyByTaxId&taxId=${encodeURIComponent(taxId)}&t=${Date.now()}`);
-                const data = await res.json();
+                const data = await safeJsonParse(res);
                 return data.company || null;
             } catch (err) {
                 return null;
@@ -2326,7 +2342,7 @@
                                 reason: value.reason
                             }
                         })
-                    }).then(r => r.json());
+                    }).then(r => safeJsonParse(r));
                     if (res.success) {
                         const notice = res.cancelNotice || {};
                         const cancelLineMessage = `安興租車 取消預約通知\n\n` +
@@ -2656,7 +2672,7 @@
             try {
                 document.getElementById('loadingText').innerText = '讀取預約資料...';
                 const res = await fetch(`${GAS_URL}?action=getReservationBindInfo&token=${encodeURIComponent(token)}&t=${Date.now()}`);
-                const data = await res.json();
+                const data = await safeJsonParse(res);
                 if (!data.success) throw new Error(data.error || '確認連結無法使用');
                 document.getElementById('loading').classList.add('hidden');
                 document.getElementById('formContainer').classList.add('hidden');
@@ -2693,7 +2709,7 @@
                         method: 'POST',
                         body: JSON.stringify({ action: 'confirmCustomerReservationBind', data: { token, lineId: profile.userId, lineName: profile.displayName } }),
                         headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-                    }).then(r => r.json());
+                    }).then(r => safeJsonParse(r));
                     if (!result.success) return Swal.fire('確認失敗', result.error || '請聯絡客服協助。', 'error');
                     const doneText = result.cardSent === false
                         ? '預約資料已完成確認，客服將協助補發預約明細通知。'
@@ -3100,7 +3116,7 @@
                 const timeoutId = setTimeout(() => controller.abort(), Math.min(4000, deadline - Date.now()));
                 try {
                     const res = await fetch(`${GAS_URL}?action=checkReservation&reservationId=${encodeURIComponent(cleanId)}&t=${Date.now()}`, { signal: controller.signal });
-                    const data = await res.json();
+                    const data = await safeJsonParse(res);
                     if (data.exists) {
                         lastResult = data;
                         if (data.calendarStatus === '已同步') return data;
@@ -3121,7 +3137,7 @@
             const timeoutId = setTimeout(() => controller.abort(), 5000);
             try {
                 const res = await fetch(`${GAS_URL}?action=checkReservation&reservationId=${encodeURIComponent(cleanId)}&t=${Date.now()}`, { signal: controller.signal });
-                return await res.json();
+                return await safeJsonParse(res);
             } catch (err) {
                 console.warn('查詢預約真實狀態失敗:', err);
                 return { exists: null, reservationId: cleanId }; // null = 查不到，不代表不存在
@@ -3140,7 +3156,7 @@
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     signal: controller.signal
                 });
-                return await res.json();
+                return await safeJsonParse(res);
             } finally {
                 clearTimeout(timeoutId);
             }
