@@ -300,10 +300,6 @@
           </select>
         </div>
       </div>
-      <p class="hint" id="cityAreaHint">縣市／鄉鎮市區用於後台比對報價與建立行事曆；詳細地址可自行輸入或用 Google 建議地點，不強制一定要點選建議項目。</p>
-      <label class="label" for="flight">航班編號</label>
-      <input id="flight" placeholder="例如 BR123" autocomplete="off" style="text-transform:uppercase">
-      <p class="hint" id="flightHint">送機請填出發航班；接機請填抵台航班。</p>
 
       <button class="addstop-link" id="addStopToggle" type="button">＋ 新增停靠點（依距離計費，最多 1 站）</button>
       <div id="addStopBody" class="addbox-body">
@@ -328,6 +324,9 @@
       <input id="date" type="date" class="dt-hidden-native" tabindex="-1" aria-hidden="true">
       <input id="time" type="time" step="300" class="dt-hidden-native" tabindex="-1" aria-hidden="true">
       <p class="hint" id="rideTimeHint" style="margin-top:8px">送機提示：請填寫家裡/公司出發的時間</p>
+      <label class="label" for="flight" style="margin-top:14px">航班編號</label>
+      <input id="flight" placeholder="例如 BR123" autocomplete="off" style="text-transform:uppercase">
+      <p class="hint" id="flightHint">送機請填出發航班；接機請填抵台航班。</p>
     </div>
 
     <!-- 乘客與行李（摘要列，點擊開啟彈窗） -->
@@ -852,6 +851,7 @@
         sysLineName=profile.displayName;
         isAdminUser=ADMIN_LINE_IDS.includes(profile.userId);
         if(isAdminUser) unlockAdminCashPayment();
+        restoreBoundMemberFromLine(); // 用 LINE ID 反查之前綁過的手機/姓名，不用每次重整頁面都重綁
       }
       liffReady=true;
     }catch(err){
@@ -1442,7 +1442,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V3.9'; // Step3預約資訊確認改版：行程卡片化＋分區塊，拿掉跟底部footer重複的預估總額
+  const APP_VERSION='TouchGo-UI-V4.1'; // 移除縣市/鄉鎮市區後台提示文字／航班編號搬到上車時間卡片、獨立一格
 
   function generateOrderId(){
     const d=new Date();
@@ -2097,16 +2097,15 @@
     }
   }
 
-  function bindPhone(){
-    const raw=$('bindPhone').value.replace(/\D/g,'');
-    const name=$('bindName').value.trim();
-    if(!name){ toast('請輸入真實姓名'); $('bindName').focus(); return; }
-    if(raw.length<8){ toast('請輸入正確的手機號碼'); return; }
-    boundPhone=raw;
+  function applyMemberBinding(phone,name,opts){
+    const silent=opts&&opts.silent;
+    boundPhone=phone;
     boundName=name;
-    $('phoneStatusText').textContent=`${name}／${raw}（已綁定）`;
+    $('bindPhone').value=phone;
+    $('bindName').value=name;
+    $('phoneStatusText').textContent=`${name}／${phone}（已綁定）`;
     $('phoneBindCard').classList.add('hidden');
-    toast('會員資料已綁定');
+    if(!silent) toast('會員資料已綁定');
     // 綁定後直接帶入訂車人姓名/電話，只補空欄位，不覆蓋已填的內容
     if(!$('ordererName').value.trim()) $('ordererName').value=boundName;
     if(!$('ordererPhone').value.trim()) $('ordererPhone').value=formatPhoneInputValue(boundPhone);
@@ -2114,6 +2113,24 @@
     queryCoupons();
     loadFavoriteAddresses();
     loadRealTrips();
+  }
+  function bindPhone(){
+    const raw=$('bindPhone').value.replace(/\D/g,'');
+    const name=$('bindName').value.trim();
+    if(!name){ toast('請輸入真實姓名'); $('bindName').focus(); return; }
+    if(raw.length<8){ toast('請輸入正確的手機號碼'); return; }
+    applyMemberBinding(raw,name);
+  }
+  // 用 LINE ID 反查之前是否已經綁過會員資料，避免每次重新整理頁面（含每次改版）都要重輸入手機/姓名
+  async function restoreBoundMemberFromLine(){
+    if(!sysLineId || boundPhone) return;
+    try{
+      const res=await fetch(`${GAS_URL}?action=getCustomerByLineId&lineId=${encodeURIComponent(sysLineId)}&t=${Date.now()}`);
+      const data=await safeJsonParse(res);
+      if(data && data.found && data.phone){
+        applyMemberBinding(data.phone, data.name||'', {silent:true});
+      }
+    }catch(err){ console.warn('會員資料還原失敗：',err); }
   }
   $('bindPhoneBtn').onclick=bindPhone;
   $('bindPhone').addEventListener('keydown',e=>{ if(e.key==='Enter') bindPhone(); });
