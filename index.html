@@ -1442,7 +1442,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V4.1'; // 移除縣市/鄉鎮市區後台提示文字／航班編號搬到上車時間卡片、獨立一格
+  const APP_VERSION='TouchGo-UI-V4.2'; // 修正：真實姓名與LINE顯示名稱分開存，不再誤寫入同一欄
 
   function generateOrderId(){
     const d=new Date();
@@ -1953,7 +1953,7 @@
     $('userDiscountsContainer').classList.add('show');
     $('userDiscountsContainer').innerHTML='<p class="hint">查詢中…</p>';
     try{
-      const res=await fetch(`${GAS_URL}?action=getUserDiscounts&phone=${encodeURIComponent(boundPhone)}&lineId=${encodeURIComponent(sysLineId)}&name=${encodeURIComponent(boundName)}&channelCode=${CURRENT_CHANNEL.code}&t=${Date.now()}`);
+      const res=await fetch(`${GAS_URL}?action=getUserDiscounts&phone=${encodeURIComponent(boundPhone)}&lineId=${encodeURIComponent(sysLineId)}&lineDisplayName=${encodeURIComponent(sysLineName)}&realName=${encodeURIComponent(boundName)}&channelCode=${CURRENT_CHANNEL.code}&t=${Date.now()}`);
       const data=await safeJsonParse(res);
       if(data.error){ $('userDiscountsContainer').innerHTML=`<p class="hint" style="color:var(--pink)">${data.error}</p>`; return; }
       const list=data.discounts||[];
@@ -2086,7 +2086,7 @@
     $('promoCouponList').innerHTML=loadingHtml;
     $('goBindBtn').classList.add('hidden');
     try{
-      const res=await fetch(`${GAS_URL}?action=getUserDiscounts&phone=${encodeURIComponent(boundPhone)}&lineId=${encodeURIComponent(sysLineId)}&name=${encodeURIComponent(boundName)}&channelCode=${CURRENT_CHANNEL.code}&t=${Date.now()}`);
+      const res=await fetch(`${GAS_URL}?action=getUserDiscounts&phone=${encodeURIComponent(boundPhone)}&lineId=${encodeURIComponent(sysLineId)}&lineDisplayName=${encodeURIComponent(sysLineName)}&realName=${encodeURIComponent(boundName)}&channelCode=${CURRENT_CHANNEL.code}&t=${Date.now()}`);
       const data=await safeJsonParse(res);
       if(data.error){ $('promoCouponList').innerHTML=`<div class="empty-box" style="border:0;box-shadow:none;padding:20px 0;color:var(--pink)">${data.error}</div>`; return; }
       const html=couponListHtml(data.discounts||[]);
