@@ -194,6 +194,25 @@
   .dt-col-narrow{flex:1}
   .dt-row{padding:13px 8px;border-radius:8px;font-size:14px;color:#7a6d80;text-align:center;cursor:pointer}
   .dt-row.active{background:var(--purple);color:#fff;font-weight:700}
+  /* 折扣碼互斥提示：客人常常沒看到小灰字，改成明顯的紅色警示框＋‼️ */
+  .discount-warn-box{display:none;background:#fdecef;border:1.5px solid #e63c6e;border-radius:10px;padding:10px 12px;margin-top:8px}
+  .discount-warn-box.show{display:block}
+  .discount-warn-box p{margin:0;font-size:13px;font-weight:700;color:#c2185b;line-height:1.5}
+  .discount-warn-box p:empty{display:none}
+  .discount-warn-box p+p:not(:empty){margin-top:6px}
+  /* Step3「預約資訊確認」：拆成有明顯分區的卡片，而不是一長串一樣樣式的行 */
+  .review-trip-card{border:1px solid #ece1ef;border-radius:12px;overflow:hidden;margin-bottom:12px}
+  .review-trip-head{background:var(--soft);padding:10px 12px;display:flex;align-items:center;gap:8px}
+  .review-trip-badge{font-size:11px;font-weight:700;color:#fff;background:var(--purple);border-radius:6px;padding:3px 9px;flex:0 0 auto;white-space:nowrap}
+  .review-trip-route{font-size:13.5px;font-weight:700;color:var(--ink);line-height:1.4}
+  .review-grid{display:grid;grid-template-columns:1fr 1fr}
+  .review-grid-item{padding:9px 12px;border-top:1px solid #f2ecf3;display:flex;flex-direction:column;gap:2px}
+  .review-grid-item:nth-child(1),.review-grid-item:nth-child(2){border-top:0}
+  .review-grid-item:last-child{grid-column:1/-1}
+  .review-grid-item .k{font-size:10.5px;color:#9a8ca0}
+  .review-grid-item .v{font-size:12.5px;color:var(--ink);font-weight:600}
+  .review-info-card{border:1px solid #ece1ef;border-radius:12px;padding:4px 12px;margin-bottom:12px}
+  .review-info-title{font-size:12px;font-weight:700;color:var(--purple);margin:10px 0 2px}
   .expand-row b{color:var(--purple)}
   .expand-row .chev-svg{transition:transform .18s;flex:0 0 auto}
   .expand-row.open .chev-svg{transform:rotate(90deg)}
@@ -398,8 +417,10 @@
           <input id="manualDiscountCode" placeholder="客服提供的折扣碼（沒有請略過）" style="text-transform:uppercase;font-size:14px">
           <button class="cta-purple" type="button" id="applyDiscountBtn" style="height:44px">套用</button>
         </div>
-        <p class="hint" id="discountMsg" style="margin-top:6px"></p>
-        <p class="hint" id="earlyBirdHint" style="margin-top:2px;color:var(--purple);font-weight:700"></p>
+        <div class="discount-warn-box" id="discountWarnBox">
+          <p id="discountMsg"></p>
+          <p id="earlyBirdHint"></p>
+        </div>
         <button class="expand-row" id="queryDiscountBtn" type="button" style="margin-top:12px">
           <span>查詢我的專屬折扣碼</span>
           <svg class="chev-svg"><use href="#i-chevron"/></svg>
@@ -900,7 +921,7 @@
   }
   let priceTableStatus='loading'; // loading | ready | error
   let cityAreaMap=new Map(); // 縣市 -> Map(郵遞區號 -> 鄉鎮市區名稱)
-  const TW_CITIES=['台北市','新北市','桃園市','台中市','台南市','高雄市','基隆市','新竹市','嘉義市','新竹縣','苗栗縣','彰化縣','南投縣','雲林縣','嘉義縣','屏東縣','宜蘭縣','花蓮縣','台東縣','澎湖縣','金門縣','連江縣'];
+  const TW_CITIES=['台北市','新北市','桃園市','新竹市','新竹縣','苗栗縣','台中市','台南市','高雄市','基隆市','嘉義市','彰化縣','南投縣','雲林縣','嘉義縣','屏東縣','宜蘭縣','花蓮縣','台東縣','澎湖縣','金門縣','連江縣'];
   function normCity(s){ return String(s||'').replace(/臺/g,'台').replace(/[\s　]+/g,'').trim(); }
   function splitCityDistrict(area){
     for(const city of TW_CITIES){ if(area.startsWith(city)) return {city, district: area.slice(city.length)||city}; }
@@ -1148,17 +1169,20 @@
     // 折扣規則引擎：早鳥回程優惠／折扣碼車型金額／來回優惠併用規則，完全比照正式系統 updateLogic()
     const discountRule = currentDiscountCode ? (getDiscountRule(currentDiscountCode)) : {};
     if(currentDiscountCode && discountRule.requiresReturn && !hasReturn){
-      $('discountMsg').textContent='此折扣碼限預約來回使用，已自動取消套用。';
-      $('discountMsg').style.color='var(--pink)';
+      $('discountMsg').textContent='‼️ 此折扣碼限預約來回使用，已自動取消套用。';
       currentDiscountCode=''; currentDiscountAmt=0; $('manualDiscountCode').value='';
+      clearDiscountRadioSelection();
     }
     const earlyBirdEligible = isEarlyBirdReturnEligible();
     if(earlyBirdEligible && currentDiscountCode){
       currentDiscountCode=''; currentDiscountAmt=0; $('manualDiscountCode').value='';
-      $('discountMsg').textContent='早鳥優惠不可與其他折扣碼併用，已自動改套早鳥優惠。';
-      $('discountMsg').style.color='var(--purple)';
+      clearDiscountRadioSelection();
+      $('discountMsg').textContent='‼️ 早鳥優惠不可與其他折扣碼併用，已自動改套早鳥優惠。';
+    }else if(earlyBirdEligible){
+      $('discountMsg').textContent=''; // 早鳥優惠本來就生效、沒有衝突要顯示時，不留舊訊息在畫面上跟下面的早鳥說明重疊
     }
-    $('earlyBirdHint').textContent = earlyBirdEligible ? '🎉 符合早鳥回程優惠：出發日距今超過 30 天且已加訂回程，自動折抵 $300（不可與其他折扣碼併用）。' : '';
+    $('earlyBirdHint').textContent = earlyBirdEligible ? '‼️ 符合早鳥回程優惠：出發日距今超過 30 天且已加訂回程，自動折抵 $300（不可與其他折扣碼併用）。' : '';
+    $('discountWarnBox').classList.toggle('show', Boolean($('discountMsg').textContent||$('earlyBirdHint').textContent));
     const earlyBirdDiscount = earlyBirdEligible ? 300 : 0;
     const discountBlocksReturn = Boolean(currentDiscountCode && discountRule.allowReturn===false);
     const autoReturnDiscount = hasReturn && !earlyBirdEligible && !discountBlocksReturn ? 100 : 0;
@@ -1321,9 +1345,8 @@
       const val=`${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
       const md=`${d.getMonth()+1}月${d.getDate()}日`;
       const wk=`週${WEEKDAY_ZH[d.getDay()]}`;
-      const tag=i===0?' ・今天':i===1?' ・明天':'';
       const short=i===0?'今天':i===1?'明天':`${d.getMonth()+1}/${d.getDate()}`;
-      list.push({value:val,label:`${md}（${wk}）${tag}`,short});
+      list.push({value:val,label:`${md}（${wk}）`,short});
     }
     return list;
   }
@@ -1419,7 +1442,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V3.6'; // 折扣碼金額修正／liff.closeWindow／清單式時間選單／乘車人資訊預設展開＋代訂提示／驗證錯誤自動跳回欄位／企業月結隱藏報價／我的頁綁定真實姓名
+  const APP_VERSION='TouchGo-UI-V3.9'; // Step3預約資訊確認改版：行程卡片化＋分區塊，拿掉跟底部footer重複的預估總額
 
   function generateOrderId(){
     const d=new Date();
@@ -1456,6 +1479,7 @@
     const sportStr=$('sportLuggage').checked?`有 ${$('sportLuggageQty').value}件，${$('sportLuggageSize').value||''}`:'無';
     const signStr=$('optSign').checked?($('signContent').value||''):'無';
     const paxName=$('sameAsOrderer').checked?$('ordererName').value.trim():$('paxName').value.trim();
+    const paxTitle=$('sameAsOrderer').checked?$('ordererTitle').value:$('paxTitle').value;
     const paxPhone=$('sameAsOrderer').checked?$('ordererPhone').value.trim():$('paxPhone').value.trim();
     const extraStopVal = ctx==='_R' ? ($('addStop_R').checked?$('stopAddress_R').value.trim():'') : ($('addStop').checked?$('stopAddress').value.trim():'');
     const surchargeLabels=q.lines.filter(l=>!l[0].startsWith('基本車資')).map(l=>l[0]);
@@ -1468,6 +1492,7 @@
       lineDisplayName: t(sysLineName),
       reservationId: t(orderId),
       paxNameOnly: t(paxName),
+      paxTitle: t(paxTitle),
       paxPhone: t(paxPhone),
       rideDate: t(dateVal),
       rideTime: t(timeVal),
@@ -1778,7 +1803,7 @@
     return full||'（未填地址）';
   }
 
-  function buildLegReviewRows(ctx){
+  function buildLegReviewCard(ctx, badgeLabel){
     const addr = getFullAddressText(ctx);
     const legMode = ctx==='_R' ? (mode==='send'?'pickup':'send') : mode;
     const ap = airport();
@@ -1793,14 +1818,20 @@
     if(n('forwardSeat'+ctx)) seatParts.push(`前向${n('forwardSeat'+ctx)}`);
     if(n('booster'+ctx)) seatParts.push(`增高墊${n('booster'+ctx)}`);
     const seatText = seatParts.length ? seatParts.join('、') : '無';
-    return [
-      ['行程', `${legMode==='send'?'送機':'接機'}｜${routeText}`],
+    const gridItems=[
       ['上車時間', `${formatDateWithWeekday(dateVal)} ${timeVal||'--'}`],
       ['航班編號', flightVal||'—'],
       ['乘客', paxText],
       ['行李', luggageText],
       ['安全座椅/增高墊', seatText]
     ];
+    return `<div class="review-trip-card">
+      <div class="review-trip-head">
+        <span class="review-trip-badge">${badgeLabel}</span>
+        <span class="review-trip-route">${legMode==='send'?'送機':'接機'}｜${routeText}</span>
+      </div>
+      <div class="review-grid">${gridItems.map(([k,val])=>`<div class="review-grid-item"><span class="k">${k}</span><span class="v">${val}</span></div>`).join('')}</div>
+    </div>`;
   }
 
   function buildFinalReview(){
@@ -1812,24 +1843,30 @@
     const sportText = $('sportLuggage').checked ? `有（${$('sportLuggageQty').value}件・${$('sportLuggageSize').value||'尺寸未填'}）` : '無';
 
     let html='';
-    html += `<p class="subgroup-title" style="margin-top:0">${hasReturn?'【去程】':''}</p>`;
-    html += renderReviewLines(buildLegReviewRows(''));
-    if(hasReturn){
-      html += `<p class="subgroup-title">【回程】</p>`;
-      html += renderReviewLines(buildLegReviewRows('_R'));
-    }
-    const sharedRows=[
+    html += buildLegReviewCard('', hasReturn?'去程':'單程');
+    if(hasReturn) html += buildLegReviewCard('_R','回程');
+
+    html += `<div class="review-info-card">
+      <p class="review-info-title">聯絡資訊</p>
+      ${renderReviewLines([
+        ['訂車人', `${$('ordererName').value||'—'}${$('ordererTitle').value}／${$('ordererPhone').value||'—'}`],
+        ['乘車人', `${paxName||'—'}${paxName?paxTitle:''}／${paxPhone||'—'}`]
+      ])}
+    </div>`;
+
+    const serviceRows=[
       ['車型', v?v.name:'—'],
       ['胖胖箱', sportText],
       ['舉牌服務', $('optSign').checked ? ($('signContent').value||'需舉牌') : '否'],
-      ['訂車人', `${$('ordererName').value||'—'}${$('ordererTitle').value}／${$('ordererPhone').value||'—'}`],
-      ['乘車人', `${paxName||'—'}${paxName?paxTitle:''}／${paxPhone||'—'}`],
       ['付款方式', $('payment').value],
       ['優惠碼', computeDiscountBreakdown().label || '未使用']
     ];
-    if($('remarks').value.trim()) sharedRows.push(['備註', $('remarks').value.trim()]);
-    sharedRows.push(['預估總額', $('total').textContent]);
-    html += renderReviewLines(sharedRows);
+    if($('remarks').value.trim()) serviceRows.push(['備註', $('remarks').value.trim()]);
+    html += `<div class="review-info-card">
+      <p class="review-info-title">車輛與付款</p>
+      ${renderReviewLines(serviceRows)}
+    </div>`;
+
     $('finalReviewContent').innerHTML = html;
   }
 
@@ -1922,7 +1959,7 @@
       const list=data.discounts||[];
       if(!list.length){ $('userDiscountsContainer').innerHTML='<p class="hint">目前沒有可用的專屬折扣碼。</p>'; return; }
       list.forEach(c=>{ USER_COUPON_MAP[String(c.code||'').trim().toUpperCase()]=c; }); // 把個人券的 amount/vehicleDiscounts 一併存起來，套用時才查得到金額
-      $('userDiscountsContainer').innerHTML=list.map(c=>`<label class="choice" style="margin-top:8px"><input type="radio" name="couponPick" value="${c.code}">${c.code}（-$${Number(c.amount||0).toLocaleString()}）</label>`).join('');
+      $('userDiscountsContainer').innerHTML=list.map(c=>`<label class="choice" style="margin-top:8px"><input type="radio" name="couponPick" value="${c.code}">${c.campaignName?`${c.campaignName}｜`:''}${c.code}（-$${Number(c.amount||0).toLocaleString()}）</label>`).join('');
       $('userDiscountsContainer').querySelectorAll('input[name="couponPick"]').forEach(r=>{
         r.onchange=()=>{ applyDiscountCode(r.value); };
       });
@@ -1930,6 +1967,10 @@
       $('userDiscountsContainer').innerHTML='<p class="hint">查詢失敗，請確認網路連線後再試一次。</p>';
     }
   };
+  function clearDiscountRadioSelection(){
+    const checked=$('userDiscountsContainer').querySelector('input[name="couponPick"]:checked');
+    if(checked) checked.checked=false;
+  }
   function applyDiscountCode(code){
     const normalized=String(code||'').trim().toUpperCase();
     if(!normalized){ toast('請輸入或選擇折扣碼'); return; }
@@ -2037,7 +2078,7 @@
 
   function couponListHtml(list){
     if(!list.length) return `<div class="empty-box" style="border:0;box-shadow:none;padding:20px 0">目前沒有可用的折扣碼</div>`;
-    return list.map(c=>`<div class="coupon-item"><div><div class="code">${c.code}</div><div class="exp">效期：${c.expiry||'無期限'}</div></div><div class="amt">-$${Number(c.amount||0).toLocaleString()}</div></div>`).join('');
+    return list.map(c=>`<div class="coupon-item"><div>${c.campaignName?`<div style="font-size:11px;color:var(--purple);font-weight:700;margin-bottom:2px">${c.campaignName}</div>`:''}<div class="code">${c.code}</div><div class="exp">效期：${c.expiry||'無期限'}</div></div><div class="amt">-$${Number(c.amount||0).toLocaleString()}</div></div>`).join('');
   }
 
   async function queryCoupons(){
@@ -2140,7 +2181,7 @@
     if(!city||!zip){ toast('請選擇縣市／鄉鎮區域'); return; }
     if(!detail){ toast('請輸入詳細地址'); return; }
     try{
-      const res=await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'addFavoriteAddress',data:{phone:boundPhone,label,city,district,zip,detail}}),headers:{'Content-Type':'text/plain;charset=utf-8'}});
+      const res=await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'addFavoriteAddress',data:{phone:boundPhone,name:boundName,label,city,district,zip,detail}}),headers:{'Content-Type':'text/plain;charset=utf-8'}});
       const data=await safeJsonParse(res);
       if(!data.success){ toast(data.error||'儲存失敗'); return; }
       toast('已儲存常用地址');
