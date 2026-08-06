@@ -271,6 +271,17 @@
   <!-- ============ 分頁一：訂車（正式邏輯，沿用原本 V3 的計算規則） ============ -->
   <section id="tab-book" class="tabscreen show">
 
+    <div id="unboundNudgeBanner" class="hidden">
+      <div style="display:flex;align-items:flex-start;gap:10px;background:var(--soft);border:1px solid #e4d6ea;border-radius:12px;padding:12px;margin-bottom:14px">
+        <svg class="ic-svg" style="width:20px;height:20px;flex:0 0 auto;color:var(--purple)"><use href="#i-user"/></svg>
+        <div style="flex:1">
+          <p style="margin:0;font-size:13px;font-weight:700;color:var(--ink)">建議先完成會員綁定</p>
+          <p style="margin:4px 0 8px;font-size:12px;color:#75677b;line-height:1.5">先到「我的」頁綁定真實姓名＋手機號碼，訂車時姓名/電話會自動帶入，也才能自動帶出您的專屬折扣碼。</p>
+          <button type="button" id="unboundNudgeBtn" style="background:var(--purple);color:#fff;border:0;border-radius:8px;padding:7px 14px;font-size:12.5px;font-weight:700;cursor:pointer">前往綁定</button>
+        </div>
+      </div>
+    </div>
+
     <div id="step1Panel">
     <div class="trip">
       <button id="sendBtn" class="active" type="button"><svg class="ic-svg" style="width:16px;height:16px"><use href="#i-send"/></svg> 送機</button>
@@ -854,11 +865,14 @@
         isAdminUser=ADMIN_LINE_IDS.includes(profile.userId);
         if(isAdminUser) unlockAdminCashPayment();
         restoreBoundMemberFromLine(); // 用 LINE ID 反查之前綁過的手機/姓名，不用每次重整頁面都重綁
+      }else{
+        updateUnboundNudgeBanner(); // 沒登入 LINE（例如瀏覽器測試）也要正確顯示綁定提示
       }
       liffReady=true;
     }catch(err){
       console.warn('LIFF 初始化失敗（若不是在 LINE 容器內開啟屬正常）：',err);
       liffReady=false;
+      updateUnboundNudgeBanner();
     }
   }
 
@@ -1444,7 +1458,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V4.3'; // 行程分頁新增「已取消」頁籤，後端不再把取消單直接濾掉
+  const APP_VERSION='TouchGo-UI-V4.4'; // 行程日期加星期幾；訂車頁新增未綁定提示卡片，引導先去我的頁綁定真實姓名+電話
 
   function generateOrderId(){
     const d=new Date();
@@ -2115,7 +2129,16 @@
     queryCoupons();
     loadFavoriteAddresses();
     loadRealTrips();
+    updateUnboundNudgeBanner();
   }
+  // 訂車頁最上面的「建議先綁定」提示：還沒綁過就顯示，綁完自動收起來
+  function updateUnboundNudgeBanner(){
+    $('unboundNudgeBanner').classList.toggle('hidden', Boolean(boundPhone));
+  }
+  $('unboundNudgeBtn').onclick=()=>{
+    document.querySelector('.tabbtn[data-tab="me"]').click();
+    setTimeout(()=>$('bindName').focus(),200);
+  };
   function bindPhone(){
     const raw=$('bindPhone').value.replace(/\D/g,'');
     const name=$('bindName').value.trim();
@@ -2125,7 +2148,7 @@
   }
   // 用 LINE ID 反查之前是否已經綁過會員資料，避免每次重新整理頁面（含每次改版）都要重輸入手機/姓名
   async function restoreBoundMemberFromLine(){
-    if(!sysLineId || boundPhone) return;
+    if(!sysLineId || boundPhone){ updateUnboundNudgeBanner(); return; }
     try{
       const res=await fetch(`${GAS_URL}?action=getCustomerByLineId&lineId=${encodeURIComponent(sysLineId)}&t=${Date.now()}`);
       const data=await safeJsonParse(res);
@@ -2133,6 +2156,7 @@
         applyMemberBinding(data.phone, data.name||'', {silent:true});
       }
     }catch(err){ console.warn('會員資料還原失敗：',err); }
+    updateUnboundNudgeBanner();
   }
   $('bindPhoneBtn').onclick=bindPhone;
   $('bindPhone').addEventListener('keydown',e=>{ if(e.key==='Enter') bindPhone(); });
@@ -2285,7 +2309,7 @@
       const statusClass=status==='cancelled'?'cancelled':status==='history'?'done':'upcoming';
       const cancelBtn=status==='upcoming'?`<button type="button" class="secondary-btn" style="margin-top:10px;width:100%" data-cancel-order="${o.orderId}">取消預約</button>`:'';
       return `<div class="trip-card" style="margin-top:16px">
-        <div class="trow"><span class="tdate">${o.date} ${o.time}</span><span class="tstatus ${statusClass}">${label}</span></div>
+        <div class="trow"><span class="tdate">${formatDateWithWeekday(o.date)} ${o.time}</span><span class="tstatus ${statusClass}">${label}</span></div>
         <div class="troute">${o.type}｜${o.route}</div>
         <div class="tid">${o.orderId}｜${o.car||'—'}｜$${(o.amount||0).toLocaleString()}</div>
         ${cancelBtn}
