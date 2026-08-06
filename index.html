@@ -20,7 +20,7 @@
 
   /* ===== 送機/接機 分段控制 ===== */
   .trip{display:flex;gap:8px;background:#f3edf4;border-radius:11px;padding:4px;margin-bottom:12px}
-  .trip button{border:0;border-radius:8px;background:transparent;color:#75677b;padding:11px 8px;flex:1;font-weight:700;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;gap:6px}
+  .trip button{border:0;border-radius:8px;background:transparent;color:#75677b;padding:11px 4px;flex:1;font-weight:700;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px}
   .trip button.active{background:#fff;color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.08)}
 
   /* ===== 卡片（仿 TouchGo 行程路線 / 乘客與行李 卡片）===== */
@@ -177,6 +177,7 @@
   .trip-card .tstatus{font-size:10.5px;font-weight:700;border-radius:5px;padding:2px 7px}
   .tstatus.done{background:#eee9ef;color:#665a6c}
   .tstatus.upcoming{background:var(--soft);color:var(--purple)}
+  .tstatus.cancelled{background:#fdecef;color:var(--pink)}
   .trip-card .troute{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:2px}
   .trip-card .tid{font-size:11px;color:#a698ac}
 
@@ -529,6 +530,7 @@
       <button class="tripFilterBtn active" data-filter="ongoing" type="button">進行中</button>
       <button class="tripFilterBtn" data-filter="upcoming" type="button">即將</button>
       <button class="tripFilterBtn" data-filter="history" type="button">歷史</button>
+      <button class="tripFilterBtn" data-filter="cancelled" type="button">已取消</button>
     </div>
     <div id="tripListArea"></div>
   </section>
@@ -1442,7 +1444,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V4.2'; // 修正：真實姓名與LINE顯示名稱分開存，不再誤寫入同一欄
+  const APP_VERSION='TouchGo-UI-V4.3'; // 行程分頁新增「已取消」頁籤，後端不再把取消單直接濾掉
 
   function generateOrderId(){
     const d=new Date();
@@ -2243,6 +2245,7 @@
   let realTripOrders=[];
 
   function classifyTrip(o){
+    if(o.cancelled) return 'cancelled';
     const dt=new Date(`${o.date}T${(o.time||'00:00')}:00`);
     if(isNaN(dt.getTime())) return 'history';
     const diffHours=(dt-new Date())/3600000;
@@ -2278,10 +2281,11 @@
     if(!list.length){ $('tripListArea').innerHTML='<div class="empty-box" style="margin-top:20px">沒有行程</div>'; return; }
     $('tripListArea').innerHTML=list.map(o=>{
       const status=classifyTrip(o);
-      const label=status==='ongoing'?'進行中':status==='upcoming'?'即將出發':'已完成';
+      const label=status==='cancelled'?'已取消':status==='ongoing'?'進行中':status==='upcoming'?'即將出發':'已完成';
+      const statusClass=status==='cancelled'?'cancelled':status==='history'?'done':'upcoming';
       const cancelBtn=status==='upcoming'?`<button type="button" class="secondary-btn" style="margin-top:10px;width:100%" data-cancel-order="${o.orderId}">取消預約</button>`:'';
       return `<div class="trip-card" style="margin-top:16px">
-        <div class="trow"><span class="tdate">${o.date} ${o.time}</span><span class="tstatus ${status==='history'?'done':'upcoming'}">${label}</span></div>
+        <div class="trow"><span class="tdate">${o.date} ${o.time}</span><span class="tstatus ${statusClass}">${label}</span></div>
         <div class="troute">${o.type}｜${o.route}</div>
         <div class="tid">${o.orderId}｜${o.car||'—'}｜$${(o.amount||0).toLocaleString()}</div>
         ${cancelBtn}
