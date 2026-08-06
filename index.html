@@ -12,7 +12,6 @@
   body{margin:0;background:var(--wash);color:#26202a;font-family:"Microsoft JhengHei",Arial,sans-serif;font-size:14px;letter-spacing:0}
   .app{max-width:560px;margin:0 auto;padding:16px 16px 190px;position:relative}
 
-  /* ===== 頂部品牌列（仿 TouchGo 有 logo + 鈴鐺，改成自己的紫色系）===== */
   .brandbar{display:flex;align-items:center;justify-content:space-between;padding:2px 0 12px}
   .brandbar .brand{font-size:19px;font-weight:800;color:var(--ink)}
   .brandbar .brand span{color:var(--pink)}
@@ -104,6 +103,13 @@
   .counter{display:flex;align-items:center;gap:14px;margin-left:auto}
   .counter button{width:32px;height:32px;border-radius:50%;border:1px solid var(--purple);background:#fff;color:var(--purple);font-size:17px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
   .counter button:disabled{opacity:.3;cursor:not-allowed}
+  input:disabled,select:disabled{background:#f5f1f6;color:#9a8ca0}
+  .field-err-flash{animation:fieldErrPulse 1.6s ease}
+  @keyframes fieldErrPulse{
+    0%{box-shadow:0 0 0 3px rgba(230,60,110,.35);border-color:var(--pink)}
+    70%{box-shadow:0 0 0 3px rgba(230,60,110,.35);border-color:var(--pink)}
+    100%{box-shadow:none}
+  }
   .counter button.plus{background:var(--purple);color:#fff}
   .counter .val{min-width:18px;text-align:center;font-weight:700;font-size:15px;color:var(--ink)}
   .subgroup-title{font-size:12px;font-weight:700;color:#93889b;margin:16px 0 2px}
@@ -135,6 +141,7 @@
   .tabscreen.show{display:block}
   .screen-title{font-size:20px;font-weight:800;color:var(--ink);margin:4px 0 14px}
   .mock-badge{display:inline-block;font-size:10px;font-weight:700;color:#9a8ca0;background:var(--soft);border-radius:5px;padding:2px 7px;margin-bottom:12px}
+  #manualDiscountCode::placeholder{font-size:12.5px;color:#b3a7ba;letter-spacing:0}
 
   .promo-hero{background:linear-gradient(135deg,#574266,#7a5b8c);border-radius:16px;padding:18px;color:#fff;margin-bottom:14px}
   .promo-hero .badge{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.16);border-radius:20px;padding:4px 10px;font-size:11px;font-weight:700;margin-bottom:10px}
@@ -177,6 +184,16 @@
   .toast.show{opacity:1}
 
   .expand-row{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;background:var(--soft);border:1px dashed #d9cee0;border-radius:9px;padding:10px 12px;margin-top:12px;cursor:pointer;color:#62546a;font-size:12.5px;line-height:1.5}
+  /* 自訂時間選單觸發按鈕：外觀比照一般 input，但點下去開的是清單式選單，不是原生滾輪 */
+  .dt-hidden-native{position:absolute;width:0;height:0;padding:0;margin:0;border:0;opacity:0;pointer-events:none}
+  .dt-display-btn{display:flex;align-items:center;gap:10px;width:100%;height:46px;border:1px solid #d9cee0;border-radius:9px;padding:0 12px;background:#fff;color:var(--purple);cursor:pointer;text-align:left}
+  .dt-display-btn .dt-display-value{flex:1;font-size:14px;color:var(--ink);font-weight:600}
+  .dt-display-btn.placeholder .dt-display-value{color:#a89bb0;font-weight:400}
+  .dt-cols{display:flex;gap:8px;margin-top:14px;height:264px}
+  .dt-col{flex:1.35;overflow-y:auto;border-radius:10px;background:var(--soft);padding:4px;scroll-behavior:smooth}
+  .dt-col-narrow{flex:1}
+  .dt-row{padding:13px 8px;border-radius:8px;font-size:14px;color:#7a6d80;text-align:center;cursor:pointer}
+  .dt-row.active{background:var(--purple);color:#fff;font-weight:700}
   .expand-row b{color:var(--purple)}
   .expand-row .chev-svg{transition:transform .18s;flex:0 0 auto}
   .expand-row.open .chev-svg{transform:rotate(90deg)}
@@ -281,13 +298,16 @@
       <input id="addStop" type="checkbox" class="hidden">
     </div>
 
-    <!-- 上車時間卡 -->
+    <!-- 上車時間卡：改用自訂清單式選單（比原生時間滾輪好操作），原生 input 保留但隱藏，維持後面所有計算邏輯不用改 -->
     <div class="card">
       <p class="card-title"><svg class="ic-svg"><use href="#i-clock"/></svg> 上車時間</p>
-      <div class="two">
-        <input id="date" type="date">
-        <input id="time" type="time" step="300">
-      </div>
+      <button type="button" class="dt-display-btn" id="rideTimeBtn">
+        <svg class="ic-svg" style="width:18px;height:18px;flex:0 0 auto"><use href="#i-clock"/></svg>
+        <span class="dt-display-value" id="rideTimeBtnText">請選擇上車日期與時間</span>
+        <svg class="chev-svg" style="width:14px;height:14px;flex:0 0 auto"><use href="#i-chevron"/></svg>
+      </button>
+      <input id="date" type="date" class="dt-hidden-native" tabindex="-1" aria-hidden="true">
+      <input id="time" type="time" step="300" class="dt-hidden-native" tabindex="-1" aria-hidden="true">
       <p class="hint" id="rideTimeHint" style="margin-top:8px">送機提示：請填寫家裡/公司出發的時間</p>
     </div>
 
@@ -311,10 +331,13 @@
       <input id="roundTrip" type="checkbox" class="hidden">
       <div id="returnBox" class="addbox-body">
         <p class="subgroup-title" style="margin-top:14px">回程資訊</p>
-        <div class="two" style="margin-top:8px">
-          <input id="returnDate" type="date">
-          <input id="returnTime" type="time" step="300">
-        </div>
+        <button type="button" class="dt-display-btn" id="returnTimeBtn" style="margin-top:8px">
+          <svg class="ic-svg" style="width:18px;height:18px;flex:0 0 auto"><use href="#i-clock"/></svg>
+          <span class="dt-display-value" id="returnTimeBtnText">請選擇回程日期與時間</span>
+          <svg class="chev-svg" style="width:14px;height:14px;flex:0 0 auto"><use href="#i-chevron"/></svg>
+        </button>
+        <input id="returnDate" type="date" class="dt-hidden-native" tabindex="-1" aria-hidden="true">
+        <input id="returnTime" type="time" step="300" class="dt-hidden-native" tabindex="-1" aria-hidden="true">
         <label class="label" for="returnFlight">回程航班編號</label>
         <input id="returnFlight" placeholder="例如 BR456" style="text-transform:uppercase">
 
@@ -372,7 +395,7 @@
         <p class="card-title"><svg class="ic-svg"><use href="#i-ticket"/></svg> 專屬優惠與折扣</p>
         <label class="label" for="manualDiscountCode">折扣碼 <span style="color:#9a8ca0;font-weight:400">(單筆總折抵上限 500 元)</span></label>
         <div class="two" style="grid-template-columns:2fr 1fr;gap:8px">
-          <input id="manualDiscountCode" placeholder="輸入客服提供的折扣碼（沒有直接略過）" style="text-transform:uppercase">
+          <input id="manualDiscountCode" placeholder="客服提供的折扣碼（沒有請略過）" style="text-transform:uppercase;font-size:14px">
           <button class="cta-purple" type="button" id="applyDiscountBtn" style="height:44px">套用</button>
         </div>
         <p class="hint" id="discountMsg" style="margin-top:6px"></p>
@@ -408,12 +431,13 @@
           <span class="label" style="margin:0">乘車人資訊</span>
           <label class="choice" style="margin:0;min-height:0;padding:4px 10px;font-size:11.5px;gap:5px"><input id="sameAsOrderer" type="checkbox" checked style="width:14px;height:14px">同訂車人</label>
         </div>
-        <div id="paxInfoBody" class="addbox-body">
+        <p class="hint" style="margin:4px 0 0">如果是幫朋友、家人代訂，請取消勾選「同訂車人」並填寫實際乘車人的姓名與電話；乘車人就是您本人的話，勾選即可自動帶入。</p>
+        <div id="paxInfoBody" class="addbox-body show">
           <div class="two" style="grid-template-columns:2fr 1fr;margin-top:10px">
-            <input id="paxName" placeholder="乘客真實姓名">
-            <select id="paxTitle"><option value="先生">先生</option><option value="小姐">小姐</option></select>
+            <input id="paxName" placeholder="乘客真實姓名" disabled>
+            <select id="paxTitle" disabled><option value="先生">先生</option><option value="小姐">小姐</option></select>
           </div>
-          <input id="paxPhone" type="tel" maxlength="12" placeholder="乘客聯絡電話（0900-000-000）" style="margin-top:10px">
+          <input id="paxPhone" type="tel" maxlength="12" placeholder="乘客聯絡電話（0900-000-000）" style="margin-top:10px" disabled>
         </div>
       </div>
 
@@ -424,6 +448,7 @@
         <select id="payment"></select>
         <div id="monthlyBillingNote" class="addbox-body">
           <p class="hint" style="margin-top:10px"><b style="color:var(--ink)">企業月結簽單：</b>適用已建檔企業客戶，實際車資與月結條件由客服核對後確認。司機端結案時會要求簽單確認。</p>
+          <p class="hint" style="margin-top:8px;padding:10px 12px;background:var(--soft);border-radius:8px;color:var(--purple);font-weight:700">已啟用企業帳號，不顯示費用，將依據貴司簽約價結算。</p>
           <label class="label" for="companyBillingInfo">公司統編（8 碼）</label>
           <input id="companyBillingInfo" inputmode="numeric" maxlength="8" placeholder="請輸入公司統編8碼">
           <p id="companyNameDisplay" class="hint" style="margin-top:6px;color:var(--purple);font-weight:700"></p>
@@ -480,7 +505,6 @@
   <!-- ============ 分頁二：行程（示意用 UI，非真實訂單資料） ============ -->
   <section id="tab-trips" class="tabscreen">
     <div class="screen-title">行程</div>
-    <span class="mock-badge">已串接真實資料：依綁定手機號碼查詢訂單記錄（進行中/歷史依上車時間近似分類）</span>
     <div class="trip">
       <button class="tripFilterBtn active" data-filter="ongoing" type="button">進行中</button>
       <button class="tripFilterBtn" data-filter="upcoming" type="button">即將</button>
@@ -492,7 +516,6 @@
   <!-- ============ 分頁三：優惠 ============ -->
   <section id="tab-promo" class="tabscreen">
     <div class="screen-title">優惠</div>
-    <span class="mock-badge">折扣碼已串接真實客戶折扣券資料</span>
     <div class="promo-hero">
       <div class="badge"><svg class="ic-svg" style="width:13px;height:13px"><use href="#i-shield"/></svg> 安興承諾</div>
       <h3>固定價，不臨時加價</h3>
@@ -508,25 +531,26 @@
   <!-- ============ 分頁四：最新消息（真實資料，來自 GAS「最新消息列表」工作表） ============ -->
   <section id="tab-reward" class="tabscreen">
     <div class="screen-title">最新消息</div>
-    <span class="mock-badge">已串接真實資料：GAS 試算表「最新消息列表」工作表</span>
     <div id="newsListArea"><div class="empty-box">載入中…</div></div>
   </section>
 
   <!-- ============ 分頁五：我的（示意用 UI） ============ -->
   <section id="tab-me" class="tabscreen">
     <div class="screen-title">我的</div>
-    <span class="mock-badge">會員 = LINE 綁定＋手機號碼；綁定後折扣碼會自動帶出，不用重複輸入</span>
     <div class="profile-hero">
       <div class="avatar">安</div>
       <div style="flex:1">
         <div class="pname">LINE 使用者</div>
-        <div class="pphone" id="phoneStatusText">尚未綁定手機</div>
+        <div class="pphone" id="phoneStatusText">尚未綁定會員資料</div>
         <div class="pphone" id="memberStatsText" style="margin-top:2px"></div>
       </div>
     </div>
     <div class="card" id="phoneBindCard">
-      <p class="card-title" style="margin-bottom:8px">手機號碼綁定</p>
-      <p class="hint" style="margin:0 0 12px">綁定後可自動帶出你的專屬折扣碼，不用每次輸入。</p>
+      <p class="card-title" style="margin-bottom:8px">會員資料綁定</p>
+      <p class="hint" style="margin:0 0 12px">綁定後可自動帶出你的專屬折扣碼與訂車人資料，不用每次輸入。</p>
+      <label class="label" for="bindName">真實姓名</label>
+      <input id="bindName" placeholder="請輸入真實姓名" style="margin-bottom:10px">
+      <label class="label" for="bindPhone">手機號碼</label>
       <div class="two" style="grid-template-columns:1fr auto;gap:8px">
         <input id="bindPhone" type="tel" placeholder="請輸入手機號碼" autocomplete="tel">
         <button class="cta-purple" type="button" style="width:auto;padding:0 20px" id="bindPhoneBtn">綁定</button>
@@ -658,6 +682,20 @@
     <label class="choice"><input id="noLuggage" type="checkbox">我沒有行李</label>
 
     <button class="sheet-cta" id="confirmPax" type="button">確認人數與行李</button>
+  </div>
+</div>
+
+<!-- 彈窗：上車時間選擇（清單式選單，取代原生時間滾輪，參考 TouchGo 的做法） -->
+<div class="sheet" id="dtSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-inner">
+    <h2 id="dtSheetTitle">選擇上車時間</h2>
+    <div class="dt-cols">
+      <div class="dt-col" id="dtColDate"></div>
+      <div class="dt-col dt-col-narrow" id="dtColHour"></div>
+      <div class="dt-col dt-col-narrow" id="dtColMinute"></div>
+    </div>
+    <button class="sheet-cta" id="dtConfirmBtn" type="button">確認</button>
   </div>
 </div>
 
@@ -853,7 +891,13 @@
    * ------------------------------------------------------------- */
   let priceTableData=[];
   let DISCOUNT_CODES={}, DISCOUNT_RULES={};
+  let USER_COUPON_MAP={}; // 個人專屬折扣券（來自 getUserDiscounts），key 為大寫折扣碼，value 為完整券資料（含 amount / vehicleDiscounts）
   let currentDiscountCode='', currentDiscountAmt=0;
+  // 統一取得折扣碼規則：優先查個人專屬券，查不到才 fallback 到全店通用折扣表
+  function getDiscountRule(code){
+    const normalized=String(code||'').trim().toUpperCase();
+    return USER_COUPON_MAP[normalized] || DISCOUNT_RULES[normalized] || {};
+  }
   let priceTableStatus='loading'; // loading | ready | error
   let cityAreaMap=new Map(); // 縣市 -> Map(郵遞區號 -> 鄉鎮市區名稱)
   const TW_CITIES=['台北市','新北市','桃園市','台中市','台南市','高雄市','基隆市','新竹市','嘉義市','新竹縣','苗栗縣','彰化縣','南投縣','雲林縣','嘉義縣','屏東縣','宜蘭縣','花蓮縣','台東縣','澎湖縣','金門縣','連江縣'];
@@ -1102,7 +1146,7 @@
     const sign=$('optSign').checked&&outQuote.subtotal?200:0;
 
     // 折扣規則引擎：早鳥回程優惠／折扣碼車型金額／來回優惠併用規則，完全比照正式系統 updateLogic()
-    const discountRule = currentDiscountCode ? (DISCOUNT_RULES[currentDiscountCode]||{}) : {};
+    const discountRule = currentDiscountCode ? (getDiscountRule(currentDiscountCode)) : {};
     if(currentDiscountCode && discountRule.requiresReturn && !hasReturn){
       $('discountMsg').textContent='此折扣碼限預約來回使用，已自動取消套用。';
       $('discountMsg').style.color='var(--pink)';
@@ -1124,7 +1168,8 @@
 
     const rawTotal=outQuote.subtotal+(retQuote?retQuote.subtotal:0)+sign;
     const total=Math.max(0, rawTotal-combinedDiscount);
-    $('total').textContent='$'+total.toLocaleString();
+    if(isMonthlyBillingSelected()){ $('total').textContent='依簽約價結算'; }
+    else { $('total').textContent='$'+total.toLocaleString(); }
 
     $('outQuoteLabel').textContent=hasReturn?'【去程】':'';
     $('detailsOut').innerHTML=renderQuoteLines(outQuote.lines);
@@ -1172,21 +1217,22 @@
   }
   function getDiscountAmountForCurrentTrip(code){
     const normalizedCode=String(code||'').trim().toUpperCase();
-    const rule=DISCOUNT_RULES[normalizedCode]||{};
+    const rule=getDiscountRule(normalizedCode); // 個人專屬券優先，查不到才用全店通用折扣表
+    const fallbackAmt=Number((USER_COUPON_MAP[normalizedCode]&&USER_COUPON_MAP[normalizedCode].amount)||DISCOUNT_CODES[normalizedCode]||0);
     const v=vehicleData.find(x=>x.id===selected);
     const carType=v?v.name:'小車';
     const vehicleDiscounts=rule.vehicleDiscounts||{};
     const keys=Object.keys(vehicleDiscounts);
     for(const key of keys){ if(carType===key || carType.includes(key) || key.includes(carType)) return Number(vehicleDiscounts[key])||0; }
-    if(carType!=='小車') return Number(vehicleDiscounts['大車']||vehicleDiscounts['進口商務車']||vehicleDiscounts['New Alphard']||DISCOUNT_CODES[normalizedCode]||0);
-    return Number(vehicleDiscounts['小車']||DISCOUNT_CODES[normalizedCode]||0);
+    if(carType!=='小車') return Number(vehicleDiscounts['大車']||vehicleDiscounts['進口商務車']||vehicleDiscounts['New Alphard']||fallbackAmt);
+    return Number(vehicleDiscounts['小車']||fallbackAmt);
   }
 
   function computeDiscountBreakdown(){
     const hasReturn=$('roundTrip').checked;
     const earlyBirdEligible=isEarlyBirdReturnEligible();
     const earlyBirdDiscount=earlyBirdEligible?300:0;
-    const rule=currentDiscountCode?(DISCOUNT_RULES[currentDiscountCode]||{}):{};
+    const rule=currentDiscountCode?(getDiscountRule(currentDiscountCode)):{};
     const discountBlocksReturn=Boolean(currentDiscountCode && rule.allowReturn===false);
     const autoReturnDiscount = hasReturn && !earlyBirdEligible && !discountBlocksReturn ? 100 : 0;
     const codeAmt = currentDiscountCode ? getDiscountAmountForCurrentTrip(currentDiscountCode) : 0;
@@ -1249,6 +1295,7 @@
     if((rideDateTime-new Date())<0){
       toast(`${label}時間已過，請重新選擇尚未出發的日期與時間`);
       $(dateId).value='';
+      refreshDtDisplay(dateId==='returnDate'?'ret':'out');
       update();
       return false;
     }
@@ -1260,11 +1307,119 @@
   $('returnTime').addEventListener('change',()=>checkRideTimeNotPast('returnDate','returnTime','回程'));
 
   /* ---------------------------------------------------------------
+   * 自訂上車時間選單：取代原生 date/time 滾輪選單（客人反應很難操作）。
+   * 原生 input#date/#time（及 returnDate/returnTime）保留在 DOM 但隱藏，
+   * 純粹當「資料存放處」，其餘所有報價/驗證邏輯完全不用改動——
+   * 選單確認時把值寫回原生 input 並補發 input/change 事件即可。
+   * ------------------------------------------------------------- */
+  const WEEKDAY_ZH=['日','一','二','三','四','五','六'];
+  function pad2(n){ return String(n).padStart(2,'0'); }
+  function buildDtDateList(days){
+    const list=[]; const base=new Date(); base.setHours(0,0,0,0);
+    for(let i=0;i<days;i++){
+      const d=new Date(base.getTime()+i*86400000);
+      const val=`${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+      const md=`${d.getMonth()+1}月${d.getDate()}日`;
+      const wk=`週${WEEKDAY_ZH[d.getDay()]}`;
+      const tag=i===0?' ・今天':i===1?' ・明天':'';
+      const short=i===0?'今天':i===1?'明天':`${d.getMonth()+1}/${d.getDate()}`;
+      list.push({value:val,label:`${md}（${wk}）${tag}`,short});
+    }
+    return list;
+  }
+  let dtTarget='out';
+  let dtSel={date:'',hour:'09',minute:'00'};
+  function dtFieldIds(target){
+    return target==='ret'
+      ? {dateId:'returnDate',timeId:'returnTime',btnTextId:'returnTimeBtnText',btnId:'returnTimeBtn'}
+      : {dateId:'date',timeId:'time',btnTextId:'rideTimeBtnText',btnId:'rideTimeBtn'};
+  }
+  function refreshDtDisplay(target){
+    const f=dtFieldIds(target);
+    const dv=$(f.dateId).value, tv=$(f.timeId).value;
+    const btn=$(f.btnId), txt=$(f.btnTextId);
+    if(dv && tv){
+      const d=new Date(dv+'T00:00:00');
+      txt.textContent=`${d.getMonth()+1}/${d.getDate()}（週${WEEKDAY_ZH[d.getDay()]}）${tv}`;
+      btn.classList.remove('placeholder');
+    }else{
+      txt.textContent = target==='ret' ? '請選擇回程日期與時間' : '請選擇上車日期與時間';
+      btn.classList.add('placeholder');
+    }
+  }
+  function openDateTimeSheet(target){
+    dtTarget=target;
+    const f=dtFieldIds(target);
+    $('dtSheetTitle').textContent = target==='ret' ? '選擇回程上車時間' : '選擇上車時間';
+    const existDate=$(f.dateId).value, existTime=$(f.timeId).value;
+    const now=new Date();
+    let roundedMin=Math.ceil(now.getMinutes()/5)*5, roundedHour=now.getHours();
+    if(roundedMin>=60){ roundedMin=0; roundedHour=(roundedHour+1)%24; }
+    dtSel.date = existDate || buildDtDateList(1)[0].value;
+    dtSel.hour = existTime ? existTime.split(':')[0] : pad2(roundedHour);
+    dtSel.minute = existTime ? existTime.split(':')[1] : pad2(roundedMin);
+    renderDtColumns();
+    openSheet('dtSheet');
+  }
+  function renderDtColumns(){
+    const dates=buildDtDateList(90);
+    const hours=[]; for(let h=0;h<24;h++) hours.push(pad2(h));
+    const minutes=['00','05','10','15','20','25','30','35','40','45','50','55'];
+    $('dtColDate').innerHTML=dates.map(d=>`<div class="dt-row ${d.value===dtSel.date?'active':''}" data-val="${d.value}">${d.label}</div>`).join('');
+    $('dtColHour').innerHTML=hours.map(h=>`<div class="dt-row ${h===dtSel.hour?'active':''}" data-val="${h}">${h} 時</div>`).join('');
+    $('dtColMinute').innerHTML=minutes.map(m=>`<div class="dt-row ${m===dtSel.minute?'active':''}" data-val="${m}">${m} 分</div>`).join('');
+    bindDtColClicks();
+    updateDtConfirmLabel();
+    requestAnimationFrame(()=>{
+      ['dtColDate','dtColHour','dtColMinute'].forEach(colId=>{
+        const active=$(colId).querySelector('.dt-row.active');
+        if(active) active.scrollIntoView({block:'center'});
+      });
+    });
+  }
+  function bindDtColClicks(){
+    $('dtColDate').querySelectorAll('.dt-row').forEach(row=>{
+      row.onclick=()=>{ dtSel.date=row.dataset.val; refreshDtActive('dtColDate',dtSel.date); updateDtConfirmLabel(); };
+    });
+    $('dtColHour').querySelectorAll('.dt-row').forEach(row=>{
+      row.onclick=()=>{ dtSel.hour=row.dataset.val; refreshDtActive('dtColHour',dtSel.hour); updateDtConfirmLabel(); };
+    });
+    $('dtColMinute').querySelectorAll('.dt-row').forEach(row=>{
+      row.onclick=()=>{ dtSel.minute=row.dataset.val; refreshDtActive('dtColMinute',dtSel.minute); updateDtConfirmLabel(); };
+    });
+  }
+  function refreshDtActive(colId,val){
+    $(colId).querySelectorAll('.dt-row').forEach(row=>row.classList.toggle('active', row.dataset.val===val));
+  }
+  function updateDtConfirmLabel(){
+    const dateInfo=buildDtDateList(90).find(d=>d.value===dtSel.date);
+    const dayLabel = dateInfo ? dateInfo.short : dtSel.date;
+    $('dtConfirmBtn').textContent=`確認：${dayLabel} ${dtSel.hour}:${dtSel.minute}`;
+  }
+  $('dtConfirmBtn').onclick=()=>{
+    const f=dtFieldIds(dtTarget);
+    const dateEl=$(f.dateId), timeEl=$(f.timeId);
+    dateEl.value=dtSel.date;
+    timeEl.value=`${dtSel.hour}:${dtSel.minute}`;
+    [dateEl,timeEl].forEach(el=>{
+      el.dispatchEvent(new Event('input',{bubbles:true}));
+      el.dispatchEvent(new Event('change',{bubbles:true}));
+    });
+    refreshDtDisplay(dtTarget);
+    closeSheet('dtSheet');
+  };
+  $('rideTimeBtn').onclick=()=>openDateTimeSheet('out');
+  $('returnTimeBtn').onclick=()=>openDateTimeSheet('ret');
+  window.openDateTimeSheet=openDateTimeSheet;
+  refreshDtDisplay('out');
+  refreshDtDisplay('ret');
+
+  /* ---------------------------------------------------------------
    * 真實送出預約：完全比照正式系統 index.html 的流程與欄位結構。
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V3.5';
+  const APP_VERSION='TouchGo-UI-V3.6'; // 折扣碼金額修正／liff.closeWindow／清單式時間選單／乘車人資訊預設展開＋代訂提示／驗證錯誤自動跳回欄位／企業月結隱藏報價／我的頁綁定真實姓名
 
   function generateOrderId(){
     const d=new Date();
@@ -1425,7 +1580,10 @@
 
       showSubmitStatus('預約已成立','您的預約明細已成功送出，客服正為您核對訂單。單號：'+baseOrderId,false,true);
       btn.innerText='預約已建立完成';
-      if(window.liff && liff.isInClient && liff.isInClient()){ /* 保留視窗，讓客人自己看完關閉 */ }
+      if(window.liff && liff.isInClient && liff.isInClient()){
+        // 讓客人看得到「預約已成立」訊息一下子，再自動關閉視窗回到 LINE 對話框
+        setTimeout(()=>{ try{ liff.closeWindow(); }catch(e){} }, 1500);
+      }
     }catch(err){
       btn.disabled=false;
       btn.innerText='確認送出預約';
@@ -1508,7 +1666,7 @@
         let filled=false;
         if(data.user.name && !$('ordererName').value.trim()){ $('ordererName').value=data.user.name; filled=true; }
         if(data.user.email && !$('ordererEmail').value.trim()){ $('ordererEmail').value=data.user.email; filled=true; }
-        if(filled) toast('已帶入常用資料，如需修改可直接更改');
+        if(filled){ toast('已帶入常用資料，如需修改可直接更改'); syncPaxInfoFromOrderer(); }
       }
     }catch(err){ console.warn('老客戶查詢失敗：',err); }
   });
@@ -1568,13 +1726,13 @@
     const ctx=paxCtx;
     const errs=[];
     if(n('toddler'+ctx)>0 && (n('rearSeat'+ctx)+n('forwardSeat'+ctx)+n('booster'+ctx))<n('toddler'+ctx)){
-      errs.push('幼童依法須使用安全座椅，數量需 ≥ 幼童人數');
+      errs.push(['幼童依法須使用安全座椅，數量需 ≥ 幼童人數','rearSeat'+ctx]);
     }
     if(ctx===''){
-      if(!$('noLuggage').checked && n('checked')===0 && n('carry')===0) errs.push('請確認行李件數，若沒有行李請勾選「我沒有行李」');
-      if($('sportLuggage').checked && !$('sportLuggageSize').value.trim()) errs.push('請輸入胖胖箱尺寸/大小');
+      if(!$('noLuggage').checked && n('checked')===0 && n('carry')===0) errs.push(['請確認行李件數，若沒有行李請勾選「我沒有行李」','noLuggage']);
+      if($('sportLuggage').checked && !$('sportLuggageSize').value.trim()) errs.push(['請輸入胖胖箱尺寸/大小','sportLuggageSize']);
     }
-    if(errs.length){ toast(errs[0]); return; }
+    if(errs.length){ toast(errs[0][0]); focusField(errs[0][1]); return; }
     closeSheet('paxSheet');
     toast(ctx==='_R'?'已更新回程人數與行李':'已更新人數與行李');
     paxCtx='';
@@ -1678,37 +1836,39 @@
   $('nextBtn').onclick=()=>{
     if(currentStep===1){
       const errs=[]; let needPaxSheet=false;
-      if(!$('address').value.trim()) errs.push('請輸入完整地址');
-      if(!$('districtSel').value) errs.push('請選擇縣市／鄉鎮區域（用於試算報價）');
-      if(!$('date').value) errs.push('請選擇上車日期');
-      if(!$('time').value) errs.push('請選擇上車時間');
-      if($('roundTrip').checked && !$('returnDate').value) errs.push('請選擇回程日期');
-      if($('roundTrip').checked && !$('returnTime').value) errs.push('請選擇回程時間');
-      if(!n('adult') && !n('child') && !n('toddler')){ errs.push('請設定乘客人數'); needPaxSheet=true; }
-      if(!$('flight').value.trim()) errs.push('請輸入去程航班編號');
-      if($('roundTrip').checked && !$('returnFlight').value.trim()) errs.push('請輸入回程航班編號');
+      if(!$('address').value.trim()) errs.push(['請輸入完整地址','address']);
+      if(!$('districtSel').value) errs.push(['請選擇縣市／鄉鎮區域（用於試算報價）','districtSel']);
+      if(!$('date').value) errs.push(['請選擇上車日期','date']);
+      if(!$('time').value) errs.push(['請選擇上車時間','time']);
+      if($('roundTrip').checked && !$('returnDate').value) errs.push(['請選擇回程日期','returnDate']);
+      if($('roundTrip').checked && !$('returnTime').value) errs.push(['請選擇回程時間','returnTime']);
+      if(!n('adult') && !n('child') && !n('toddler')){ errs.push(['請設定乘客人數','openPax']); needPaxSheet=true; }
+      if(!$('flight').value.trim()) errs.push(['請輸入去程航班編號','flight']);
+      if($('roundTrip').checked && !$('returnFlight').value.trim()) errs.push(['請輸入回程航班編號','returnFlight']);
       // 幼童依法須有安全座椅：後向+前向+增高墊總數需 ≥ 幼童人數（比照正式系統 validatePassengerAndLuggageStep）
-      if(n('toddler')>0 && (n('rearSeat')+n('forwardSeat')+n('booster'))<n('toddler')){ errs.push('幼童依法須使用安全座椅，數量需 ≥ 幼童人數'); needPaxSheet=true; }
+      if(n('toddler')>0 && (n('rearSeat')+n('forwardSeat')+n('booster'))<n('toddler')){ errs.push(['幼童依法須使用安全座椅，數量需 ≥ 幼童人數','openPax']); needPaxSheet=true; }
       // 行李件數若都是0，一定要勾選「我沒有行李」，不能就這樣跳過（比照正式系統 isLuggageConfirmed）
-      if(!$('noLuggage').checked && n('checked')===0 && n('carry')===0){ errs.push('請確認行李件數，若沒有行李請勾選「我沒有行李」'); needPaxSheet=true; }
-      if($('sportLuggage').checked && !$('sportLuggageSize').value.trim()){ errs.push('請輸入胖胖箱尺寸/大小'); needPaxSheet=true; }
-      if(!checkRideTimeNotPast('date','time','去程')) errs.push('去程時間已過，請重新選擇');
-      if($('roundTrip').checked && !checkRideTimeNotPast('returnDate','returnTime','回程')) errs.push('回程時間已過，請重新選擇');
-      if(errs.length){ toast(errs[0]); if(needPaxSheet) $('openPax').click(); return; }
+      if(!$('noLuggage').checked && n('checked')===0 && n('carry')===0){ errs.push(['請確認行李件數，若沒有行李請勾選「我沒有行李」','openPax']); needPaxSheet=true; }
+      if($('sportLuggage').checked && !$('sportLuggageSize').value.trim()){ errs.push(['請輸入胖胖箱尺寸/大小','openPax']); needPaxSheet=true; }
+      if(!checkRideTimeNotPast('date','time','去程')) errs.push(['去程時間已過，請重新選擇','date']);
+      if($('roundTrip').checked && !checkRideTimeNotPast('returnDate','returnTime','回程')) errs.push(['回程時間已過，請重新選擇','returnDate']);
+      if(errs.length){ toast(errs[0][0]); if(needPaxSheet) $('openPax').click(); else focusField(errs[0][1]); return; }
       goToStep(2);
       return;
     }
     if(currentStep===2){
       const errs=[];
       const isSignSelected=$('optSign').checked;
-      if(!$('ordererName').value.trim()) errs.push('請輸入訂車人姓名');
+      if(!$('ordererName').value.trim()) errs.push(['請輸入訂車人姓名','ordererName']);
       const paxName = $('sameAsOrderer').checked ? $('ordererName').value.trim() : $('paxName').value.trim();
       const paxPhoneRaw = ($('sameAsOrderer').checked ? $('ordererPhone').value : $('paxPhone').value).replace(/\D/g,'');
-      if(!paxName) errs.push('請輸入乘客姓名');
-      if(paxPhoneRaw.length<10 && !isSignSelected) errs.push('請輸入乘車人聯絡電話（如沒有台灣門號請輸入0000-000-000，並在備註填寫聯絡方式，或選擇舉牌）');
-      if(isSignSelected && !$('signContent').value.trim()) errs.push('請輸入舉牌姓名或內容');
-      if($('payment').value==='月結簽單(企業客戶)' && $('companyBillingInfo').value.replace(/\D/g,'').length!==8) errs.push('請輸入正確的公司統編8碼');
-      if(errs.length){ toast(errs[0]); return; }
+      const paxFieldId = $('sameAsOrderer').checked ? 'ordererName' : 'paxName';
+      const paxPhoneFieldId = $('sameAsOrderer').checked ? 'ordererPhone' : 'paxPhone';
+      if(!paxName) errs.push(['請輸入乘客姓名',paxFieldId]);
+      if(paxPhoneRaw.length<10 && !isSignSelected) errs.push(['請輸入乘車人聯絡電話（如沒有台灣門號請輸入0000-000-000，並在備註填寫聯絡方式，或選擇舉牌）',paxPhoneFieldId]);
+      if(isSignSelected && !$('signContent').value.trim()) errs.push(['請輸入舉牌姓名或內容','signContent']);
+      if($('payment').value==='月結簽單(企業客戶)' && $('companyBillingInfo').value.replace(/\D/g,'').length!==8) errs.push(['請輸入正確的公司統編8碼','companyBillingInfo']);
+      if(errs.length){ toast(errs[0][0]); focusField(errs[0][1]); return; }
       goToStep(3);
       return;
     }
@@ -1730,8 +1890,19 @@
   $('backToStep1').onclick=()=>goToStep(1);
   $('backToStep2').onclick=()=>goToStep(2);
 
-  $('sameAsOrderer').addEventListener('change',()=>{
-    $('paxInfoBody').classList.toggle('show', !$('sameAsOrderer').checked);
+  $('sameAsOrderer').addEventListener('change',syncPaxInfoFromOrderer);
+  function syncPaxInfoFromOrderer(){
+    const same=$('sameAsOrderer').checked;
+    $('paxName').disabled=same; $('paxTitle').disabled=same; $('paxPhone').disabled=same;
+    if(same){
+      $('paxName').value=$('ordererName').value;
+      $('paxTitle').value=$('ordererTitle').value;
+      $('paxPhone').value=$('ordererPhone').value;
+    }
+  }
+  ['ordererName','ordererTitle','ordererPhone'].forEach(id=>{
+    $(id).addEventListener('input',()=>{ if($('sameAsOrderer').checked) syncPaxInfoFromOrderer(); });
+    $(id).addEventListener('change',()=>{ if($('sameAsOrderer').checked) syncPaxInfoFromOrderer(); });
   });
 
   // 查詢專屬折扣碼：沿用「獎勵」頁已綁定的手機號碼；若還沒綁定，導去「我的」頁綁定
@@ -1745,11 +1916,12 @@
     $('userDiscountsContainer').classList.add('show');
     $('userDiscountsContainer').innerHTML='<p class="hint">查詢中…</p>';
     try{
-      const res=await fetch(`${GAS_URL}?action=getUserDiscounts&phone=${encodeURIComponent(boundPhone)}&lineId=${encodeURIComponent(sysLineId)}&channelCode=${CURRENT_CHANNEL.code}&t=${Date.now()}`);
+      const res=await fetch(`${GAS_URL}?action=getUserDiscounts&phone=${encodeURIComponent(boundPhone)}&lineId=${encodeURIComponent(sysLineId)}&name=${encodeURIComponent(boundName)}&channelCode=${CURRENT_CHANNEL.code}&t=${Date.now()}`);
       const data=await safeJsonParse(res);
       if(data.error){ $('userDiscountsContainer').innerHTML=`<p class="hint" style="color:var(--pink)">${data.error}</p>`; return; }
       const list=data.discounts||[];
       if(!list.length){ $('userDiscountsContainer').innerHTML='<p class="hint">目前沒有可用的專屬折扣碼。</p>'; return; }
+      list.forEach(c=>{ USER_COUPON_MAP[String(c.code||'').trim().toUpperCase()]=c; }); // 把個人券的 amount/vehicleDiscounts 一併存起來，套用時才查得到金額
       $('userDiscountsContainer').innerHTML=list.map(c=>`<label class="choice" style="margin-top:8px"><input type="radio" name="couponPick" value="${c.code}">${c.code}（-$${Number(c.amount||0).toLocaleString()}）</label>`).join('');
       $('userDiscountsContainer').querySelectorAll('input[name="couponPick"]').forEach(r=>{
         r.onchange=()=>{ applyDiscountCode(r.value); };
@@ -1761,7 +1933,7 @@
   function applyDiscountCode(code){
     const normalized=String(code||'').trim().toUpperCase();
     if(!normalized){ toast('請輸入或選擇折扣碼'); return; }
-    const rule=DISCOUNT_RULES[normalized]||{};
+    const rule=getDiscountRule(normalized);
     if(rule.requiresReturn && !$('roundTrip').checked){
       toast('此折扣碼限預約來回使用，請先開啟「同時預約回程接送」');
       return;
@@ -1778,7 +1950,21 @@
     const isMonthly=$('payment').value==='月結簽單(企業客戶)';
     $('monthlyBillingNote').classList.toggle('show', isMonthly);
     if(!isMonthly){ $('companyNameDisplay').textContent=''; $('companyNameDisplay').dataset.companyName=''; $('companyNameDisplay').dataset.billingCode=''; }
+    updateFixedBarForPayment();
   });
+  function isMonthlyBillingSelected(){ return $('payment') && $('payment').value==='月結簽單(企業客戶)'; }
+  function updateFixedBarForPayment(){
+    const isMonthly=isMonthlyBillingSelected();
+    $('toggleQuote').classList.toggle('is-enterprise', isMonthly);
+    $('toggleQuote').style.pointerEvents=isMonthly?'none':'';
+    if(isMonthly){
+      $('total').textContent='依簽約價結算';
+      $('toggleQuote').querySelector('.chev').style.visibility='hidden';
+    }else{
+      $('toggleQuote').querySelector('.chev').style.visibility='';
+      update();
+    }
+  }
 
   /* 企業月結客戶自動帶入：統編打滿8碼就查真實後端 action=getCompanyByTaxId，比照正式系統 fetchCompanyByTaxId */
   $('companyBillingInfo').addEventListener('input',async()=>{
@@ -1822,6 +2008,23 @@
   let toastTimer=null;
   function toast(msg){ const el=$('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'),1600); }
 
+  /* 驗證錯誤自動跳回欄位：舊系統的行為，錯誤訊息只用 toast 客人常常找不到是哪一格，
+   * 這裡改成自動捲動到該欄位並短暫用紅框提示。日期/時間欄位因為改成自訂選單，
+   * 交給 openDateTimeSheet 直接把選單打開，而不是 focus 隱藏的原生 input。 */
+  function focusField(id){
+    if(!id) return;
+    if(id==='date'||id==='time'){ $('address') && $('address').scrollIntoView({behavior:'smooth',block:'center'}); if(window.openDateTimeSheet) setTimeout(()=>openDateTimeSheet('out'),350); return; }
+    if(id==='returnDate'||id==='returnTime'){ if(window.openDateTimeSheet) setTimeout(()=>openDateTimeSheet('ret'),200); return; }
+    const el=$(id);
+    if(!el) return;
+    try{ el.scrollIntoView({behavior:'smooth',block:'center'}); }catch(e){}
+    setTimeout(()=>{
+      try{ el.focus({preventScroll:true}); }catch(e){ try{ el.focus(); }catch(e2){} }
+      el.classList.add('field-err-flash');
+      setTimeout(()=>el.classList.remove('field-err-flash'),1600);
+    },300);
+  }
+
   /* ---------------------------------------------------------------
    * 折扣碼查詢：直接打正式後端 gas.html 的 fetchUserDiscounts()，
    * 資料來源就是 Google 試算表「客戶折扣券」工作表，依手機號碼比對，
@@ -1830,6 +2033,7 @@
    * 不需要客人在每個分頁重複輸入電話。
    * ------------------------------------------------------------- */
   let boundPhone='';
+  let boundName='';
 
   function couponListHtml(list){
     if(!list.length) return `<div class="empty-box" style="border:0;box-shadow:none;padding:20px 0">目前沒有可用的折扣碼</div>`;
@@ -1841,7 +2045,7 @@
     $('promoCouponList').innerHTML=loadingHtml;
     $('goBindBtn').classList.add('hidden');
     try{
-      const res=await fetch(`${GAS_URL}?action=getUserDiscounts&phone=${encodeURIComponent(boundPhone)}&lineId=${encodeURIComponent(sysLineId)}&channelCode=${CURRENT_CHANNEL.code}&t=${Date.now()}`);
+      const res=await fetch(`${GAS_URL}?action=getUserDiscounts&phone=${encodeURIComponent(boundPhone)}&lineId=${encodeURIComponent(sysLineId)}&name=${encodeURIComponent(boundName)}&channelCode=${CURRENT_CHANNEL.code}&t=${Date.now()}`);
       const data=await safeJsonParse(res);
       if(data.error){ $('promoCouponList').innerHTML=`<div class="empty-box" style="border:0;box-shadow:none;padding:20px 0;color:var(--pink)">${data.error}</div>`; return; }
       const html=couponListHtml(data.discounts||[]);
@@ -1854,11 +2058,18 @@
 
   function bindPhone(){
     const raw=$('bindPhone').value.replace(/\D/g,'');
+    const name=$('bindName').value.trim();
+    if(!name){ toast('請輸入真實姓名'); $('bindName').focus(); return; }
     if(raw.length<8){ toast('請輸入正確的手機號碼'); return; }
     boundPhone=raw;
-    $('phoneStatusText').textContent=`${raw}（已綁定）`;
+    boundName=name;
+    $('phoneStatusText').textContent=`${name}／${raw}（已綁定）`;
     $('phoneBindCard').classList.add('hidden');
-    toast('手機號碼已綁定');
+    toast('會員資料已綁定');
+    // 綁定後直接帶入訂車人姓名/電話，只補空欄位，不覆蓋已填的內容
+    if(!$('ordererName').value.trim()) $('ordererName').value=boundName;
+    if(!$('ordererPhone').value.trim()) $('ordererPhone').value=formatPhoneInputValue(boundPhone);
+    syncPaxInfoFromOrderer();
     queryCoupons();
     loadFavoriteAddresses();
     loadRealTrips();
