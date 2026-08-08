@@ -1556,7 +1556,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V4.6'; // 修正waitForReservationSaved輪詢邏輯：只確認單號已寫入還不夠，要等calendarStatus也變成「已同步」才算完成，避免行事曆其實已同步成功、卻因輪詢時間差被誤判卡住(不會關閉畫面、也不會送卡片跟文字通知)
+  const APP_VERSION='TouchGo-UI-V4.7'; // 修正未綁定提示卡片誤判：只看boundPhone就判定已綁定，導致LINE ID自動還原到「只有電話沒姓名」的舊資料時提示卡片直接消失、姓名補不齊(連帶常用地址存不到姓名)。改成電話+姓名都有才算真的綁定完成，缺姓名會繼續提示且「我的」頁綁定表單保持可見
 
   function generateOrderId(){
     const d=new Date();
@@ -2231,9 +2231,13 @@
     boundName=name;
     $('bindPhone').value=phone;
     $('bindName').value=name;
-    $('phoneStatusText').textContent=`${name}／${phone}（已綁定）`;
-    $('phoneBindCard').classList.add('hidden');
-    if(!silent) toast('會員資料已綁定');
+    // 只有電話+姓名都有才算真的綁定完成：把表單收起來、顯示「已綁定」。
+    // 只有電話沒有姓名（例如LINE ID自動還原到舊資料）時，表單要留著讓客人補姓名，
+    // 不然提示卡片引導客人跳過去卻看不到可以填的欄位。
+    const fullyBound=Boolean(phone && name);
+    $('phoneStatusText').textContent=fullyBound?`${name}／${phone}（已綁定）`:'';
+    $('phoneBindCard').classList.toggle('hidden',fullyBound);
+    if(!silent && fullyBound) toast('會員資料已綁定');
     // 綁定後直接帶入訂車人姓名/電話，只補空欄位，不覆蓋已填的內容
     if(!$('ordererName').value.trim()) $('ordererName').value=boundName;
     if(!$('ordererPhone').value.trim()) $('ordererPhone').value=formatPhoneInputValue(boundPhone);
@@ -2243,9 +2247,11 @@
     loadRealTrips();
     updateUnboundNudgeBanner();
   }
-  // 訂車頁最上面的「建議先綁定」提示：還沒綁過就顯示，綁完自動收起來
+  // 訂車頁最上面的「建議先綁定」提示：電話跟姓名都要有才算真的綁定完成，缺姓名也要繼續提示，
+  // 不然像LINE ID自動還原到「只有電話沒有姓名」的舊資料時，會被誤判成已綁定，提示卡片直接消失，
+  // 姓名就永遠補不齊（常用地址等功能會需要真實姓名）。
   function updateUnboundNudgeBanner(){
-    $('unboundNudgeBanner').classList.toggle('hidden', Boolean(boundPhone));
+    $('unboundNudgeBanner').classList.toggle('hidden', Boolean(boundPhone && boundName));
   }
   $('unboundNudgeBtn').onclick=()=>{
     document.querySelector('.tabbtn[data-tab="me"]').click();
