@@ -759,6 +759,19 @@
   </div>
 </div>
 
+<!-- 客服代訂客人點「客人確認連結」（c.html?t=...）進來時顯示的確認畫面。
+     這裡蓋在最上層、擋住一般訂車流程，客人確認資料無誤並綁定 LINE 後，
+     後端 confirmCustomerReservationBind 會自動送出正式預約卡片，不需要前端另外呼叫。 -->
+<div class="overlay show" id="bindConfirmOverlay" style="display:none;z-index:60">
+  <div class="submit-box" id="bindConfirmBox" style="max-width:420px;width:88vw;max-height:82vh;overflow-y:auto;text-align:left">
+    <div id="bindConfirmLoading" style="text-align:center;padding:10px 0">
+      <div class="submit-spinner"></div>
+      <p class="submit-text" style="margin-top:10px">正在載入預約資料...</p>
+    </div>
+    <div id="bindConfirmContent" class="hidden"></div>
+  </div>
+</div>
+
 <div class="sheet" id="cancelSheet">
   <div class="sheet-handle"></div>
   <div class="sheet-inner">
@@ -855,9 +868,89 @@
    * 但 liff.isLoggedIn() 會是 false，這裡改成不強制 login，避免測試時卡住，
    * 沒登入就先用空字串，實際部署在 LINE 裡才會正常拿到真實資料。
    * ------------------------------------------------------------- */
+  function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name)||''; }
+
+  /* ---------------------------------------------------------------
+   * 客服代訂客人確認流程（c.html -> 這裡）：
+   * c.html 只負責把 t/s 參數轉成 https://liff.line.me/{liffId}?bindToken=...&source=... 再跳轉，
+   * 實際「顯示預約卡片給客人確認、綁定 LINE」的畫面要在這裡（index.html／LIFF App 本體）處理。
+   * 這次改版之前完全沒有處理 bindToken，所以連結打開後會直接進到一般訂車畫面，跟客服代訂完全無關。
+   * ------------------------------------------------------------- */
+  async function startBindConfirmFlow(token){
+    $('bindConfirmOverlay').style.display='block';
+    try{
+      const res=await fetch(`${GAS_URL}?action=getReservationBindInfo&token=${encodeURIComponent(token)}`).then(safeJsonParse);
+      if(!res || !res.success) return renderBindConfirmError(res && res.error || '連結已失效，請聯絡客服協助。');
+      renderBindConfirmCard(token,res);
+    }catch(e){
+      renderBindConfirmError('系統忙碌中或連線異常，請稍後再試一次。');
+    }
+  }
+  function bindRow(label,value){
+    return `<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:13px">
+      <span style="color:var(--muted);flex:0 0 auto">${label}</span>
+      <span style="color:var(--ink);text-align:right">${value||'無'}</span>
+    </div>`;
+  }
+  function renderBindConfirmCard(token,res){
+    $('bindConfirmLoading').classList.add('hidden');
+    const content=$('bindConfirmContent');
+    content.classList.remove('hidden');
+    const ordersHtml=(res.orders||[]).map((o,idx)=>`
+      <div style="border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:${idx?10:0}">
+        <div style="font-weight:700;color:var(--purple);margin-bottom:6px">${o.date} ${o.time}　${o.type}${o.flightNo?'　'+o.flightNo:''}</div>
+        <div style="color:var(--ink);font-size:13px;margin-bottom:8px">${o.airport||''}${o.airport&&o.address?' → ':''}${o.address||''}</div>
+        ${bindRow('單號',o.orderId)}
+        ${bindRow('姓名',o.custName)}
+        ${bindRow('電話',o.custPhone)}
+        ${bindRow('車型',o.car)}
+        ${bindRow('人數',o.pax)}
+        ${bindRow('行李',o.luggage)}
+        ${bindRow('付款方式',o.paymentMethod)}
+        ${bindRow('金額','$'+Number(o.payableAmount||0).toLocaleString())}
+      </div>`).join('');
+    content.innerHTML=`
+      <p class="submit-title" style="text-align:center">預約資料確認</p>
+      <p class="submit-text" style="text-align:center;margin-bottom:14px">請確認以下預約資訊是否正確，確認後將以此 LINE 帳號綁定，後續司機資訊與行前通知都會發送到這裡。</p>
+      ${ordersHtml}
+      <div style="display:flex;justify-content:space-between;padding:12px 2px 4px;font-weight:700;color:var(--purple)">
+        <span>合計金額</span><span>$${Number(res.totalAmount||0).toLocaleString()}</span>
+      </div>
+      <button class="sheet-cta" id="bindConfirmBtn" type="button" style="margin-top:14px">資料正確，確認綁定</button>
+      <p style="text-align:center;color:var(--muted);font-size:12px;margin-top:10px">資料如有問題，請直接聯絡客服協助修改，不要點下方按鈕。</p>
+    `;
+    $('bindConfirmBtn').onclick=()=>handleBindConfirm(token);
+  }
+  function renderBindConfirmError(msg){
+    $('bindConfirmLoading').classList.add('hidden');
+    const content=$('bindConfirmContent');
+    content.classList.remove('hidden');
+    content.innerHTML=`<p class="submit-title" style="text-align:center">無法開啟確認頁</p><p class="submit-text" style="text-align:center">${msg}</p>`;
+  }
+  async function handleBindConfirm(token){
+    const btn=$('bindConfirmBtn');
+    if(btn){ btn.disabled=true; btn.textContent='處理中...'; }
+    try{
+      if(!liff.isLoggedIn()){ liff.login(); return; } // 導去 LINE 登入後會帶著同一個 bindToken 網址返回，回來會重新自動跑一次這個流程
+      const profile=await liff.getProfile();
+      const res=await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'confirmCustomerReservationBind',data:{token,lineId:profile.userId,lineName:profile.displayName}})}).then(safeJsonParse);
+      const content=$('bindConfirmContent');
+      if(!res || !res.success){
+        content.innerHTML=`<p class="submit-title" style="text-align:center">綁定失敗</p><p class="submit-text" style="text-align:center">${(res&&res.error)||'請稍後再試，或聯絡客服協助。'}</p>`;
+        return;
+      }
+      content.innerHTML=`<p class="submit-title" style="text-align:center">綁定完成！</p><p class="submit-text" style="text-align:center">${res.cardSent?'正式預約明細卡片已發送到您的 LINE，請留意訊息。':'資料已綁定，但卡片尚未送達，客服會盡快協助補發。'}</p>`;
+    }catch(e){
+      const content=$('bindConfirmContent');
+      content.innerHTML=`<p class="submit-title" style="text-align:center">綁定失敗</p><p class="submit-text" style="text-align:center">系統忙碌中或連線異常，請稍後再試一次。</p>`;
+    }
+  }
+
   async function initLiff(){
     try{
       await liff.init({ liffId: LIFF_ID });
+      const bindToken=getUrlParam('bindToken');
+      if(bindToken){ liffReady=true; startBindConfirmFlow(bindToken); return; }
       if(liff.isLoggedIn()){
         const profile=await liff.getProfile();
         sysLineId=profile.userId;
@@ -872,6 +965,11 @@
     }catch(err){
       console.warn('LIFF 初始化失敗（若不是在 LINE 容器內開啟屬正常）：',err);
       liffReady=false;
+      if(getUrlParam('bindToken')){
+        renderBindConfirmError('請在 LINE 內開啟此連結進行確認，若已在 LINE 中開啟仍出現此訊息，請聯絡客服協助。');
+        $('bindConfirmOverlay').style.display='block';
+        return;
+      }
       updateUnboundNudgeBanner();
     }
   }
@@ -1458,7 +1556,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V4.4'; // 行程日期加星期幾；訂車頁新增未綁定提示卡片，引導先去我的頁綁定真實姓名+電話
+  const APP_VERSION='TouchGo-UI-V4.6'; // 修正waitForReservationSaved輪詢邏輯：只確認單號已寫入還不夠，要等calendarStatus也變成「已同步」才算完成，避免行事曆其實已同步成功、卻因輪詢時間差被誤判卡住(不會關閉畫面、也不會送卡片跟文字通知)
 
   function generateOrderId(){
     const d=new Date();
@@ -1500,6 +1598,16 @@
     const extraStopVal = ctx==='_R' ? ($('addStop_R').checked?$('stopAddress_R').value.trim():'') : ($('addStop').checked?$('stopAddress').value.trim():'');
     const surchargeLabels=q.lines.filter(l=>!l[0].startsWith('基本車資')).map(l=>l[0]);
     const isMonthly=$('payment').value==='月結簽單(企業客戶)';
+    // 給後端組 LINE 預約卡片用的完整費用明細（含金額）。
+    // 之前這裡固定送 '{}'，後端只能改用 surchargeDetails 純文字（沒有金額）反推，
+    // 常常把加價項目的金額整個折進基本車資、或是把項目名稱誤當成金額印出來。
+    // 這裡直接把 calcLegQuote() 算好的每一行（含金額）原封不動送過去，後端就不用再猜。
+    const feeExtras=q.lines.filter(l=>!l[0].startsWith('基本車資')).map(l=>({label:l[0],amount:l[1]}));
+    const cardFeeObj={ baseFare:q.lines[0][1], extras:feeExtras, total:q.subtotal };
+    if(hasReturn && ctx==='_R'){
+      const outQ=calcLegQuote(''); // 回程單獨送出時，順便算一次去程金額，才能在卡片底部顯示「去程小計+回程小計」與「來回總額」
+      cardFeeObj.roundTripSummary={ outboundSubtotal:outQ.subtotal, returnSubtotal:q.subtotal, total:outQ.subtotal+q.subtotal-discBreak.combined };
+    }
     return {
       timestamp: t(new Date().toLocaleString('zh-TW',{timeZone:'Asia/Taipei'})),
       ordererName: t($('ordererName').value.trim()),
@@ -1537,7 +1645,7 @@
       companyName: t($('companyNameDisplay').dataset.companyName||''),
       companyBillingCode: t($('companyNameDisplay').dataset.billingCode||''),
       companyBillingNote: t(isMonthly?'企業月結簽單，請客戶簽名確認':''),
-      cardFeeJson: t('{}'),
+      cardFeeJson: t(JSON.stringify(cardFeeObj)),
       channelCode: t(CURRENT_CHANNEL.code),
       channelName: t(CURRENT_CHANNEL.name),
       channelPaymentOptions: t(CURRENT_CHANNEL.paymentOptions.join('、'))
@@ -1564,8 +1672,12 @@
     let lastResult={exists:false,calendarStatus:''};
     while(Date.now()<deadline){
       const r=await checkReservationOnceReal(reservationId);
-      if(r && r.exists) return r;
-      lastResult=r||lastResult;
+      if(r) lastResult=r;
+      // 只有「已寫入」還不夠：行事曆同步是後端寫完資料列之後才做的下一步，
+      // 如果剛好在那個空檔輪詢到，calendarStatus 會是空字串，此時不能提早回傳，
+      // 不然外層會誤判成「行事曆沒同步」，導致明明成功卻卡住、卡片跟文字通知也不會發。
+      // 要兩個條件都到位（存在 + 已同步）才提早結束；沒到位就繼續輪詢到逾時為止。
+      if(r && r.exists && r.calendarStatus==='已同步') return r;
       await new Promise(res=>setTimeout(res,1500));
     }
     return lastResult;
