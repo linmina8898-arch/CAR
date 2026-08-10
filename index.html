@@ -1124,22 +1124,43 @@
    * 用 Google DistanceMatrixService 算實際駕車距離，
    * 同縣市（地址前3碼相同）每5公里+$100；跨縣市起跳+$200，外加每5公里+$100。
    * ------------------------------------------------------------- */
+  // Google地址自動完成回填的 formatted_address 本身就含完整縣市/郵遞區號（例如
+  // 「302台灣新竹縣竹北市溪州里中正西路1179號」），但詳細地址欄位是跟「縣市/鄉鎮市區」下拉選單
+  // 分開組合的（見 getFullAddressText），兩邊都有縣市資訊，直接組合會變成「新竹縣竹北市」+
+  // 「302台灣新竹縣竹北市溪州里中正西路1179號」這樣整段重複。這裡把 formatted_address 裡
+  // 郵遞區號/台灣/目前選取的縣市鄉鎮市區都拿掉，只留街道門牌，才不會跟下拉選單的縣市重複。
+  function stripKnownAddressPrefix_(fullText, city, district){
+    let t=String(fullText||'').replace(/^\d{3,6}/,'').replace(/^台灣|^臺灣/,'').trim();
+    if(city) t=t.split(city).join('');
+    if(district) t=t.split(district.replace(/^臺/,'台')).join('').split(district).join('');
+    return t.trim();
+  }
   function initMapAutocomplete(){
-    const bindAutocomplete=(inputId)=>{
+    const bindAutocomplete=(inputId,getCity,getDistrict)=>{
       const el=$(inputId);
       if(!el || !window.google?.maps?.places?.Autocomplete) return;
       try{
         const ac=new google.maps.places.Autocomplete(el,{componentRestrictions:{country:"tw"},fields:["address_components","formatted_address"]});
         ac.addListener('place_changed',()=>{
           const place=ac.getPlace();
-          if(place.formatted_address) el.value=place.formatted_address;
+          if(place.formatted_address){
+            const city=getCity?getCity():'';
+            const district=getDistrict?getDistrict():'';
+            el.value=stripKnownAddressPrefix_(place.formatted_address,city,district);
+          }
           calculateDistanceFee();
           update();
         });
       }catch(err){ console.warn('Google 地址自動完成無法使用：',err); }
     };
-    bindAutocomplete('address');
+    bindAutocomplete('address',()=>$('citySel').value,()=>$('districtSel').selectedOptions[0]?.textContent||'');
+    // 回程地址：回程縣市/鄉鎮沒特別選（顯示「預設沿用去程」）時，實際生效的縣市就是去程那組，
+    // 要用一樣的 fallback 規則，不然回程縣市留空時就抓不到東西可以移除。
+    bindAutocomplete('address_R',
+      ()=>$('citySel_R').value||$('citySel').value,
+      ()=>$('citySel_R').value?($('districtSel_R').selectedOptions[0]?.textContent||''):($('districtSel').selectedOptions[0]?.textContent||''));
     bindAutocomplete('stopAddress');
+    bindAutocomplete('stopAddress_R');
   }
   window.initMapAutocomplete=initMapAutocomplete;
 
@@ -1556,7 +1577,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V4.8'; // 修正來回程送出邏輯：改成去程/回程一開始就同時送出、平行等待確認，不再「先等去程確認寫入才送回程」。原本這樣接力送出，去程只要比較慢逾時就會整個中止，回程的送出請求根本沒被呼叫到，導致「去程後來自己同步成功、回程整筆不存在」且不會有任何錯誤日誌
+  const APP_VERSION='TouchGo-UI-V4.9'; // 修正Google地址自動完成造成地址重複縣市的問題：Google回填的formatted_address本身就含完整縣市/郵遞區號，又跟下拉選單選的縣市/鄉鎮市區組合在一起，導致地址變成「新竹縣竹北市」+「302台灣新竹縣竹北市...」整段重複。改成回填時先把郵遞區號/台灣/目前選取的縣市鄉鎮市區都拿掉，只留街道門牌
 
   function generateOrderId(){
     const d=new Date();
