@@ -1556,7 +1556,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V4.7'; // 修正未綁定提示卡片誤判：只看boundPhone就判定已綁定，導致LINE ID自動還原到「只有電話沒姓名」的舊資料時提示卡片直接消失、姓名補不齊(連帶常用地址存不到姓名)。改成電話+姓名都有才算真的綁定完成，缺姓名會繼續提示且「我的」頁綁定表單保持可見
+  const APP_VERSION='TouchGo-UI-V4.8'; // 修正來回程送出邏輯：改成去程/回程一開始就同時送出、平行等待確認，不再「先等去程確認寫入才送回程」。原本這樣接力送出，去程只要比較慢逾時就會整個中止，回程的送出請求根本沒被呼叫到，導致「去程後來自己同步成功、回程整筆不存在」且不會有任何錯誤日誌
 
   function generateOrderId(){
     const d=new Date();
@@ -1708,20 +1708,25 @@
     const baseOrderId=generateOrderId();
     const attemptedIds=[];
     try{
+      // 去程／回程要「一開始就同時送出」，不能等去程確認寫入成功才送回程：
+      // 如果去程剛好比較慢（後端忙、行事曆API卡頓），光是等去程確認就可能超過輪詢時限，
+      // 導致函式提早丟出例外中止，回程那個 postReservationToGas 根本沒機會被呼叫到，
+      // 造成「去程後來自己同步成功、回程卻整筆不存在」的狀況，而且這不算後端錯誤，不會留下任何錯誤日誌。
       const outId=hasReturn?baseOrderId+'-A':baseOrderId;
+      const retId=hasReturn?baseOrderId+'-B':null;
       attemptedIds.push(outId);
       postReservationToGas(buildLegPayload('',outId));
-      const outSaved=await waitForReservationSaved(outId);
-      if(!outSaved.exists) throw {code:'storage',message:'去程預約尚未寫入 Google 試算表'};
-
-      let retSaved=null;
       if(hasReturn){
-        const retId=baseOrderId+'-B';
         attemptedIds.push(retId);
         postReservationToGas(buildLegPayload('_R',retId));
-        retSaved=await waitForReservationSaved(retId);
-        if(!retSaved.exists) throw {code:'storage',message:'回程預約尚未寫入 Google 試算表'};
       }
+
+      const [outSaved,retSaved]=await Promise.all([
+        waitForReservationSaved(outId),
+        hasReturn?waitForReservationSaved(retId):Promise.resolve(null)
+      ]);
+      if(!outSaved.exists) throw {code:'storage',message:'去程預約尚未寫入 Google 試算表'};
+      if(hasReturn && !retSaved.exists) throw {code:'storage',message:'回程預約尚未寫入 Google 試算表'};
 
       if(outSaved.calendarStatus!=='已同步' || (retSaved && retSaved.calendarStatus!=='已同步')){
         throw {code:'calendar',message:'預約資料已收到，但行事曆尚未同步完成'};
