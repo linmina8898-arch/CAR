@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>安興租車預約/詢價 系統</title>
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAxYym5ZR8puPb0iiycHdwzTJTKH0Aears&libraries=places&callback=initMapAutocomplete"></script>
+<script defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAxYym5ZR8puPb0iiycHdwzTJTKH0Aears&libraries=places"></script>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
   :root{--ink:#1A0B3D;--purple:#574266;--purple-dark:#463451;--muted:#7A6A82;--line:#e7ddea;--paper:#fff;--wash:#faf7fb;--pink:#d9578a;--soft:#f7eff7}
@@ -1162,7 +1162,13 @@
     bindAutocomplete('stopAddress');
     bindAutocomplete('stopAddress_R');
   }
-  window.initMapAutocomplete=initMapAutocomplete;
+  // 不再用 Google callback 機制（callback=xxx）綁地圖初始化：async+callback容易撞上腳本
+  // 執行時機競速問題，callback可能在initMapAutocomplete這個函式定義完成前就被呼叫，
+  // 導致「initMapAutocomplete is not a function」整個地圖初始化失敗、地址自動完成完全失效
+  // （而且是斷斷續續發生，看網路/載入速度而定，很難察覺）。
+  // 改成用 defer（不加 async），並在 window 的 load 事件時才綁地址自動完成，
+  // 這時候 defer 腳本一定已經執行完、window.google.maps 一定存在。
+  window.addEventListener('load', initMapAutocomplete);
 
   function calculateDistanceFee(){
     const addr1=$('address').value.trim(), addr2=$('stopAddress').value.trim();
@@ -1577,7 +1583,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V4.9'; // 修正Google地址自動完成造成地址重複縣市的問題：Google回填的formatted_address本身就含完整縣市/郵遞區號，又跟下拉選單選的縣市/鄉鎮市區組合在一起，導致地址變成「新竹縣竹北市」+「302台灣新竹縣竹北市...」整段重複。改成回填時先把郵遞區號/台灣/目前選取的縣市鄉鎮市區都拿掉，只留街道門牌
+  const APP_VERSION='TouchGo-UI-V5.0'; // 修正Google地圖初始化的callback競速bug：async+callback寫法會讓Google的callback可能在initMapAutocomplete函式定義完成前就被呼叫，導致地址自動完成整個失效(而且是斷斷續續發生，難以察覺)。改成defer(拿掉async)+window的load事件才綁定，不再依賴Google callback機制
 
   function generateOrderId(){
     const d=new Date();
