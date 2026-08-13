@@ -60,8 +60,8 @@
   .summary-row{display:flex;align-items:center;gap:12px;padding:2px 0;cursor:pointer;background:none;border:0;width:100%;text-align:left}
   .summary-row .ic{color:var(--purple);width:20px;height:20px;flex:0 0 auto}
   .summary-row .txt{flex:1}
-  .summary-row .txt b{display:block;font-size:12px;color:#93889b;font-weight:700;margin-bottom:2px}
-  .summary-row .txt strong{display:block;font-size:14px;color:var(--ink);font-weight:400}
+  .summary-row .txt b{display:block;font-size:13px;color:var(--ink);font-weight:700;margin-bottom:2px}
+  .summary-row .txt strong{display:block;font-size:11.5px;color:var(--muted);font-weight:400}
   .summary-row .chev{color:#c6bacb}
 
   .switch-row{display:flex;align-items:center;gap:12px;padding:11px 0}
@@ -1636,7 +1636,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.9'; // 版本號顯示改成只秀「V5.9」這種簡短格式，不要把內部完整字串(含TouchGo等內部代稱)曝光給客人看到
+  const APP_VERSION='TouchGo-UI-V5.12'; // 修正主次排版邏輯：之前只調顏色/粗細，字級卻是次要內容(14px)比標籤(12px)還大，違反「主>次」原則。改成標籤13px(比照.card-title)、內容11.5px(比照.hint)，字級/粗細/顏色三個維度都確保主要標籤>次要內容
   // 客人端一直沒有地方顯示版本號，客服/客人回報問題時完全沒辦法確認瀏覽器抓到的是不是最新版本，
   // 造成好幾次來回都在猜是不是快取問題。補在「我的」頁最下面，不影響版面，但至少查得到。
   // 畫面上只顯示簡短版號(例如「V5.8」)，不要把內部完整字串(含TouchGo等內部代稱)整個曝光給客人看到。
