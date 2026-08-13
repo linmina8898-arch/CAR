@@ -60,8 +60,8 @@
   .summary-row{display:flex;align-items:center;gap:12px;padding:2px 0;cursor:pointer;background:none;border:0;width:100%;text-align:left}
   .summary-row .ic{color:var(--purple);width:20px;height:20px;flex:0 0 auto}
   .summary-row .txt{flex:1}
-  .summary-row .txt b{display:block;font-size:12px;color:#93889b;font-weight:700;margin-bottom:2px}
-  .summary-row .txt strong{display:block;font-size:14px;color:var(--ink)}
+  .summary-row .txt b{display:block;font-size:12px;color:#93889b;font-weight:400;margin-bottom:2px}
+  .summary-row .txt strong{display:block;font-size:14px;color:var(--ink);font-weight:700}
   .summary-row .chev{color:#c6bacb}
 
   .switch-row{display:flex;align-items:center;gap:12px;padding:11px 0}
@@ -1635,7 +1635,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.5'; // 確認頁卡片重新分類：胖胖箱併進「行李」欄位(原本獨立放在車輛與付款卡片裡，跟行李件數脫節)；「車輛與付款」只留車型/優惠碼/付款方式；舉牌服務跟備註獨立成「其他需求」卡片
+  const APP_VERSION='TouchGo-UI-V5.6'; // 分隔符號統一改用「+」(原本人數/行李是用「・」)，跟gas.html行事曆內文、司機端、客服工具同步；胖胖箱格式改成「N登機+N托運 (含胖胖箱尺寸+件數)」，不再看起來像獨立的第三種行李；確認頁補上「加點地址」欄位(去程/回程加點原本完全沒顯示地址，只有費用有算到)；「乘客與行李」卡片文字粗細對調(標籤改細、數值改粗，跟一般UI慣例一致)
 
   function generateOrderId(){
     const d=new Date();
@@ -2026,16 +2026,23 @@
     const dateVal = ctx==='_R' ? $('returnDate').value : $('date').value;
     const timeVal = ctx==='_R' ? $('returnTime').value : $('time').value;
     const flightVal = ctx==='_R' ? $('returnFlight').value : $('flight').value;
-    const paxText = `${n('adult'+ctx)}大人${n('child'+ctx)?`・${n('child'+ctx)}兒童`:''}${n('toddler'+ctx)?`・${n('toddler'+ctx)}幼童`:''}`;
+    const paxText = `${n('adult'+ctx)}大人${n('child'+ctx)?`+${n('child'+ctx)}兒童`:''}${n('toddler'+ctx)?`+${n('toddler'+ctx)}幼童`:''}`;
     // 胖胖箱是整趟行程共用的設定（不分去程回程），併進「行李」這一列一起顯示，
     // 不要另外開一個獨立欄位放在「車輛與付款」卡片裡，跟行李件數放一起客人比較看得懂關聯性。
-    const sportText = $('sportLuggage').checked ? `・胖胖箱${$('sportLuggageQty').value||1}件(${$('sportLuggageSize').value||'尺寸未填'})` : '';
-    const luggageText = (n('checked'+ctx)===0 && n('carry'+ctx)===0 && !sportText) ? '無' : `${n('checked'+ctx)}托運・${n('carry'+ctx)}登機${sportText}`;
+    // 格式比照「N登機+N托運 (含胖胖箱尺寸+件數)」，不要讓胖胖箱看起來像獨立於托運/登機之外的第三種行李。
+    const sportOn = $('sportLuggage').checked;
+    const sportNote = sportOn ? `(含胖胖箱${$('sportLuggageSize').value||'尺寸未填'}+${$('sportLuggageQty').value||1})` : '';
+    const luggageBase = (n('checked'+ctx)===0 && n('carry'+ctx)===0) ? '' : `${n('carry'+ctx)}登機+${n('checked'+ctx)}托運`;
+    const luggageText = (luggageBase || sportNote) ? `${luggageBase}${luggageBase && sportNote ? ' ' : ''}${sportNote}` : '無';
     const seatParts=[];
     if(n('rearSeat'+ctx)) seatParts.push(`後向${n('rearSeat'+ctx)}`);
     if(n('forwardSeat'+ctx)) seatParts.push(`前向${n('forwardSeat'+ctx)}`);
     if(n('booster'+ctx)) seatParts.push(`增高墊${n('booster'+ctx)}`);
     const seatText = seatParts.length ? seatParts.join('、') : '無';
+    // 確認頁本來完全沒有顯示加點地址(不管去程回程)——加點服務費用有算進報價，但地址本身沒有列出來，
+    // 客人/客服看確認頁時完全看不到這一程到底有沒有加點、加在哪裡，容易誤以為系統沒抓到。
+    const addStopChecked = ctx==='_R' ? $('addStop_R').checked : $('addStop').checked;
+    const addStopAddr = ctx==='_R' ? $('stopAddress_R').value.trim() : $('stopAddress').value.trim();
     const gridItems=[
       ['上車時間', `${formatDateWithWeekday(dateVal)} ${timeVal||'--'}`],
       ['航班編號', flightVal||'—'],
@@ -2043,6 +2050,7 @@
       ['行李', luggageText],
       ['安全座椅/增高墊', seatText]
     ];
+    if(addStopChecked) gridItems.push(['加點地址', addStopAddr||'未輸入']);
     return `<div class="review-trip-card">
       <div class="review-trip-head">
         <span class="review-trip-badge">${badgeLabel}</span>
