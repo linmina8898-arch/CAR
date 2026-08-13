@@ -211,7 +211,8 @@
   .review-trip-card{border:1px solid #ece1ef;border-radius:12px;overflow:hidden;margin-bottom:12px}
   .review-trip-head{background:var(--soft);padding:10px 12px;display:flex;align-items:center;gap:8px}
   .review-trip-badge{font-size:11px;font-weight:700;color:#fff;background:var(--purple);border-radius:6px;padding:3px 9px;flex:0 0 auto;white-space:nowrap}
-  .review-trip-route{font-size:13.5px;font-weight:700;color:var(--ink);line-height:1.4}
+  .review-trip-route{font-size:13.5px;font-weight:700;color:var(--ink);line-height:1.4;display:flex;flex-direction:column;gap:2px}
+  .review-trip-route-to{padding-left:1.6em;color:var(--muted);font-weight:500}
   .review-grid{display:grid;grid-template-columns:1fr 1fr}
   .review-grid-item{padding:9px 12px;border-top:1px solid #f2ecf3;display:flex;flex-direction:column;gap:2px}
   .review-grid-item:nth-child(1),.review-grid-item:nth-child(2){border-top:0}
@@ -1634,7 +1635,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.3'; // 特殊節日加價改成依車型查對應金額(跟後端gas.html v2.2.208的amounts陣列格式對齊)；特殊節日恕無法使用任何優惠/折扣碼：套用折扣碼時檢查、update()即時運算時也會清掉已套用的折扣碼跟停用早鳥/來回優惠，並顯示提示訊息
+  const APP_VERSION='TouchGo-UI-V5.4'; // 預約資訊確認頁的行程路線改成兩行顯示：第一行「送機/接機｜起點」，第二行縮排「→ 終點」，長地址不會擠成一團難讀
 
   function generateOrderId(){
     const d=new Date();
@@ -2018,7 +2019,10 @@
     const addr = getFullAddressText(ctx);
     const legMode = ctx==='_R' ? (mode==='send'?'pickup':'send') : mode;
     const ap = airport();
-    const routeText = legMode==='send' ? `${addr} → ${ap}` : `${ap} → ${addr}`;
+    // 起點/終點分兩行顯示：第一行「送機/接機｜起點」，第二行縮排「→ 終點」，
+    // 不要塞成一長串文字擠在一起換行，長地址會斷得很難讀。
+    const fromText = legMode==='send' ? addr : ap;
+    const toText = legMode==='send' ? ap : addr;
     const dateVal = ctx==='_R' ? $('returnDate').value : $('date').value;
     const timeVal = ctx==='_R' ? $('returnTime').value : $('time').value;
     const flightVal = ctx==='_R' ? $('returnFlight').value : $('flight').value;
@@ -2039,7 +2043,10 @@
     return `<div class="review-trip-card">
       <div class="review-trip-head">
         <span class="review-trip-badge">${badgeLabel}</span>
-        <span class="review-trip-route">${legMode==='send'?'送機':'接機'}｜${routeText}</span>
+        <span class="review-trip-route">
+          <span class="review-trip-route-type">${legMode==='send'?'送機':'接機'}｜${fromText}</span>
+          <span class="review-trip-route-to">→ ${toText}</span>
+        </span>
       </div>
       <div class="review-grid">${gridItems.map(([k,val])=>`<div class="review-grid-item"><span class="k">${k}</span><span class="v">${val}</span></div>`).join('')}</div>
     </div>`;
