@@ -34,6 +34,10 @@
   .route-lines.pickup #airportLine{order:1}
   .route-line span{display:block;font-size:11px;color:#93889b;margin-bottom:2px}
   .route-line input{border:0;padding:0;height:auto;font-weight:700;color:#302638;font-size:14px;background:transparent}
+  /* #address(上車地點詳細地址) 是.route-line裡唯一真正要打字輸入的欄位，
+     繼承上面那條「拿掉外框」的規則後完全看不出來是輸入框，容易跟旁邊的靜態文字混在一起分不清楚。
+     加點地址(#stopAddress)因為不在.route-line裡面，本來就有正常外框，這裡讓#address也一樣有外框。 */
+  #address{border:1px solid #d9cee0!important;border-radius:9px!important;padding:0 12px!important;height:44px!important;background:#fff!important;font-weight:400!important}
   .route-line input::placeholder{color:#b6a9bc;font-weight:400}
 
   .addstop-link{display:flex;align-items:center;gap:6px;color:var(--purple);font-weight:700;font-size:12.5px;margin-top:12px;cursor:pointer;background:none;border:0;padding:0}
@@ -194,6 +198,8 @@
   .dt-col{flex:1.35;overflow-y:auto;border-radius:10px;background:var(--soft);padding:4px;scroll-behavior:smooth}
   .dt-col-narrow{flex:1}
   .dt-row{padding:13px 8px;border-radius:8px;font-size:14px;color:#7a6d80;text-align:center;cursor:pointer}
+  .dt-month-divider{padding:8px 4px 4px;font-size:11px;color:#a89fb0;text-align:center;font-weight:700;border-top:1px solid var(--line);margin-top:4px}
+  .dt-month-divider:first-child{border-top:0;margin-top:0}
   .dt-row.active{background:var(--purple);color:#fff;font-weight:700}
   /* 折扣碼互斥提示：客人常常沒看到小灰字，改成明顯的紅色警示框＋‼️ */
   .discount-warn-box{display:none;background:#fdecef;border:1.5px solid #e63c6e;border-radius:10px;padding:10px 12px;margin-top:8px}
@@ -1025,6 +1031,7 @@
    * 縣市／鄉鎮市區採兩層連動選單（先選縣市，才帶出該縣市底下的鄉鎮市區），比單一長清單好操作。
    * ------------------------------------------------------------- */
   let priceTableData=[];
+  let SPECIAL_DATE_SURCHARGES={}; // 特殊節日加價：{"2026-06-18":{amount:400,label:"端午節連假加成"}}，跟折扣碼一樣後台設定、系統自動比對套用
   let DISCOUNT_CODES={}, DISCOUNT_RULES={};
   let USER_COUPON_MAP={}; // 個人專屬折扣券（來自 getUserDiscounts），key 為大寫折扣碼，value 為完整券資料（含 amount / vehicleDiscounts）
   let currentDiscountCode='', currentDiscountAmt=0;
@@ -1050,6 +1057,7 @@
       priceTableStatus='ready';
       DISCOUNT_CODES=data.discounts||{};
       DISCOUNT_RULES=data.discountRules||{};
+      SPECIAL_DATE_SURCHARGES=data.specialDates||{};
       buildCityAreaOptions();
       update();
       renderNewsList(data.newsList||[]);
@@ -1433,13 +1441,18 @@
     const seats=(n('rearSeat'+ctx)+n('forwardSeat'+ctx)+n('booster'+ctx))*200;
     const {nightFee,urgentFee,isPast}=computeTimeSurcharges(dateVal,timeVal);
     if(ctx===''){ $('optNight').checked=nightFee>0; $('lblNight').classList.toggle('dim',nightFee<=0); $('optUrgent').checked=urgentFee>0; $('lblUrgent').classList.toggle('dim',urgentFee<=0); }
-    const subtotal = fare ? (fare+pickup+addFee+seats+nightFee+urgentFee) : 0;
+    // 特殊節日加價：後台「特殊日期」表設定好日期/金額/名稱，這裡直接查表比對上車日期，
+    // 系統自動套用，客服不用每次遇到連假手動加價，跟折扣碼一樣是自動比對機制。
+    const specialDate = fare && dateVal ? SPECIAL_DATE_SURCHARGES[dateVal] : null;
+    const specialFee = specialDate ? Number(specialDate.amount)||0 : 0;
+    const subtotal = fare ? (fare+pickup+addFee+seats+nightFee+urgentFee+specialFee) : 0;
     const lines=[['基本車資'+(v?`（${v.name}）`:''),fare]];
     if(pickup) lines.push(['接機服務',pickup]);
     if(addFee) lines.push(['加點服務',addFee]);
     if(seats) lines.push(['安全座椅 / 增高墊',seats]);
     if(nightFee) lines.push(['夜間加成(23-05)',nightFee]);
     if(urgentFee) lines.push(['24小時內急單服務費',urgentFee]);
+    if(specialFee) lines.push([specialDate.label,specialFee]);
     return {subtotal,lines,isPast};
   }
 
@@ -1491,13 +1504,19 @@
   function pad2(n){ return String(n).padStart(2,'0'); }
   function buildDtDateList(days){
     const list=[]; const base=new Date(); base.setHours(0,0,0,0);
+    let lastMonth=null;
     for(let i=0;i<days;i++){
       const d=new Date(base.getTime()+i*86400000);
       const val=`${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
       const md=`${d.getMonth()+1}月${d.getDate()}日`;
       const wk=`週${WEEKDAY_ZH[d.getDay()]}`;
       const short=i===0?'今天':i===1?'明天':`${d.getMonth()+1}/${d.getDate()}`;
-      list.push({value:val,label:`${md}（${wk}）`,short});
+      // 日期清單拉長到一年，捲動距離變長了，在每個月第一天前面插入一條月份分隔線，
+      // 方便直接抓大概位置，不用整條慢慢滑過去找。
+      const monthKey=`${d.getFullYear()}-${d.getMonth()}`;
+      const isNewMonth = monthKey!==lastMonth;
+      lastMonth=monthKey;
+      list.push({value:val,label:`${md}（${wk}）`,short,isNewMonth,monthLabel:`${d.getFullYear()}年${d.getMonth()+1}月`});
     }
     return list;
   }
@@ -1535,11 +1554,12 @@
     renderDtColumns();
     openSheet('dtSheet');
   }
+  const DT_DATE_RANGE_DAYS = 365; // 上車時間可選範圍：一年內，不要再卡3個月
   function renderDtColumns(){
-    const dates=buildDtDateList(90);
+    const dates=buildDtDateList(DT_DATE_RANGE_DAYS);
     const hours=[]; for(let h=0;h<24;h++) hours.push(pad2(h));
     const minutes=['00','05','10','15','20','25','30','35','40','45','50','55'];
-    $('dtColDate').innerHTML=dates.map(d=>`<div class="dt-row ${d.value===dtSel.date?'active':''}" data-val="${d.value}">${d.label}</div>`).join('');
+    $('dtColDate').innerHTML=dates.map(d=>`${d.isNewMonth?`<div class="dt-month-divider">${d.monthLabel}</div>`:''}<div class="dt-row ${d.value===dtSel.date?'active':''}" data-val="${d.value}">${d.label}</div>`).join('');
     $('dtColHour').innerHTML=hours.map(h=>`<div class="dt-row ${h===dtSel.hour?'active':''}" data-val="${h}">${h} 時</div>`).join('');
     $('dtColMinute').innerHTML=minutes.map(m=>`<div class="dt-row ${m===dtSel.minute?'active':''}" data-val="${m}">${m} 分</div>`).join('');
     bindDtColClicks();
@@ -1566,7 +1586,7 @@
     $(colId).querySelectorAll('.dt-row').forEach(row=>row.classList.toggle('active', row.dataset.val===val));
   }
   function updateDtConfirmLabel(){
-    const dateInfo=buildDtDateList(90).find(d=>d.value===dtSel.date);
+    const dateInfo=buildDtDateList(DT_DATE_RANGE_DAYS).find(d=>d.value===dtSel.date);
     const dayLabel = dateInfo ? dateInfo.short : dtSel.date;
     $('dtConfirmBtn').textContent=`確認：${dayLabel} ${dtSel.hour}:${dtSel.minute}`;
   }
@@ -1593,7 +1613,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.1'; // 修正加點費同縣市誤判成跨縣市多收$200的bug：判斷邏輯是比較兩個地址欄位的文字前3碼，但「上車地點」欄位只存門牌巷弄(不含縣市)、「加點地址」欄位是Google自動完成回填(含縣市)，格式不一致永遠比不對。改成用地址組裝好的完整字串(含縣市)去比對，並用縣市清單抓出真正縣市名稱來比較，不再直接比文字前3碼
+  const APP_VERSION='TouchGo-UI-V5.2'; // 上車地點詳細地址欄位補回外框(之前.route-line input{border:0}把它的外框拿掉了，看起來不像輸入框)；上車時間可選範圍3個月延長到一年，日期清單加月份分隔線方便捲動；新增特殊節日加價：後台「特殊日期」表設定好日期/金額/名稱，calcLegQuote()自動比對套用，跟折扣碼一樣不用手動輸入
 
   function generateOrderId(){
     const d=new Date();
