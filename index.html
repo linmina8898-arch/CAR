@@ -1635,7 +1635,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.4'; // 預約資訊確認頁的行程路線改成兩行顯示：第一行「送機/接機｜起點」，第二行縮排「→ 終點」，長地址不會擠成一團難讀
+  const APP_VERSION='TouchGo-UI-V5.5'; // 確認頁卡片重新分類：胖胖箱併進「行李」欄位(原本獨立放在車輛與付款卡片裡，跟行李件數脫節)；「車輛與付款」只留車型/優惠碼/付款方式；舉牌服務跟備註獨立成「其他需求」卡片
 
   function generateOrderId(){
     const d=new Date();
@@ -2027,7 +2027,10 @@
     const timeVal = ctx==='_R' ? $('returnTime').value : $('time').value;
     const flightVal = ctx==='_R' ? $('returnFlight').value : $('flight').value;
     const paxText = `${n('adult'+ctx)}大人${n('child'+ctx)?`・${n('child'+ctx)}兒童`:''}${n('toddler'+ctx)?`・${n('toddler'+ctx)}幼童`:''}`;
-    const luggageText = (n('checked'+ctx)===0 && n('carry'+ctx)===0) ? '無' : `${n('checked'+ctx)}托運・${n('carry'+ctx)}登機`;
+    // 胖胖箱是整趟行程共用的設定（不分去程回程），併進「行李」這一列一起顯示，
+    // 不要另外開一個獨立欄位放在「車輛與付款」卡片裡，跟行李件數放一起客人比較看得懂關聯性。
+    const sportText = $('sportLuggage').checked ? `・胖胖箱${$('sportLuggageQty').value||1}件(${$('sportLuggageSize').value||'尺寸未填'})` : '';
+    const luggageText = (n('checked'+ctx)===0 && n('carry'+ctx)===0 && !sportText) ? '無' : `${n('checked'+ctx)}托運・${n('carry'+ctx)}登機${sportText}`;
     const seatParts=[];
     if(n('rearSeat'+ctx)) seatParts.push(`後向${n('rearSeat'+ctx)}`);
     if(n('forwardSeat'+ctx)) seatParts.push(`前向${n('forwardSeat'+ctx)}`);
@@ -2058,7 +2061,6 @@
     const paxPhone = $('sameAsOrderer').checked ? $('ordererPhone').value.trim() : $('paxPhone').value.trim();
     const paxTitle = $('sameAsOrderer').checked ? $('ordererTitle').value : $('paxTitle').value;
     const hasReturn = $('roundTrip').checked;
-    const sportText = $('sportLuggage').checked ? `有（${$('sportLuggageQty').value}件・${$('sportLuggageSize').value||'尺寸未填'}）` : '無';
 
     let html='';
     html += buildLegReviewCard('', hasReturn?'去程':'單程');
@@ -2072,17 +2074,22 @@
       ])}
     </div>`;
 
-    const serviceRows=[
-      ['車型', v?v.name:'—'],
-      ['胖胖箱', sportText],
-      ['舉牌服務', $('optSign').checked ? ($('signContent').value||'需舉牌') : '否'],
-      ['付款方式', $('payment').value],
-      ['優惠碼', computeDiscountBreakdown().label || '未使用']
-    ];
-    if($('remarks').value.trim()) serviceRows.push(['備註', $('remarks').value.trim()]);
+    // 「車輛與付款」只留車型/優惠碼/付款方式這三項直接相關的，胖胖箱移去跟行李放一起(見buildLegReviewCard)，
+    // 舉牌服務跟備註是另外一組「特殊需求」性質的資訊，獨立開一張卡片，不要三種不同性質的東西擠在同一張卡。
     html += `<div class="review-info-card">
       <p class="review-info-title">車輛與付款</p>
-      ${renderReviewLines(serviceRows)}
+      ${renderReviewLines([
+        ['車型', v?v.name:'—'],
+        ['優惠碼', computeDiscountBreakdown().label || '未使用'],
+        ['付款方式', $('payment').value]
+      ])}
+    </div>`;
+
+    const extraRows=[['舉牌服務', $('optSign').checked ? ($('signContent').value||'需舉牌') : '否']];
+    if($('remarks').value.trim()) extraRows.push(['備註', $('remarks').value.trim()]);
+    html += `<div class="review-info-card">
+      <p class="review-info-title">其他需求</p>
+      ${renderReviewLines(extraRows)}
     </div>`;
 
     $('finalReviewContent').innerHTML = html;
