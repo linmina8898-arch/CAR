@@ -1332,8 +1332,17 @@
       currentDiscountCode=''; currentDiscountAmt=0; $('manualDiscountCode').value='';
       clearDiscountRadioSelection();
     }
-    const earlyBirdEligible = isEarlyBirdReturnEligible();
-    if(earlyBirdEligible && currentDiscountCode){
+    // 特殊節日恕無法使用任何優惠/折扣碼：去程或回程只要有一天落在特殊日期，
+    // 就把已套用的折扣碼清掉、早鳥優惠也不生效，用醒目提示框說明原因。
+    const isSpecialDateBlocked = isAnyLegSpecialDate();
+    if(isSpecialDateBlocked && currentDiscountCode){
+      currentDiscountCode=''; currentDiscountAmt=0; $('manualDiscountCode').value='';
+      clearDiscountRadioSelection();
+    }
+    const earlyBirdEligible = isSpecialDateBlocked ? false : isEarlyBirdReturnEligible();
+    if(isSpecialDateBlocked){
+      $('discountMsg').textContent='‼️ 特殊節日期間恕無法使用任何折扣碼或優惠折抵。';
+    }else if(earlyBirdEligible && currentDiscountCode){
       currentDiscountCode=''; currentDiscountAmt=0; $('manualDiscountCode').value='';
       clearDiscountRadioSelection();
       $('discountMsg').textContent='‼️ 早鳥優惠不可與其他折扣碼併用，已自動改套早鳥優惠。';
@@ -1344,7 +1353,7 @@
     $('discountWarnBox').classList.toggle('show', Boolean($('discountMsg').textContent||$('earlyBirdHint').textContent));
     const earlyBirdDiscount = earlyBirdEligible ? 300 : 0;
     const discountBlocksReturn = Boolean(currentDiscountCode && discountRule.allowReturn===false);
-    const autoReturnDiscount = hasReturn && !earlyBirdEligible && !discountBlocksReturn ? 100 : 0;
+    const autoReturnDiscount = isSpecialDateBlocked ? 0 : (hasReturn && !earlyBirdEligible && !discountBlocksReturn ? 100 : 0);
     if(currentDiscountCode) currentDiscountAmt = getDiscountAmountForCurrentTrip(currentDiscountCode);
     let combinedDiscount = earlyBirdDiscount || (currentDiscountAmt + autoReturnDiscount);
     if(combinedDiscount>500) combinedDiscount=500;
@@ -1413,6 +1422,10 @@
 
   function computeDiscountBreakdown(){
     const hasReturn=$('roundTrip').checked;
+    // 特殊節日恕無法使用任何優惠/折扣碼，去程或回程只要有一天落在特殊日期就整筆不給折扣。
+    if(isAnyLegSpecialDate()){
+      return {earlyBirdEligible:false,earlyBirdDiscount:0,autoReturnDiscount:0,codeAmt:0,combined:0,label:'',blockedBySpecialDate:true};
+    }
     const earlyBirdEligible=isEarlyBirdReturnEligible();
     const earlyBirdDiscount=earlyBirdEligible?300:0;
     const rule=currentDiscountCode?(getDiscountRule(currentDiscountCode)):{};
@@ -1425,7 +1438,7 @@
     if(earlyBirdDiscount>0) label='早鳥優惠';
     else if(codeAmt>0) label = autoReturnDiscount>0 ? `折扣碼(${currentDiscountCode}) + 預約來回優惠` : `折扣碼(${currentDiscountCode})`;
     else if(autoReturnDiscount>0) label='預約來回優惠';
-    return {earlyBirdEligible,earlyBirdDiscount,autoReturnDiscount,codeAmt,combined,label};
+    return {earlyBirdEligible,earlyBirdDiscount,autoReturnDiscount,codeAmt,combined,label,blockedBySpecialDate:false};
   }
 
   function calcLegQuote(ctx){
@@ -1441,10 +1454,11 @@
     const seats=(n('rearSeat'+ctx)+n('forwardSeat'+ctx)+n('booster'+ctx))*200;
     const {nightFee,urgentFee,isPast}=computeTimeSurcharges(dateVal,timeVal);
     if(ctx===''){ $('optNight').checked=nightFee>0; $('lblNight').classList.toggle('dim',nightFee<=0); $('optUrgent').checked=urgentFee>0; $('lblUrgent').classList.toggle('dim',urgentFee<=0); }
-    // 特殊節日加價：後台「特殊日期」表設定好日期/金額/名稱，這裡直接查表比對上車日期，
+    // 特殊節日加價：後台「特殊日期」表設定好日期/各車型金額/名稱，這裡查表比對上車日期+目前選的車型，
     // 系統自動套用，客服不用每次遇到連假手動加價，跟折扣碼一樣是自動比對機制。
     const specialDate = fare && dateVal ? SPECIAL_DATE_SURCHARGES[dateVal] : null;
-    const specialFee = specialDate ? Number(specialDate.amount)||0 : 0;
+    const specialVehicleIdx = vehicleData.findIndex(x=>x.id===selected);
+    const specialFee = specialDate ? Number((specialDate.amounts||[])[specialVehicleIdx]||0) : 0;
     const subtotal = fare ? (fare+pickup+addFee+seats+nightFee+urgentFee+specialFee) : 0;
     const lines=[['基本車資'+(v?`（${v.name}）`:''),fare]];
     if(pickup) lines.push(['接機服務',pickup]);
@@ -1453,7 +1467,14 @@
     if(nightFee) lines.push(['夜間加成(23-05)',nightFee]);
     if(urgentFee) lines.push(['24小時內急單服務費',urgentFee]);
     if(specialFee) lines.push([specialDate.label,specialFee]);
-    return {subtotal,lines,isPast};
+    return {subtotal,lines,isPast,isSpecialDate:Boolean(specialFee>0)};
+  }
+  // 判斷去程或回程是不是落在特殊節日：特殊日期恕無法使用任何折扣/優惠，這裡給computeDiscountBreakdown()判斷用。
+  function isAnyLegSpecialDate(){
+    const hasReturn=$('roundTrip').checked;
+    if(calcLegQuote('').isSpecialDate) return true;
+    if(hasReturn && calcLegQuote('_R').isSpecialDate) return true;
+    return false;
   }
 
   /* ---------------------------------------------------------------
@@ -1613,7 +1634,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.2'; // 上車地點詳細地址欄位補回外框(之前.route-line input{border:0}把它的外框拿掉了，看起來不像輸入框)；上車時間可選範圍3個月延長到一年，日期清單加月份分隔線方便捲動；新增特殊節日加價：後台「特殊日期」表設定好日期/金額/名稱，calcLegQuote()自動比對套用，跟折扣碼一樣不用手動輸入
+  const APP_VERSION='TouchGo-UI-V5.3'; // 特殊節日加價改成依車型查對應金額(跟後端gas.html v2.2.208的amounts陣列格式對齊)；特殊節日恕無法使用任何優惠/折扣碼：套用折扣碼時檢查、update()即時運算時也會清掉已套用的折扣碼跟停用早鳥/來回優惠，並顯示提示訊息
 
   function generateOrderId(){
     const d=new Date();
@@ -2164,6 +2185,10 @@
   function applyDiscountCode(code){
     const normalized=String(code||'').trim().toUpperCase();
     if(!normalized){ toast('請輸入或選擇折扣碼'); return; }
+    if(isAnyLegSpecialDate()){
+      toast('特殊節日恕無法使用折扣碼，請重新選擇日期或聯絡客服');
+      return;
+    }
     const rule=getDiscountRule(normalized);
     if(rule.requiresReturn && !$('roundTrip').checked){
       toast('此折扣碼限預約來回使用，請先開啟「同時預約回程接送」');
