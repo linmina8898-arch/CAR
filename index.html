@@ -1170,17 +1170,27 @@
   // 這時候 defer 腳本一定已經執行完、window.google.maps 一定存在。
   window.addEventListener('load', initMapAutocomplete);
 
+  // 找地址文字裡屬於哪個縣市（不管是完整地址還是只有門牌巷弄，只要文字裡含縣市名稱就抓得到）。
+  function extractCityFromAddressText(text){
+    const t=String(text||'').replace(/臺/g,'台');
+    return TW_CITIES.find(c=>t.includes(c))||'';
+  }
   function calculateDistanceFee(){
-    const addr1=$('address').value.trim(), addr2=$('stopAddress').value.trim();
+    const addr1Full=getFullAddressText(''); // 上車地點欄位本身只存門牌巷弄、不含縣市，同縣市判斷一定要用組好縣市+鄉鎮市區+門牌的完整地址，不能只用門牌本身
+    const addr2=$('stopAddress').value.trim();
     const needStop=$('addStop').checked;
-    if(!needStop || !addr1 || !addr2){ extraStopFee=0; extraStopDist=0; extraStopState='idle'; renderStopHint(); return; }
+    if(!needStop || !addr1Full || !addr2 || addr1Full==='（未填地址）'){ extraStopFee=0; extraStopDist=0; extraStopState='idle'; renderStopHint(); return; }
     if(!window.google?.maps?.DistanceMatrixService){ extraStopState='error'; renderStopHint(); return; }
     extraStopState='calculating'; renderStopHint();
     const service=new google.maps.DistanceMatrixService();
-    service.getDistanceMatrix({origins:[addr1],destinations:[addr2],travelMode:'DRIVING',region:'tw'},(response,status)=>{
+    service.getDistanceMatrix({origins:[addr1Full],destinations:[addr2],travelMode:'DRIVING',region:'tw'},(response,status)=>{
       if(status==='OK' && response.rows[0].elements[0].status==='OK'){
         const distanceKm=response.rows[0].elements[0].distance.value/1000;
-        const isSameCity=addr1.substring(0,3)===addr2.substring(0,3);
+        // 之前這裡直接比較 addr1.substring(0,3) 跟 addr2.substring(0,3)，
+        // 但上車地點欄位不含縣市、加點地址(Google自動完成)含縣市，兩邊格式不一致永遠比不對，
+        // 導致同縣市的加點也被誤判成跨縣市、多收$200。改成各自抓出真正的縣市名稱來比對。
+        const city1=extractCityFromAddressText(addr1Full), city2=extractCityFromAddressText(addr2);
+        const isSameCity=Boolean(city1) && city1===city2;
         const units=Math.ceil(distanceKm/5)||1;
         const fee=isSameCity?(units*100):(200+units*100);
         extraStopFee=fee; extraStopDist=distanceKm; extraStopState='done';
@@ -1583,7 +1593,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.0'; // 修正Google地圖初始化的callback競速bug：async+callback寫法會讓Google的callback可能在initMapAutocomplete函式定義完成前就被呼叫，導致地址自動完成整個失效(而且是斷斷續續發生，難以察覺)。改成defer(拿掉async)+window的load事件才綁定，不再依賴Google callback機制
+  const APP_VERSION='TouchGo-UI-V5.1'; // 修正加點費同縣市誤判成跨縣市多收$200的bug：判斷邏輯是比較兩個地址欄位的文字前3碼，但「上車地點」欄位只存門牌巷弄(不含縣市)、「加點地址」欄位是Google自動完成回填(含縣市)，格式不一致永遠比不對。改成用地址組裝好的完整字串(含縣市)去比對，並用縣市清單抓出真正縣市名稱來比較，不再直接比文字前3碼
 
   function generateOrderId(){
     const d=new Date();
