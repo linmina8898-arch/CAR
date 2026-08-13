@@ -620,6 +620,7 @@
     <div class="card" style="padding:0 16px">
       <div class="setting-row"><span class="ic"><svg class="ic-svg"><use href="#i-phone"/></svg></span><span class="t">聯絡客服</span><span class="v">0955-311-306 ›</span></div>
     </div>
+    <p style="text-align:center;color:#c9bccf;font-size:11px;margin:14px 0 4px">版本 <span id="appVersionDisplay"></span></p>
   </section>
 
 </main>
@@ -1635,7 +1636,11 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.7'; // 修正「乘客與行李」粗細方向：標籤(乘客與行李)改回粗體、狀態文字(請設定人數與行李)改細，上一版V5.6改反了
+  const APP_VERSION='TouchGo-UI-V5.8'; // 新增版面顯示版本號：客人端(index.html)一直沒有地方顯示版本號，客服/客人回報問題時完全沒辦法確認瀏覽器抓到的是不是最新版本，補在「我的」頁最下面
+  // 客人端一直沒有地方顯示版本號，客服/客人回報問題時完全沒辦法確認瀏覽器抓到的是不是最新版本，
+  // 造成好幾次來回都在猜是不是快取問題。補在「我的」頁最下面，不影響版面，但至少查得到。
+  const appVersionEl=document.getElementById('appVersionDisplay');
+  if(appVersionEl) appVersionEl.textContent=APP_VERSION;
 
   function generateOrderId(){
     const d=new Date();
