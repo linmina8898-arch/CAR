@@ -1636,7 +1636,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.12'; // 修正主次排版邏輯：之前只調顏色/粗細，字級卻是次要內容(14px)比標籤(12px)還大，違反「主>次」原則。改成標籤13px(比照.card-title)、內容11.5px(比照.hint)，字級/粗細/顏色三個維度都確保主要標籤>次要內容
+  const APP_VERSION='TouchGo-UI-V5.13'; // 確認頁「行李」欄位修正：登機/托運件數為0時不再顯示「0登機」這種多餘項目；胖胖箱備註(含胖胖箱XX+N)用nowrap包住，換行時整段一起換到下一行，不會斷在數字中間變成兩截
   // 客人端一直沒有地方顯示版本號，客服/客人回報問題時完全沒辦法確認瀏覽器抓到的是不是最新版本，
   // 造成好幾次來回都在猜是不是快取問題。補在「我的」頁最下面，不影響版面，但至少查得到。
   // 畫面上只顯示簡短版號(例如「V5.8」)，不要把內部完整字串(含TouchGo等內部代稱)整個曝光給客人看到。
@@ -2040,8 +2040,13 @@
     // 不要另外開一個獨立欄位放在「車輛與付款」卡片裡，跟行李件數放一起客人比較看得懂關聯性。
     // 格式比照「N登機+N托運 (含胖胖箱尺寸+件數)」，不要讓胖胖箱看起來像獨立於托運/登機之外的第三種行李。
     const sportOn = $('sportLuggage').checked;
-    const sportNote = sportOn ? `(含胖胖箱${$('sportLuggageSize').value||'尺寸未填'}+${$('sportLuggageQty').value||1})` : '';
-    const luggageBase = (n('checked'+ctx)===0 && n('carry'+ctx)===0) ? '' : `${n('carry'+ctx)}登機+${n('checked'+ctx)}托運`;
+    const sportNote = sportOn ? `<span style="white-space:nowrap">(含胖胖箱${$('sportLuggageSize').value||'尺寸未填'}+${$('sportLuggageQty').value||1})</span>` : '';
+    const carryCount = n('carry'+ctx);
+    const checkedCount = n('checked'+ctx);
+    const luggageParts = [];
+    if(carryCount>0) luggageParts.push(`${carryCount}登機`);
+    if(checkedCount>0) luggageParts.push(`${checkedCount}托運`);
+    const luggageBase = luggageParts.join('+');
     const luggageText = (luggageBase || sportNote) ? `${luggageBase}${luggageBase && sportNote ? ' ' : ''}${sportNote}` : '無';
     const seatParts=[];
     if(n('rearSeat'+ctx)) seatParts.push(`後向${n('rearSeat'+ctx)}`);
