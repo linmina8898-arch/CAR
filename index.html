@@ -290,6 +290,11 @@
     </div>
 
     <div id="step1Panel">
+    <div id="adminPhoneLookupBox" class="card hidden" style="border:1px solid var(--pink);background:#fff7fb">
+      <p class="card-title" style="color:var(--pink)"><svg class="ic-svg"><use href="#i-user"/></svg> 客服快速查詢 <span style="display:inline-block;margin-left:6px;font-size:10px;font-weight:700;color:#fff;background:var(--pink);border-radius:10px;padding:2px 8px;vertical-align:middle">客服模式</span></p>
+      <input id="adminLookupPhone" placeholder="輸入客人電話，自動帶入常用地址" inputmode="tel" autocomplete="off">
+      <p class="hint" style="margin-top:6px">查到資料後會自動帶入下方地址欄位，進到下一頁也會順便帶入姓名/電話/Email。</p>
+    </div>
     <div class="trip">
       <button id="sendBtn" class="active" type="button"><svg class="ic-svg" style="width:16px;height:16px"><use href="#i-send"/></svg> 送機</button>
       <button id="pickupBtn" type="button"><svg class="ic-svg flip" style="width:16px;height:16px"><use href="#i-send"/></svg> 接機</button>
@@ -964,7 +969,7 @@
         sysLineId=profile.userId;
         sysLineName=profile.displayName;
         isAdminUser=ADMIN_LINE_IDS.includes(profile.userId);
-        if(isAdminUser) unlockAdminCashPayment();
+        if(isAdminUser){ unlockAdminCashPayment(); unlockAdminPhoneLookup(); }
         restoreBoundMemberFromLine(); // 用 LINE ID 反查之前綁過的手機/姓名，不用每次重整頁面都重綁
       }else{
         updateUnboundNudgeBanner(); // 沒登入 LINE（例如瀏覽器測試）也要正確顯示綁定提示
@@ -994,6 +999,52 @@
     badge.style.cssText='display:inline-block;margin-left:8px;font-size:10px;font-weight:700;color:#fff;background:var(--pink);border-radius:10px;padding:2px 8px;vertical-align:middle';
     $('brandbarTitle')?.appendChild(badge);
   }
+
+  // 客服在第一頁查電話帶出來的資料，先存起來，等進到第二頁時補上訂車人姓名/電話/Email（見 goToStep）。
+  let adminPrefillData=null;
+  function unlockAdminPhoneLookup(){
+    $('adminPhoneLookupBox').classList.remove('hidden');
+  }
+  // 把後端查到的完整地址字串（例如「新竹縣湖口鄉信義街97巷6號」）拆回 縣市／鄉鎮市區／詳細地址 三個欄位，
+  // 沿用跟 loadPriceTable 完全一樣的 TW_CITIES／cityAreaMap／normCity，才能跟距離計費邏輯吃到同一套資料。
+  // 拆不出縣市（例如地址格式很怪）時，退而求其次整段塞進「詳細地址」欄，至少不會漏資料要客服重打。
+  function applyFullAddressToStep1(fullAddress){
+    const addr=normCity(String(fullAddress||'').trim());
+    if(!addr) return false;
+    const city=TW_CITIES.find(c=>addr.startsWith(c));
+    if(!city || !cityAreaMap.has(city)){ $('address').value=addr; return true; }
+    $('citySel').value=city;
+    populateDistrictSelect('citySel','districtSel');
+    const rest=addr.slice(city.length);
+    const districts=Array.from(cityAreaMap.get(city).values());
+    const matchedDistrict=districts.find(d=>rest.startsWith(d.district));
+    if(matchedDistrict){
+      $('districtSel').value=`${matchedDistrict.zip}::${matchedDistrict.district}`;
+      $('address').value=rest.slice(matchedDistrict.district.length);
+    }else{
+      $('address').value=rest;
+    }
+    return true;
+  }
+  $('adminLookupPhone').addEventListener('input',()=>{ $('adminLookupPhone').value=formatPhoneInputValue($('adminLookupPhone').value); });
+  $('adminLookupPhone').addEventListener('blur',async()=>{
+    const phone=$('adminLookupPhone').value.replace(/\D/g,'');
+    if(phone.length<10) return;
+    try{
+      const res=await fetch(`${GAS_URL}?action=getLastUser&phone=${encodeURIComponent(phone)}&lineId=${encodeURIComponent(sysLineId)}&t=${Date.now()}`);
+      const data=await safeJsonParse(res);
+      if(data && data.error==='mismatch'){ toast('此電話已綁定其他 LINE 帳號，請聯絡客服協助處理'); return; }
+      if(data && data.user){
+        adminPrefillData={ name:data.user.name||'', phone, email:data.user.email||'' };
+        const filledAddress=data.user.address?applyFullAddressToStep1(data.user.address):false;
+        if(filledAddress){ update(); toast('已帶入客人常用地址，如需修改可直接更改'); }
+        else toast('查到客人資料，但沒有可帶入的地址');
+      }else{
+        adminPrefillData=null;
+        toast('查無這支電話的歷史資料');
+      }
+    }catch(err){ console.warn('客服查詢失敗：',err); }
+  });
 
   /* ---------------------------------------------------------------
    * 以下計價 / 車型判斷邏輯完全沿用原本 V3 測試頁，未做任何規則變動，
@@ -1636,7 +1687,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.13'; // 確認頁「行李」欄位修正：登機/托運件數為0時不再顯示「0登機」這種多餘項目；胖胖箱備註(含胖胖箱XX+N)用nowrap包住，換行時整段一起換到下一行，不會斷在數字中間變成兩截
+  const APP_VERSION='TouchGo-UI-V5.15'; // 新增客服白名單專屬功能：第一頁多一個「客服快速查詢」電話輸入框(只有isAdminUser看得到，跟現金付款選項同一組白名單)，查到客人電話的歷史資料後自動拆解帶入縣市/鄉鎮市區/詳細地址，進到第二頁時也會順手補上訂車人姓名/電話/Email，不用等到第二頁才能靠電話帶出資料
   // 客人端一直沒有地方顯示版本號，客服/客人回報問題時完全沒辦法確認瀏覽器抓到的是不是最新版本，
   // 造成好幾次來回都在猜是不是快取問題。補在「我的」頁最下面，不影響版面，但至少查得到。
   // 畫面上只顯示簡短版號(例如「V5.8」)，不要把內部完整字串(含TouchGo等內部代稱)整個曝光給客人看到。
@@ -1844,9 +1895,21 @@
         return;
       }
       const results=await Promise.all(attemptedIds.map(checkReservationOnceReal));
-      if(results.some(r=>r&&r.exists)){
+      // 這裡要「每一個」都存在才算真的成功，不能用 .some()（任一個存在就算數）——
+      // 來回預約如果只有去程寫入成功、回程失敗，.some() 會誤判成「資料其實已經送達」，
+      // 讓客人以為兩腿都成功、系統也不會顯示任何錯誤，實際上回程整筆不存在，客服完全不會發現。
+      const allAttemptedExist=results.every(r=>r&&r.exists);
+      if(allAttemptedExist){
         showSubmitStatus('預約資料其實已經送達','系統確認資料已寫入，只是稍早輪詢逾時沒有即時顯示。請勿使用新單號再次送出，客服將儘快協助確認並補發卡片。',false,true);
         btn.disabled=true; btn.innerText='預約已建立完成';
+        return;
+      }
+      if(results.some(r=>r&&r.exists)){
+        // 部分寫入成功、部分失敗（例如來回預約其中一腿失敗）：不能顯示「已送達」，
+        // 這是真的異常狀況，必須明確告知客人有一部分沒有成功，請客服人工介入處理，
+        // 不要讓客人用新單號整個重新訂一次（已成功的那一腿會變成多餘的重複預約）。
+        showSubmitStatus('預約僅部分送出','偵測到部分行程資料寫入成功、部分失敗，請勿重複送出或使用新單號重新預約，客服將盡快為您確認並補齊缺漏的行程。單號：'+baseOrderId,false,true);
+        btn.disabled=true; btn.innerText='請等候客服確認';
         return;
       }
       hideSubmitStatus();
@@ -1998,7 +2061,17 @@
     $('step2Panel').classList.toggle('hidden', n!==2);
     $('step3Panel').classList.toggle('hidden', n!==3);
     if(n===1) $('nextBtn').textContent='下一步，填寫乘客資料';
-    if(n===2) $('nextBtn').textContent='下一步，確認送出';
+    if(n===2){
+      $('nextBtn').textContent='下一步，確認送出';
+      // 客服在第一頁用電話查過客人資料的話，這裡順手把訂車人姓名/電話/Email補上，
+      // 客服不用進到第二頁還要再打一次電話（只補空欄位，不覆蓋掉客服已經手動改過的內容）。
+      if(adminPrefillData){
+        if(adminPrefillData.phone && !$('ordererPhone').value.trim()) $('ordererPhone').value=formatPhoneInputValue(adminPrefillData.phone);
+        if(adminPrefillData.name && !$('ordererName').value.trim()) $('ordererName').value=adminPrefillData.name;
+        if(adminPrefillData.email && !$('ordererEmail').value.trim()) $('ordererEmail').value=adminPrefillData.email;
+        syncPaxInfoFromOrderer();
+      }
+    }
     if(n===3){ $('nextBtn').textContent='確認送出預約'; buildFinalReview(); }
     window.scrollTo(0,0);
   }
