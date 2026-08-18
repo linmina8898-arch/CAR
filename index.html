@@ -1001,7 +1001,10 @@
   }
 
   // 客服在第一頁查電話帶出來的資料，先存起來，等進到第二頁時補上訂車人姓名/電話/Email（見 goToStep）。
+  // adminPrefillApplied 用來確保「覆蓋訂車人欄位」只在查完後第一次進到第二頁執行一次，
+  // 避免客服後來在第二頁手動改了電話/姓名，又因為在第一、二頁之間切換而被舊的查詢結果蓋回去。
   let adminPrefillData=null;
+  let adminPrefillApplied=false;
   function unlockAdminPhoneLookup(){
     $('adminPhoneLookupBox').classList.remove('hidden');
   }
@@ -1036,6 +1039,7 @@
       if(data && data.error==='mismatch'){ toast('此電話已綁定其他 LINE 帳號，請聯絡客服協助處理'); return; }
       if(data && data.user){
         adminPrefillData={ name:data.user.name||'', phone, email:data.user.email||'' };
+        adminPrefillApplied=false;
         const filledAddress=data.user.address?applyFullAddressToStep1(data.user.address):false;
         if(filledAddress){ update(); toast('已帶入客人常用地址，如需修改可直接更改'); }
         else toast('查到客人資料，但沒有可帶入的地址');
@@ -1622,9 +1626,22 @@
     const now=new Date();
     let roundedMin=Math.ceil(now.getMinutes()/5)*5, roundedHour=now.getHours();
     if(roundedMin>=60){ roundedMin=0; roundedHour=(roundedHour+1)%24; }
-    dtSel.date = existDate || buildDtDateList(1)[0].value;
-    dtSel.hour = existTime ? existTime.split(':')[0] : pad2(roundedHour);
-    dtSel.minute = existTime ? existTime.split(':')[1] : pad2(roundedMin);
+    if(target==='ret' && !existDate && $('date').value){
+      // 回程第一次開啟選單、還沒選過的話，預設帶到「去程隔天、同一個時間」，
+      // 不要預設今天——不然客人選完去程（通常是幾天後甚至幾週後）之後，
+      // 開回程選單卻要從今天開始重新往下滑一大段才能滑到去程附近，體驗很差，
+      // 而且回程時間本來就該晚於去程，直接預設隔天也符合這個邏輯。
+      const outDate=new Date($('date').value+'T00:00:00');
+      outDate.setDate(outDate.getDate()+1);
+      dtSel.date = `${outDate.getFullYear()}-${pad2(outDate.getMonth()+1)}-${pad2(outDate.getDate())}`;
+      const outTime=$('time').value;
+      dtSel.hour = outTime ? outTime.split(':')[0] : pad2(roundedHour);
+      dtSel.minute = outTime ? outTime.split(':')[1] : pad2(roundedMin);
+    }else{
+      dtSel.date = existDate || buildDtDateList(1)[0].value;
+      dtSel.hour = existTime ? existTime.split(':')[0] : pad2(roundedHour);
+      dtSel.minute = existTime ? existTime.split(':')[1] : pad2(roundedMin);
+    }
     renderDtColumns();
     openSheet('dtSheet');
   }
@@ -1687,7 +1704,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.15'; // 新增客服白名單專屬功能：第一頁多一個「客服快速查詢」電話輸入框(只有isAdminUser看得到，跟現金付款選項同一組白名單)，查到客人電話的歷史資料後自動拆解帶入縣市/鄉鎮市區/詳細地址，進到第二頁時也會順手補上訂車人姓名/電話/Email，不用等到第二頁才能靠電話帶出資料
+  const APP_VERSION='TouchGo-UI-V5.17'; // 修正客服快速查詢：客服自己LINE帳號如果本身綁定過手機，頁面載入時會先把「客服自己的電話」帶進訂車人欄位，導致後來客服查了客人電話，原本「只補空欄位」的邏輯不會覆蓋掉，訂單留的還是客服自己的電話。改成只要客服明確查過客人電話就直接覆蓋(用adminPrefillApplied旗標確保只在查完後第一次進到第二頁覆蓋一次，不會蓋掉客服後續手動修改的內容)
   // 客人端一直沒有地方顯示版本號，客服/客人回報問題時完全沒辦法確認瀏覽器抓到的是不是最新版本，
   // 造成好幾次來回都在猜是不是快取問題。補在「我的」頁最下面，不影響版面，但至少查得到。
   // 畫面上只顯示簡短版號(例如「V5.8」)，不要把內部完整字串(含TouchGo等內部代稱)整個曝光給客人看到。
@@ -2063,13 +2080,18 @@
     if(n===1) $('nextBtn').textContent='下一步，填寫乘客資料';
     if(n===2){
       $('nextBtn').textContent='下一步，確認送出';
-      // 客服在第一頁用電話查過客人資料的話，這裡順手把訂車人姓名/電話/Email補上，
-      // 客服不用進到第二頁還要再打一次電話（只補空欄位，不覆蓋掉客服已經手動改過的內容）。
-      if(adminPrefillData){
-        if(adminPrefillData.phone && !$('ordererPhone').value.trim()) $('ordererPhone').value=formatPhoneInputValue(adminPrefillData.phone);
-        if(adminPrefillData.name && !$('ordererName').value.trim()) $('ordererName').value=adminPrefillData.name;
-        if(adminPrefillData.email && !$('ordererEmail').value.trim()) $('ordererEmail').value=adminPrefillData.email;
+      // 客服在第一頁用電話查過客人資料的話，這裡直接覆蓋訂車人姓名/電話/Email——
+      // 不能用「只補空欄位」的邏輯，因為客服自己的LINE帳號如果本身綁定過手機，
+      // restoreBoundMemberFromLine 會在頁面載入時就先把「客服自己的電話」帶進這幾個欄位，
+      // 等客服後來才用「客服快速查詢」查了客人電話，欄位已經非空、原本的邏輯就不會覆蓋，
+      // 變成訂單上留的是客服自己的電話，不是真正要服務的客人電話。
+      // 只要客服明確查過客人電話（adminPrefillData有值），就代表這意圖很明確，要直接覆蓋。
+      if(adminPrefillData && !adminPrefillApplied){
+        if(adminPrefillData.phone) $('ordererPhone').value=formatPhoneInputValue(adminPrefillData.phone);
+        if(adminPrefillData.name) $('ordererName').value=adminPrefillData.name;
+        if(adminPrefillData.email) $('ordererEmail').value=adminPrefillData.email;
         syncPaxInfoFromOrderer();
+        adminPrefillApplied=true;
       }
     }
     if(n===3){ $('nextBtn').textContent='確認送出預約'; buildFinalReview(); }
