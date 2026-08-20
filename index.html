@@ -185,6 +185,10 @@
   .trip-card .troute{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:2px}
   .trip-card .tid{font-size:11px;color:#a698ac}
 
+  .detail-row{display:flex;justify-content:space-between;gap:10px;padding:6px 0;font-size:13px;border-bottom:1px solid #f3eef4}
+  .detail-row .dlabel{color:#93889b;flex-shrink:0}
+  .detail-row .dvalue{color:var(--ink);text-align:right}
+
   .toast{position:fixed;left:50%;bottom:150px;transform:translateX(-50%);background:#26202a;color:#fff;font-size:12.5px;font-weight:700;padding:9px 16px;border-radius:20px;z-index:60;opacity:0;pointer-events:none;transition:opacity .2s}
   .toast.show{opacity:1}
 
@@ -761,6 +765,19 @@
   </div>
 </div>
 
+<!-- 行程明細（客人App「我的>行程」點卡片跳出來的，內容跟訂車時收到的正式LINE卡片一致） -->
+<div class="sheet" id="tripDetailSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-inner">
+    <h2 id="tripDetailTitle">行程明細</h2>
+    <p class="subgroup-title" id="tripDetailRoute" style="margin-top:0"></p>
+    <div id="tripDetailFields"></div>
+    <p class="subgroup-title">費用明細</p>
+    <div id="tripDetailFee"></div>
+    <button class="sheet-cta" id="closeTripDetail" type="button">關閉</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <div class="submit-overlay" id="submitStatusOverlay">
@@ -782,25 +799,6 @@
       <p class="submit-text" style="margin-top:10px">正在載入預約資料...</p>
     </div>
     <div id="bindConfirmContent" class="hidden"></div>
-  </div>
-</div>
-
-<div class="sheet" id="cancelSheet">
-  <div class="sheet-handle"></div>
-  <div class="sheet-inner">
-    <h2>取消預約</h2>
-    <div class="hint-card" style="margin-bottom:14px">
-      <p style="color:var(--ink);font-weight:700;margin:0 0 4px">取消規則</p>
-      <p style="margin:0">出發前 48 小時以上可自行取消；未滿 48 小時請聯絡客服協助處理。</p>
-    </div>
-    <label class="label" for="cancelOrderId">預約編號</label>
-    <input id="cancelOrderId" readonly>
-    <label class="label" for="cancelPhone">原預約聯絡電話</label>
-    <input id="cancelPhone" type="tel" placeholder="請輸入原預約時使用的電話">
-    <label class="label" for="cancelReason">取消原因（選填）</label>
-    <textarea id="cancelReason" class="field" rows="2" style="width:100%;border:1px solid #d9d6df;border-radius:10px;padding:10px 11px;font-size:15px"></textarea>
-    <button class="sheet-cta" id="confirmCancelBtn" type="button" style="margin-top:14px">確認自行取消</button>
-    <button class="secondary-btn" id="closeCancelSheet" type="button" style="margin-top:8px;width:100%">返回</button>
   </div>
 </div>
 
@@ -1704,7 +1702,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.17'; // 修正客服快速查詢：客服自己LINE帳號如果本身綁定過手機，頁面載入時會先把「客服自己的電話」帶進訂車人欄位，導致後來客服查了客人電話，原本「只補空欄位」的邏輯不會覆蓋掉，訂單留的還是客服自己的電話。改成只要客服明確查過客人電話就直接覆蓋(用adminPrefillApplied旗標確保只在查完後第一次進到第二頁覆蓋一次，不會蓋掉客服後續手動修改的內容)
+  const APP_VERSION='TouchGo-UI-V5.19'; // 拿掉「我的>行程」的「取消預約」自助取消功能(按鈕+cancelSheet表單+送出邏輯全部移除)，客人取消預約一律改由客服處理，不再讓客人自己在App裡取消
   // 客人端一直沒有地方顯示版本號，客服/客人回報問題時完全沒辦法確認瀏覽器抓到的是不是最新版本，
   // 造成好幾次來回都在猜是不是快取問題。補在「我的」頁最下面，不影響版面，但至少查得到。
   // 畫面上只顯示簡短版號(例如「V5.8」)，不要把內部完整字串(含TouchGo等內部代稱)整個曝光給客人看到。
@@ -2065,6 +2063,7 @@
   };
   $('toggleQuote').onclick=()=>openSheet('quoteSheet');
   $('closeQuote').onclick=()=>closeSheet('quoteSheet');
+  $('closeTripDetail').onclick=()=>closeSheet('tripDetailSheet');
   $('overlay').onclick=()=>{ closeSheet('paxSheet'); closeSheet('quoteSheet'); paxCtx=''; };
 
   // 下一步（本測試頁原本就只驗證 STEP1 規則，STEP2/3 尚未開發，維持原狀不做假流程）
@@ -2643,16 +2642,15 @@
       const status=classifyTrip(o);
       const label=status==='cancelled'?'已取消':status==='ongoing'?'進行中':status==='upcoming'?'即將出發':'已完成';
       const statusClass=status==='cancelled'?'cancelled':status==='history'?'done':'upcoming';
-      const cancelBtn=status==='upcoming'?`<button type="button" class="secondary-btn" style="margin-top:10px;width:100%" data-cancel-order="${o.orderId}">取消預約</button>`:'';
-      return `<div class="trip-card" style="margin-top:16px">
+      return `<div class="trip-card" style="margin-top:16px" data-view-order="${o.orderId}">
         <div class="trow"><span class="tdate">${formatDateWithWeekday(o.date)} ${o.time}</span><span class="tstatus ${statusClass}">${label}</span></div>
         <div class="troute">${o.type}｜${o.route}</div>
         <div class="tid">${o.orderId}｜${o.car||'—'}｜$${(o.amount||0).toLocaleString()}</div>
-        ${cancelBtn}
       </div>`;
     }).join('');
-    $('tripListArea').querySelectorAll('[data-cancel-order]').forEach(btn=>{
-      btn.onclick=()=>openCancelSheet(btn.dataset.cancelOrder);
+    $('tripListArea').querySelectorAll('[data-view-order]').forEach(card=>{
+      card.style.cursor='pointer';
+      card.addEventListener('click',()=>openTripDetail(card.dataset.viewOrder));
     });
   }
   document.querySelectorAll('.tripFilterBtn').forEach(btn=>{
@@ -2662,47 +2660,58 @@
     };
   });
 
-  /* ---------------- 取消預約：出發前48小時以上可自行取消，跟正式系統 setupCancelBooking() 邏輯一致 ---------------- */
-  function openCancelSheet(orderId){
-    $('cancelOrderId').value=orderId;
-    const ordererPhoneVal=$('ordererPhone')?$('ordererPhone').value.trim():'';
-    $('cancelPhone').value=ordererPhoneVal||boundPhone||'';
-    $('cancelReason').value='';
-    openSheet('cancelSheet');
-  }
-  $('closeCancelSheet').onclick=()=>closeSheet('cancelSheet');
-  $('confirmCancelBtn').onclick=async()=>{
-    const orderId=$('cancelOrderId').value.trim();
-    const phone=$('cancelPhone').value.trim();
-    const reason=$('cancelReason').value.trim();
-    if(!orderId || phone.replace(/\D/g,'').length<10){ toast('請確認預約編號與原預約聯絡電話'); return; }
-    $('confirmCancelBtn').disabled=true;
-    $('confirmCancelBtn').textContent='處理中...';
+  /* ---------------- 行程明細：跟訂車時收到的正式LINE卡片同一套資料來源，只是渲染成網頁畫面 ---------------- */
+  async function openTripDetail(orderId){
+    openSheet('tripDetailSheet');
+    $('tripDetailTitle').textContent='載入中...';
+    $('tripDetailRoute').textContent='';
+    $('tripDetailFields').innerHTML='';
+    $('tripDetailFee').innerHTML='';
     try{
-      const res=await fetch(GAS_URL,{
-        method:'POST',
-        body:JSON.stringify({action:'customerCancelReservation',data:{reservationId:orderId,phone,lineId:sysLineId,reason}}),
-        headers:{'Content-Type':'text/plain;charset=utf-8'}
-      }).then(r=>safeJsonParse(r));
-      if(res.success){
-        const notice=res.cancelNotice||{};
-        const cancelLineMessage=`安興租車 取消預約通知\n\n單號：${orderId}\n日期：${notice.date||'-'}\n行程：${notice.route||'-'}\n地址：${notice.address||'-'}\n${notice.extraStop?`加點：${notice.extraStop}\n`:''}\n狀態：已取消\n\n此筆預約已完成取消。\n\n如需重新預約，請再次開啟預約系統填寫。\n\n如已付款，請留下原轉帳帳號，將在24小時內完退車資退回。`;
-        if(window.liff && liff.isInClient && liff.isInClient()){ try{ await liff.sendMessages([{type:'text',text:cancelLineMessage}]); }catch(e){} }
-        closeSheet('cancelSheet');
-        toast('已取消預約，取消通知已回傳至 LINE 聊天室');
-        loadRealTrips();
-      }else if(res.needContactService){
-        toast(res.error||'距離出發不到48小時，請聯絡客服協助取消');
-      }else{
-        toast(res.error||'取消失敗，請確認預約編號與電話是否正確');
-      }
+      const res=await fetch(`${GAS_URL}?action=getOrderDetailForCustomer&orderId=${encodeURIComponent(orderId)}&phone=${encodeURIComponent(boundPhone)}&lineId=${encodeURIComponent(sysLineId)}&t=${Date.now()}`);
+      const data=await safeJsonParse(res);
+      if(!data.success){ $('tripDetailTitle').textContent='無法載入'; $('tripDetailRoute').textContent=data.error||'請稍後再試'; return; }
+      renderTripDetail(data);
     }catch(err){
-      toast(err.message||'取消失敗，請稍後再試');
-    }finally{
-      $('confirmCancelBtn').disabled=false;
-      $('confirmCancelBtn').textContent='確認自行取消';
+      $('tripDetailTitle').textContent='無法載入';
+      $('tripDetailRoute').textContent='請確認網路連線後再試一次';
     }
-  };
+  }
+  function renderTripDetail(d){
+    $('tripDetailTitle').textContent=d.title + (d.cancelled ? '（已取消）' : '');
+    $('tripDetailRoute').textContent=d.route||'';
+    const f=d.fields||{};
+    const fieldRows=[
+      ['單號',d.orderId],['姓名',f.name],['電話',f.phone],['車型',f.carType],
+      ['人數',f.paxCount],['行李',f.luggage],['地址',f.address],['加點',f.extraStop],
+      ['付款',f.payment],['座椅',f.seat],['備註',f.remarks]
+    ];
+    $('tripDetailFields').innerHTML=fieldRows.map(([label,value])=>
+      `<div class="detail-row"><span class="dlabel">${label}</span><span class="dvalue">${String(value||'').replace(/\n/g,'<br>')}</span></div>`
+    ).join('');
+    const fee=d.fee||{};
+    const feeLines=[];
+    (fee.items||[]).forEach(it=>{
+      feeLines.push(`<div class="detail-row"><span class="dlabel">${it.label}</span><span class="dvalue">${it.note?it.note:'$'+Number(it.amount||0).toLocaleString()}</span></div>`);
+    });
+    if((fee.discounts||[]).length){
+      feeLines.push(`<div class="subgroup-title" style="margin:8px 0 4px;font-size:13px">優惠折扣</div>`);
+      fee.discounts.forEach(dc=>{
+        feeLines.push(`<div class="detail-row"><span class="dlabel">${dc.label}</span><span class="dvalue">-$${Math.abs(dc.amount).toLocaleString()}</span></div>`);
+      });
+    }
+    if(fee.roundTripSummary){
+      const rt=fee.roundTripSummary;
+      feeLines.push(`<div style="border-top:1px solid #e9e1eb;margin:8px 0"></div>`);
+      feeLines.push(`<div class="detail-row"><span class="dlabel">去程小計</span><span class="dvalue">+$${rt.outboundSubtotal.toLocaleString()}</span></div>`);
+      feeLines.push(`<div class="detail-row"><span class="dlabel">回程小計</span><span class="dvalue">+$${rt.returnSubtotal.toLocaleString()}</span></div>`);
+      if(rt.discountTotal>0) feeLines.push(`<div class="detail-row"><span class="dlabel">優惠折扣</span><span class="dvalue">-$${rt.discountTotal.toLocaleString()}</span></div>`);
+      feeLines.push(`<div class="detail-row" style="font-weight:700;color:var(--ink)"><span class="dlabel">來回總額</span><span class="dvalue">$${rt.total.toLocaleString()}</span></div>`);
+    }else{
+      feeLines.push(`<div class="detail-row" style="border-top:1px solid #e9e1eb;margin-top:8px;padding-top:8px;font-weight:700;color:var(--ink)"><span class="dlabel">${fee.subtotalLabel||'總額'}</span><span class="dvalue">$${Number(fee.subtotal||0).toLocaleString()}</span></div>`);
+    }
+    $('tripDetailFee').innerHTML=feeLines.join('');
+  }
 
   /* ---------------- 底部分頁切換（我的頁綁定手機後可看到真實資料） ---------------- */
   document.querySelectorAll('.tabbtn').forEach(btn=>{
