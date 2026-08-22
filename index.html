@@ -404,6 +404,10 @@
           <div id="addStopBodyReturn" class="addbox-body">
             <label class="label" for="stopAddress_R">回程加點地址</label>
             <input id="stopAddress_R" placeholder="請輸入一個停靠點">
+            <p class="hint">＊輸入完整地址後請務必點選 Google 搜尋結果</p>
+            <p class="hint">＊加點順序以本公司安排路線為主；停靠點以「順向」為原則，每一點等候以 5 分鐘為限。</p>
+            <p class="hint">＊同縣市每 5 公里 +$100；跨縣市起跳 +$200，外加每 5 公里 +$100。</p>
+            <p class="hint" id="stopDistanceHintReturn" style="color:var(--purple);font-weight:700"></p>
           </div>
           <input id="addStop_R" type="checkbox" class="hidden">
 
@@ -1064,6 +1068,7 @@
   let timeIsPastFlag=false;
   let paxCtx=''; // '' = 去程, '_R' = 回程；同一個彈窗依這個變數決定操作哪組隱藏欄位
   let extraStopFee=0, extraStopDist=0, extraStopState='idle'; // idle | calculating | done | error（依 Google 實際駕車距離計算，公式與正式系統 index.html 相同）
+  let extraStopFeeReturn=0, extraStopDistReturn=0, extraStopStateReturn='idle'; // 回程加點：跟去程同一套算法，只是起點換成回程上車地點
 
   function fill(id,max=7){ // 隱藏 select 仍保留，作為唯一的資料來源（state store）
     $(id).innerHTML=[...Array(max+1)].map((_,i)=>`<option value="${i}">${i}</option>`).join('');
@@ -1199,7 +1204,7 @@
     return t.trim();
   }
   function initMapAutocomplete(){
-    const bindAutocomplete=(inputId,getCity,getDistrict)=>{
+    const bindAutocomplete=(inputId,getCity,getDistrict,feeCalcFn)=>{
       const el=$(inputId);
       if(!el || !window.google?.maps?.places?.Autocomplete) return;
       try{
@@ -1211,7 +1216,7 @@
             const district=getDistrict?getDistrict():'';
             el.value=stripKnownAddressPrefix_(place.formatted_address,city,district);
           }
-          calculateDistanceFee();
+          (feeCalcFn||calculateDistanceFee)();
           update();
         });
       }catch(err){ console.warn('Google 地址自動完成無法使用：',err); }
@@ -1222,8 +1227,10 @@
     bindAutocomplete('address_R',
       ()=>$('citySel_R').value||$('citySel').value,
       ()=>$('citySel_R').value?($('districtSel_R').selectedOptions[0]?.textContent||''):($('districtSel').selectedOptions[0]?.textContent||''));
-    bindAutocomplete('stopAddress');
-    bindAutocomplete('stopAddress_R');
+    bindAutocomplete('stopAddress',null,null,calculateDistanceFee);
+    // 回程加點地址一定要接 calculateDistanceFeeReturn，不能沿用預設的 calculateDistanceFee(去程專用)，
+    // 不然選了Google搜尋結果之後算出來的還是去程的距離/費用，跟回程加點的實際地址對不上。
+    bindAutocomplete('stopAddress_R',null,null,calculateDistanceFeeReturn);
   }
   // 不再用 Google callback 機制（callback=xxx）綁地圖初始化：async+callback容易撞上腳本
   // 執行時機競速問題，callback可能在initMapAutocomplete這個函式定義完成前就被呼叫，
@@ -1265,11 +1272,48 @@
     });
   }
 
+  // 回程加點距離計費：跟去程 calculateDistanceFee() 完全同一套公式，只是起點換成回程上車地點
+  // (getFullAddressText('_R')，沒特別選回程縣市時會自動 fallback 沿用去程縣市)、
+  // 目的地換成回程加點地址(stopAddress_R)。之前這裡是完全沒有實作的空殼(extraStopFeeReturn永遠是0)，
+  // 導致「同時預約來回、兩邊都有加點」時回程加點完全沒計費，這裡補上跟去程一致的邏輯。
+  function calculateDistanceFeeReturn(){
+    const addr1Full=getFullAddressText('_R');
+    const addr2=$('stopAddress_R').value.trim();
+    const needStop=$('addStop_R').checked;
+    if(!needStop || !addr1Full || !addr2 || addr1Full==='（未填地址）'){ extraStopFeeReturn=0; extraStopDistReturn=0; extraStopStateReturn='idle'; renderStopHintReturn(); return; }
+    if(!window.google?.maps?.DistanceMatrixService){ extraStopStateReturn='error'; renderStopHintReturn(); return; }
+    extraStopStateReturn='calculating'; renderStopHintReturn();
+    const service=new google.maps.DistanceMatrixService();
+    service.getDistanceMatrix({origins:[addr1Full],destinations:[addr2],travelMode:'DRIVING',region:'tw'},(response,status)=>{
+      if(status==='OK' && response.rows[0].elements[0].status==='OK'){
+        const distanceKm=response.rows[0].elements[0].distance.value/1000;
+        const city1=extractCityFromAddressText(addr1Full), city2=extractCityFromAddressText(addr2);
+        const isSameCity=Boolean(city1) && city1===city2;
+        const units=Math.ceil(distanceKm/5)||1;
+        const fee=isSameCity?(units*100):(200+units*100);
+        extraStopFeeReturn=fee; extraStopDistReturn=distanceKm; extraStopStateReturn='done';
+      }else{
+        extraStopFeeReturn=0; extraStopDistReturn=0; extraStopStateReturn='error';
+      }
+      renderStopHintReturn();
+      update();
+    });
+  }
+
   function renderStopHint(){
     const el=$('stopDistanceHint');
     if(extraStopState==='calculating') el.textContent='距離計算中…';
     else if(extraStopState==='done') el.textContent=`實際駕車距離約 ${extraStopDist.toFixed(1)} 公里，加點服務費 $${extraStopFee.toLocaleString()}`;
     else if(extraStopState==='error') el.textContent='無法計算距離，請確認地址是否正確或點選 Google 搜尋結果';
+    else el.textContent='';
+  }
+
+  function renderStopHintReturn(){
+    const el=$('stopDistanceHintReturn');
+    if(!el) return;
+    if(extraStopStateReturn==='calculating') el.textContent='距離計算中…';
+    else if(extraStopStateReturn==='done') el.textContent=`實際駕車距離約 ${extraStopDistReturn.toFixed(1)} 公里，加點服務費 $${extraStopFeeReturn.toLocaleString()}`;
+    else if(extraStopStateReturn==='error') el.textContent='無法計算距離，請確認地址是否正確或點選 Google 搜尋結果';
     else el.textContent='';
   }
 
@@ -1450,7 +1494,8 @@
    * 去程用 date/time，回程用 returnDate/returnTime 各自判斷夜間/急單加成，
    * 不是套一次去程結果乘以二——因為去回程時間不同，加成很可能不一樣。
    * ------------------------------------------------------------- */
-  let extraStopFeeReturn=0; // 回程加點目前僅收集資料，尚未串接距離計費（與去程不同，先不計費，避免用錯誤公式誤收費）
+  // extraStopFeeReturn 已在檔案上方跟 extraStopFee 一起宣告，這裡不用再宣告一次（舊版本這裡曾經是
+  // 寫死0的空殼變數，導致回程加點永遠不計費，現在已經接上跟去程一樣的距離計費邏輯）
   function getDaysUntilRide(){
     const dateVal=$('date').value;
     if(!dateVal) return 0;
@@ -1702,7 +1747,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.19'; // 拿掉「我的>行程」的「取消預約」自助取消功能(按鈕+cancelSheet表單+送出邏輯全部移除)，客人取消預約一律改由客服處理，不再讓客人自己在App裡取消
+  const APP_VERSION='TouchGo-UI-V5.20'; // 修正同時預約來回、兩邊都有加點時，回程加點費用永遠是$0的bug：extraStopFeeReturn原本是完全沒接上距離計費邏輯的空殼變數(只收集地址資料，寫死不計費)。新增calculateDistanceFeeReturn()，跟去程calculateDistanceFee()同一套公式(同縣市每5公里+$100，跨縣市起跳+$200外加每5公里+$100)，起點換成getFullAddressText('_R')(回程上車地點)。補上事件綁定：回程加點開關、地址欄位blur、Google地址自動完成選取，三個觸發點都會正確重算回程加點費用；也修正bindAutocomplete原本不管哪個欄位都固定呼叫去程的calculateDistanceFee()，導致選了回程加點的Google搜尋結果後算出來的還是去程距離的問題
   // 客人端一直沒有地方顯示版本號，客服/客人回報問題時完全沒辦法確認瀏覽器抓到的是不是最新版本，
   // 造成好幾次來回都在猜是不是快取問題。補在「我的」頁最下面，不影響版面，但至少查得到。
   // 畫面上只顯示簡短版號(例如「V5.8」)，不要把內部完整字串(含TouchGo等內部代稱)整個曝光給客人看到。
@@ -1947,11 +1992,12 @@
     $('openPaxReturn').classList.toggle('hidden', !$('returnDifferent').checked);
     update();
   });
-  $('addStopToggleReturn').onclick=()=>{ $('addStop_R').checked=!$('addStop_R').checked; $('addStopBodyReturn').classList.toggle('show',$('addStop_R').checked); };
+  $('addStopToggleReturn').onclick=()=>{ $('addStop_R').checked=!$('addStop_R').checked; $('addStopBodyReturn').classList.toggle('show',$('addStop_R').checked); calculateDistanceFeeReturn(); };
   $('returnDetailToggle').onclick=()=>{ $('returnDetailBody').classList.toggle('show'); $('returnDetailToggle').classList.toggle('open'); };
   $('sportLuggageSw').onclick=()=>{ $('sportLuggage').checked=!$('sportLuggage').checked; $('sportLuggageSw').classList.toggle('on',$('sportLuggage').checked); $('sportLuggage').dispatchEvent(new Event('input',{bubbles:true})); };
   $('address').addEventListener('blur',calculateDistanceFee);
   $('stopAddress').addEventListener('blur',calculateDistanceFee);
+  $('stopAddress_R').addEventListener('blur',calculateDistanceFeeReturn);
 
   // 航班編號強制英文大寫（不只是視覺樣式，貼上小寫也會被轉換）
   ['flight','returnFlight'].forEach(id=>{
