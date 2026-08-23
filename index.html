@@ -1758,7 +1758,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.21'; // 修正「回程未勾選與去程不同時，即時同步去程資料」這段程式碼漏掉「加點」的bug：人數/行李/座椅都有同步，唯獨加點沒有，導致去程有加點時回程還是要重打一次地址，而且因為addStop_R沒被連動勾上，回程加點距離計費(v5.20新增)也不會被觸發，這筆加點費用會整個漏收。補上加點同步，跟其他欄位一致
+  const APP_VERSION='TouchGo-UI-V5.22'; // addFavoriteAddress新增lineId參數，讓後端(gas.html v2.2.251)可以檢查「一支電話配一個LINE帳號」的綁定規則，原本存常用地址完全沒有這個檢查
   // 客人端一直沒有地方顯示版本號，客服/客人回報問題時完全沒辦法確認瀏覽器抓到的是不是最新版本，
   // 造成好幾次來回都在猜是不是快取問題。補在「我的」頁最下面，不影響版面，但至少查得到。
   // 畫面上只顯示簡短版號(例如「V5.8」)，不要把內部完整字串(含TouchGo等內部代稱)整個曝光給客人看到。
@@ -2616,7 +2616,7 @@
     if(!city||!zip){ toast('請選擇縣市／鄉鎮區域'); return; }
     if(!detail){ toast('請輸入詳細地址'); return; }
     try{
-      const res=await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'addFavoriteAddress',data:{phone:boundPhone,name:boundName,label,city,district,zip,detail}}),headers:{'Content-Type':'text/plain;charset=utf-8'}});
+      const res=await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'addFavoriteAddress',data:{phone:boundPhone,name:boundName,lineId:sysLineId,label,city,district,zip,detail}}),headers:{'Content-Type':'text/plain;charset=utf-8'}});
       const data=await safeJsonParse(res);
       if(!data.success){ toast(data.error||'儲存失敗'); return; }
       toast('已儲存常用地址');
