@@ -623,8 +623,8 @@
     <div class="card" id="creditCard" style="background:linear-gradient(135deg,#553f62,#6b4f7a);color:#fff;">
       <p class="card-title" style="margin-bottom:4px;color:#fff;">💰 乘車金餘額</p>
       <div style="font-size:32px;font-weight:800;margin:4px 0" id="creditBalanceText">$0</div>
-      <p class="hint" style="margin:0 0 10px;color:rgba(255,255,255,.75)">預付款或取消保留的金額，永久有效，訂車時可直接折抵車資（不可兌換現金）。</p>
-      <button class="expand-row" id="creditHistoryToggle" type="button" style="color:#fff;border-color:rgba(255,255,255,.3)">
+      <p class="hint" style="margin:0 0 10px;color:rgba(255,255,255,.75)">預付款、預約取消保留的車資，或客服提供的優惠等，皆會存為乘車金，永久有效。訂車時可直接折抵車資，不可兌換現金。</p>
+      <button class="expand-row" id="creditHistoryToggle" type="button" style="background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.3)">
         <span>查看明細</span>
         <svg class="chev-svg" style="filter:invert(1)"><use href="#i-chevron"/></svg>
       </button>
@@ -1798,7 +1798,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.23'; // 新增「乘車金」功能：客人的預付款/取消不退款轉留存，永久有效、不可退現金。「我的」分頁新增乘車金卡片(餘額+可展開明細)，綁定手機/切換分頁時自動載入。確認頁(第二頁)新增「使用乘車金折抵」卡片，只在有餘額時顯示，折抵金額不能超過餘額也不能超過本次車資，總額計算(update())、確認頁預覽(buildFinalReview)、實際送出的payload(creditUsed，只掛在最後一趟)都已串接，對應gas.html v2.2.256
+  const APP_VERSION='TouchGo-UI-V5.24'; // 乘車金卡片三處微調：①「查看明細」按鈕原本只改了文字顏色成白色、忘記改背景色，變成白字疊淡白底完全看不見，補上半透明背景。②明細清單原本只顯示時間+原因，客服在後台填的單號、經辦人(客服/系統)完全看不出來，補上第二行小字顯示。③說明文字重新潤飾，明確列出乘車金的三種來源(預付款/取消保留/客服提供的優惠)
   // 客人端一直沒有地方顯示版本號，客服/客人回報問題時完全沒辦法確認瀏覽器抓到的是不是最新版本，
   // 造成好幾次來回都在猜是不是快取問題。補在「我的」頁最下面，不影響版面，但至少查得到。
   // 畫面上只顯示簡短版號(例如「V5.8」)，不要把內部完整字串(含TouchGo等內部代稱)整個曝光給客人看到。
@@ -2716,10 +2716,21 @@
       $('creditBalanceText').textContent=`$${creditBalanceCache.toLocaleString()}`;
       const txs=data.creditTransactions||[];
       $('creditHistoryList').innerHTML = txs.length
-        ? txs.map(t=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.15);font-size:13px">
-            <span>${t.time||''}　${t.reason||''}</span>
-            <span style="font-weight:700">${t.amount>0?'+':''}$${t.amount.toLocaleString()}</span>
-          </div>`).join('')
+        ? txs.map(t=>{
+            // 之前只顯示時間+原因，客服在後台填的單號、是誰經手的(客服/系統)完全看不出來——
+            // 補上第二行小字顯示單號跟經辦人，客人才看得出這筆到底是自己訂車扣的、還是客服手動給的。
+            const metaParts=[];
+            if(t.orderId) metaParts.push(`單號 ${t.orderId}`);
+            if(t.operator) metaParts.push(`經辦 ${t.operator}`);
+            const metaLine=metaParts.length ? `<div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:1px">${metaParts.join('　')}</div>` : '';
+            return `<div style="padding:7px 0;border-bottom:1px solid rgba(255,255,255,.15);font-size:13px">
+              <div style="display:flex;justify-content:space-between;gap:8px">
+                <span>${t.time||''}　${t.reason||''}</span>
+                <span style="font-weight:700;flex-shrink:0">${t.amount>0?'+':''}$${t.amount.toLocaleString()}</span>
+              </div>
+              ${metaLine}
+            </div>`;
+          }).join('')
         : '<div class="hint" style="color:rgba(255,255,255,.6)">尚無異動紀錄</div>';
       update(); // 確認頁的乘車金折抵卡片要不要顯示、餘額顯示是否跟著更新，都要重跑一次update()
     }catch(err){ console.warn('乘車金查詢失敗：',err); }
