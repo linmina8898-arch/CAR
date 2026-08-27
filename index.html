@@ -460,6 +460,17 @@
         <div id="userDiscountsContainer" class="addbox-body"></div>
       </div>
 
+      <!-- 乘車金折抵：只有綁定手機且有餘額的客人才會看到，只在最後送出的那一趟(單程/回程)折抵一次 -->
+      <div class="card hidden" id="creditRedeemCard">
+        <p class="card-title">💰 使用乘車金折抵</p>
+        <p class="hint" style="margin:0 0 10px">目前可用餘額：<b id="creditRedeemBalanceText" style="color:var(--purple)">$0</b>（永久有效，不可兌換現金，最多折抵到本次車資為止）</p>
+        <div class="two" style="grid-template-columns:2fr 1fr;gap:8px">
+          <input id="creditRedeemInput" type="number" min="0" placeholder="輸入要折抵的金額">
+          <button class="cta-purple" type="button" id="creditRedeemMaxBtn" style="height:44px">全額折抵</button>
+        </div>
+        <p class="hint" id="creditRedeemHint" style="margin-top:6px"></p>
+      </div>
+
       <!-- 聯絡人與乘客資訊 -->
       <div class="card">
         <p class="card-title"><svg class="ic-svg"><use href="#i-user"/></svg> 聯絡人與乘客資訊</p>
@@ -608,6 +619,16 @@
         <input id="bindPhone" type="tel" placeholder="請輸入手機號碼" autocomplete="tel">
         <button class="cta-purple" type="button" style="width:auto;padding:0 20px" id="bindPhoneBtn">綁定</button>
       </div>
+    </div>
+    <div class="card" id="creditCard" style="background:linear-gradient(135deg,#553f62,#6b4f7a);color:#fff;">
+      <p class="card-title" style="margin-bottom:4px;color:#fff;">💰 乘車金餘額</p>
+      <div style="font-size:32px;font-weight:800;margin:4px 0" id="creditBalanceText">$0</div>
+      <p class="hint" style="margin:0 0 10px;color:rgba(255,255,255,.75)">預付款或取消保留的金額，永久有效，訂車時可直接折抵車資（不可兌換現金）。</p>
+      <button class="expand-row" id="creditHistoryToggle" type="button" style="color:#fff;border-color:rgba(255,255,255,.3)">
+        <span>查看明細</span>
+        <svg class="chev-svg" style="filter:invert(1)"><use href="#i-chevron"/></svg>
+      </button>
+      <div id="creditHistoryList" class="addbox-body"></div>
     </div>
     <div class="card">
       <p class="card-title" style="margin-bottom:2px">常用地址</p>
@@ -1095,6 +1116,13 @@
   let DISCOUNT_CODES={}, DISCOUNT_RULES={};
   let USER_COUPON_MAP={}; // 個人專屬折扣券（來自 getUserDiscounts），key 為大寫折扣碼，value 為完整券資料（含 amount / vehicleDiscounts）
   let currentDiscountCode='', currentDiscountAmt=0;
+  let creditBalanceCache=0; // 乘車金餘額快取，loadCreditInfo()查到之後更新，update()算總額時會用到
+  function creditRedeemAmount(){
+    // 跟update()裡算折抵上限用同一套邏輯：不能超過餘額、也不能超過本次車資(用畫面上顯示的total反推)。
+    const shown=Number(($('total').textContent||'').replace(/[^\d]/g,''))||0;
+    const input=Number($('creditRedeemInput')?$('creditRedeemInput').value:0)||0;
+    return Math.max(0, Math.min(input, creditBalanceCache, shown+input));
+  }
   // 統一取得折扣碼規則：優先查個人專屬券，查不到才 fallback 到全店通用折扣表
   function getDiscountRule(code){
     const normalized=String(code||'').trim().toUpperCase();
@@ -1470,8 +1498,20 @@
 
     const rawTotal=outQuote.subtotal+(retQuote?retQuote.subtotal:0)+sign;
     const total=Math.max(0, rawTotal-combinedDiscount);
+
+    // 乘車金折抵：跟折扣碼一樣不能超過本次總額，也不能超過帳戶餘額，兩個上限取小的那個。
+    // 只在「最後送出的那一趟」(單程或回程)折抵一次，不會去程回程各扣一次。
+    const creditMax=Math.max(0, Math.min(creditBalanceCache, total));
+    let creditInput=$('creditRedeemInput');
+    let creditUsedAmount=Math.max(0, Math.min(Number(creditInput?creditInput.value:0)||0, creditMax));
+    if(creditInput && Number(creditInput.value)>creditMax) creditInput.value=creditMax||'';
+    $('creditRedeemCard').classList.toggle('hidden', !(boundPhone && creditBalanceCache>0));
+    $('creditRedeemBalanceText').textContent='$'+creditBalanceCache.toLocaleString();
+    $('creditRedeemHint').textContent = creditUsedAmount>0 ? `本次折抵 $${creditUsedAmount.toLocaleString()}，折抵後還剩 $${(creditBalanceCache-creditUsedAmount).toLocaleString()}` : '';
+    const finalTotal=Math.max(0, total-creditUsedAmount);
+
     if(isMonthlyBillingSelected()){ $('total').textContent='依簽約價結算'; }
-    else { $('total').textContent='$'+total.toLocaleString(); }
+    else { $('total').textContent='$'+finalTotal.toLocaleString(); }
 
     $('outQuoteLabel').textContent=hasReturn?'【去程】':'';
     $('detailsOut').innerHTML=renderQuoteLines(outQuote.lines);
@@ -1758,7 +1798,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.22'; // addFavoriteAddress新增lineId參數，讓後端(gas.html v2.2.251)可以檢查「一支電話配一個LINE帳號」的綁定規則，原本存常用地址完全沒有這個檢查
+  const APP_VERSION='TouchGo-UI-V5.23'; // 新增「乘車金」功能：客人的預付款/取消不退款轉留存，永久有效、不可退現金。「我的」分頁新增乘車金卡片(餘額+可展開明細)，綁定手機/切換分頁時自動載入。確認頁(第二頁)新增「使用乘車金折抵」卡片，只在有餘額時顯示，折抵金額不能超過餘額也不能超過本次車資，總額計算(update())、確認頁預覽(buildFinalReview)、實際送出的payload(creditUsed，只掛在最後一趟)都已串接，對應gas.html v2.2.256
   // 客人端一直沒有地方顯示版本號，客服/客人回報問題時完全沒辦法確認瀏覽器抓到的是不是最新版本，
   // 造成好幾次來回都在猜是不是快取問題。補在「我的」頁最下面，不影響版面，但至少查得到。
   // 畫面上只顯示簡短版號(例如「V5.8」)，不要把內部完整字串(含TouchGo等內部代稱)整個曝光給客人看到。
@@ -1848,6 +1888,7 @@
       surchargeDetails: t(surchargeLabels.join('、')||'無'),
       discountCode: t(ctx==='_R' ? discBreak.label : (hasReturn ? '' : discBreak.label)),
       discountAmt: t(ctx==='_R' ? discBreak.combined : (hasReturn ? 0 : discBreak.combined)),
+      creditUsed: t(ctx==='_R' ? creditRedeemAmount() : (hasReturn ? 0 : creditRedeemAmount())),
       ordererEmail: t($('ordererEmail').value.trim()),
       lineId: t(sysLineId),
       appVersion: t(APP_VERSION),
@@ -2254,6 +2295,7 @@
       ${renderReviewLines([
         ['車型', v?v.name:'—'],
         ['優惠碼', computeDiscountBreakdown().label || '未使用'],
+        ['乘車金折抵', creditRedeemAmount()>0 ? `-$${creditRedeemAmount().toLocaleString()}` : '未使用'],
         ['付款方式', $('payment').value]
       ])}
     </div>`;
@@ -2388,6 +2430,13 @@
     toast(`已套用折扣碼 ${normalized}`);
   }
   $('applyDiscountBtn').onclick=()=>applyDiscountCode($('manualDiscountCode').value.trim());
+  $('creditRedeemInput').addEventListener('input', update);
+  $('creditRedeemMaxBtn').onclick=()=>{
+    // 全額折抵：呼叫update()重算一次真正的可折抵上限(min(餘額,本次車資))，不能只用餘額，
+    // 不然客人餘額比車資高時，會把車資折成負數。
+    $('creditRedeemInput').value=creditBalanceCache;
+    update();
+  };
 
   $('payment').addEventListener('change',()=>{
     const isMonthly=$('payment').value==='月結簽單(企業客戶)';
@@ -2519,6 +2568,7 @@
     queryCoupons();
     loadFavoriteAddresses();
     loadRealTrips();
+    loadCreditInfo();
     updateUnboundNudgeBanner();
   }
   // 訂車頁最上面的「建議先綁定」提示：電話跟姓名都要有才算真的綁定完成，缺姓名也要繼續提示，
@@ -2654,6 +2704,29 @@
   };
 
   /* ---------------------------------------------------------------
+   * 乘車金：客人的預付款／取消不退款轉留存，永久有效、不可退現金。
+   * ------------------------------------------------------------- */
+  async function loadCreditInfo(){
+    if(!boundPhone){ $('creditBalanceText').textContent='$0'; return; }
+    try{
+      const res=await fetch(`${GAS_URL}?action=getMemberOverview&phone=${encodeURIComponent(boundPhone)}&lineId=${encodeURIComponent(sysLineId)}&t=${Date.now()}`);
+      const data=await safeJsonParse(res);
+      if(!data.success) return;
+      creditBalanceCache=Number(data.creditBalance||0);
+      $('creditBalanceText').textContent=`$${creditBalanceCache.toLocaleString()}`;
+      const txs=data.creditTransactions||[];
+      $('creditHistoryList').innerHTML = txs.length
+        ? txs.map(t=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.15);font-size:13px">
+            <span>${t.time||''}　${t.reason||''}</span>
+            <span style="font-weight:700">${t.amount>0?'+':''}$${t.amount.toLocaleString()}</span>
+          </div>`).join('')
+        : '<div class="hint" style="color:rgba(255,255,255,.6)">尚無異動紀錄</div>';
+      update(); // 確認頁的乘車金折抵卡片要不要顯示、餘額顯示是否跟著更新，都要重跑一次update()
+    }catch(err){ console.warn('乘車金查詢失敗：',err); }
+  }
+  $('creditHistoryToggle').onclick=()=>{ $('creditHistoryList').classList.toggle('show'); };
+
+  /* ---------------------------------------------------------------
    * 行程分頁：真實資料，來自 getMemberOverview_ 彙整查詢。
    * 後端沒有回傳司機即時派遣狀態，這裡改用「日期時間」做近似分類：
    * 上車時間前後 3 小時內算「進行中」，之後算「即將」，之前算「歷史」。
@@ -2781,6 +2854,7 @@
       closeSheet('paxSheet'); closeSheet('quoteSheet');
       if(tab==='promo' && boundPhone) queryCoupons();
       if(tab==='trips') loadRealTrips();
+      if(tab==='me' && boundPhone) loadCreditInfo();
     };
   });
 
