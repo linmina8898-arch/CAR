@@ -462,7 +462,7 @@
 
       <!-- 乘車金折抵：只有綁定手機且有餘額的客人才會看到，只在最後送出的那一趟(單程/回程)折抵一次 -->
       <div class="card hidden" id="creditRedeemCard">
-        <p class="card-title">💰 使用乘車金折抵</p>
+        <p class="card-title"><svg class="ic-svg"><use href="#i-card"/></svg> 使用乘車金折抵</p>
         <p class="hint" style="margin:0 0 10px">目前可用餘額：<b id="creditRedeemBalanceText" style="color:var(--purple)">$0</b>（永久有效，不可兌換現金，最多折抵到本次車資為止）</p>
         <div class="two" style="grid-template-columns:2fr 1fr;gap:8px">
           <input id="creditRedeemInput" type="number" min="0" placeholder="輸入要折抵的金額">
@@ -621,7 +621,7 @@
       </div>
     </div>
     <div class="card" id="creditCard" style="background:linear-gradient(135deg,#553f62,#6b4f7a);color:#fff;">
-      <p class="card-title" style="margin-bottom:4px;color:#fff;">💰 乘車金餘額</p>
+      <p class="card-title" style="margin-bottom:4px;color:#fff;"><svg class="ic-svg"><use href="#i-card"/></svg> 乘車金餘額</p>
       <div style="font-size:32px;font-weight:800;margin:4px 0" id="creditBalanceText">$0</div>
       <p class="hint" style="margin:0 0 10px;color:rgba(255,255,255,.75)">預付款、預約取消保留的車資，或客服提供的優惠等，皆會存為乘車金，永久有效。訂車時可直接折抵車資，不可兌換現金。</p>
       <button class="expand-row" id="creditHistoryToggle" type="button" style="background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.3)">
@@ -1529,7 +1529,8 @@
       if(currentDiscountAmt) adjustLines.push([`折扣碼優惠(${currentDiscountCode})`,-currentDiscountAmt]);
       if(autoReturnDiscount) adjustLines.push(['預約來回優惠',-autoReturnDiscount]);
     }
-    adjustLines.push([hasReturn?'來回總額':'預估總額',total]);
+    if(creditUsedAmount>0) adjustLines.push(['乘車金折抵',-creditUsedAmount]);
+    adjustLines.push([hasReturn?'來回總額':'預估總額',finalTotal]);
     $('detailsAdjust').innerHTML=renderQuoteLines(adjustLines);
   }
 
@@ -1798,7 +1799,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.25'; // ①修正客人端載入變慢的問題：「行程」跟「我的」乘車金原本各自獨立呼叫一次getMemberOverview(這支API要掃整張預約單、算好幾種統計，蠻吃資源)，短時間內打兩次一模一樣的查詢，改成共用同一次結果(fetchMemberOverviewShared，有進行中的請求就共用，不重複發送)。②乘車金明細拿掉「經辦」欄位，那是內部客服帳號名稱(例如星星)，客人看了完全不知道是誰、只會困惑，客人端只留對他有意義的單號，經辦人資訊留在後端內部查核用
+  const APP_VERSION='TouchGo-UI-V5.26'; // ①「報價明細」彈窗(quoteSheet)原本沒有把乘車金折抵金額算進去，客人折抵了$1,400、彈窗還是顯示折抵前的總額，補上「乘車金折抵」這一行，最後總額也改用finalTotal(已扣除乘車金)。②拿掉「使用乘車金折抵」跟「乘車金餘額」前面的💰emoji，改用系統既有的SVG icon(i-card)，跟其他card-title(i-pin/i-clock/i-spark等)的圖示風格一致
   // 客人端一直沒有地方顯示版本號，客服/客人回報問題時完全沒辦法確認瀏覽器抓到的是不是最新版本，
   // 造成好幾次來回都在猜是不是快取問題。補在「我的」頁最下面，不影響版面，但至少查得到。
   // 畫面上只顯示簡短版號(例如「V5.8」)，不要把內部完整字串(含TouchGo等內部代稱)整個曝光給客人看到。
