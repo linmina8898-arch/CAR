@@ -1798,7 +1798,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.24'; // 乘車金卡片三處微調：①「查看明細」按鈕原本只改了文字顏色成白色、忘記改背景色，變成白字疊淡白底完全看不見，補上半透明背景。②明細清單原本只顯示時間+原因，客服在後台填的單號、經辦人(客服/系統)完全看不出來，補上第二行小字顯示。③說明文字重新潤飾，明確列出乘車金的三種來源(預付款/取消保留/客服提供的優惠)
+  const APP_VERSION='TouchGo-UI-V5.25'; // ①修正客人端載入變慢的問題：「行程」跟「我的」乘車金原本各自獨立呼叫一次getMemberOverview(這支API要掃整張預約單、算好幾種統計，蠻吃資源)，短時間內打兩次一模一樣的查詢，改成共用同一次結果(fetchMemberOverviewShared，有進行中的請求就共用，不重複發送)。②乘車金明細拿掉「經辦」欄位，那是內部客服帳號名稱(例如星星)，客人看了完全不知道是誰、只會困惑，客人端只留對他有意義的單號，經辦人資訊留在後端內部查核用
   // 客人端一直沒有地方顯示版本號，客服/客人回報問題時完全沒辦法確認瀏覽器抓到的是不是最新版本，
   // 造成好幾次來回都在猜是不是快取問題。補在「我的」頁最下面，不影響版面，但至少查得到。
   // 畫面上只顯示簡短版號(例如「V5.8」)，不要把內部完整字串(含TouchGo等內部代稱)整個曝光給客人看到。
@@ -2709,31 +2709,33 @@
   async function loadCreditInfo(){
     if(!boundPhone){ $('creditBalanceText').textContent='$0'; return; }
     try{
-      const res=await fetch(`${GAS_URL}?action=getMemberOverview&phone=${encodeURIComponent(boundPhone)}&lineId=${encodeURIComponent(sysLineId)}&t=${Date.now()}`);
-      const data=await safeJsonParse(res);
-      if(!data.success) return;
-      creditBalanceCache=Number(data.creditBalance||0);
-      $('creditBalanceText').textContent=`$${creditBalanceCache.toLocaleString()}`;
-      const txs=data.creditTransactions||[];
-      $('creditHistoryList').innerHTML = txs.length
-        ? txs.map(t=>{
-            // 之前只顯示時間+原因，客服在後台填的單號、是誰經手的(客服/系統)完全看不出來——
-            // 補上第二行小字顯示單號跟經辦人，客人才看得出這筆到底是自己訂車扣的、還是客服手動給的。
-            const metaParts=[];
-            if(t.orderId) metaParts.push(`單號 ${t.orderId}`);
-            if(t.operator) metaParts.push(`經辦 ${t.operator}`);
-            const metaLine=metaParts.length ? `<div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:1px">${metaParts.join('　')}</div>` : '';
-            return `<div style="padding:7px 0;border-bottom:1px solid rgba(255,255,255,.15);font-size:13px">
-              <div style="display:flex;justify-content:space-between;gap:8px">
-                <span>${t.time||''}　${t.reason||''}</span>
-                <span style="font-weight:700;flex-shrink:0">${t.amount>0?'+':''}$${t.amount.toLocaleString()}</span>
-              </div>
-              ${metaLine}
-            </div>`;
-          }).join('')
-        : '<div class="hint" style="color:rgba(255,255,255,.6)">尚無異動紀錄</div>';
-      update(); // 確認頁的乘車金折抵卡片要不要顯示、餘額顯示是否跟著更新，都要重跑一次update()
+      const data=await fetchMemberOverviewShared();
+      if(!data || !data.success) return;
+      renderCreditFromMemberOverview(data);
     }catch(err){ console.warn('乘車金查詢失敗：',err); }
+  }
+  function renderCreditFromMemberOverview(data){
+    creditBalanceCache=Number(data.creditBalance||0);
+    $('creditBalanceText').textContent=`$${creditBalanceCache.toLocaleString()}`;
+    const txs=data.creditTransactions||[];
+    $('creditHistoryList').innerHTML = txs.length
+      ? txs.map(t=>{
+          // 「經辦」是內部客服帳號名稱(例如星星)，客人看了完全不知道那是誰，容易困惑，
+          // 客人端這裡不顯示經辦人，只留客人自己看得懂、對他有意義的單號；
+          // 經辦人資訊留在後端/中控台內部查核用即可，不用秀給客人看。
+          const metaParts=[];
+          if(t.orderId) metaParts.push(`單號 ${t.orderId}`);
+          const metaLine=metaParts.length ? `<div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:1px">${metaParts.join('　')}</div>` : '';
+          return `<div style="padding:7px 0;border-bottom:1px solid rgba(255,255,255,.15);font-size:13px">
+            <div style="display:flex;justify-content:space-between;gap:8px">
+              <span>${t.time||''}　${t.reason||''}</span>
+              <span style="font-weight:700;flex-shrink:0">${t.amount>0?'+':''}$${t.amount.toLocaleString()}</span>
+            </div>
+            ${metaLine}
+          </div>`;
+        }).join('')
+      : '<div class="hint" style="color:rgba(255,255,255,.6)">尚無異動紀錄</div>';
+    update(); // 確認頁的乘車金折抵卡片要不要顯示、餘額顯示是否跟著更新，都要重跑一次update()
   }
   $('creditHistoryToggle').onclick=()=>{ $('creditHistoryList').classList.toggle('show'); };
 
@@ -2753,6 +2755,29 @@
     return diffHours>3 ? 'upcoming' : 'history';
   }
 
+  /* ---------------------------------------------------------------
+   * 行程分頁 + 我的頁乘車金，共用同一支 getMemberOverview 查詢，不要各自獨立打一次API——
+   * 這支API要掃整張預約單、算好幾種統計，蠻吃資源的，之前「行程」跟「我的」各打一次，
+   * 變成同一支電話短時間內查兩次一模一樣的東西，是載入變慢的主因。
+   * ------------------------------------------------------------- */
+  let memberOverviewData=null;
+  let memberOverviewFetchPromise=null;
+  async function fetchMemberOverviewShared(){
+    if(!boundPhone) return null;
+    if(memberOverviewFetchPromise) return memberOverviewFetchPromise; // 已經有一次查詢在飛行中，共用同一個結果，不要重複發送
+    memberOverviewFetchPromise=(async()=>{
+      try{
+        const res=await fetch(`${GAS_URL}?action=getMemberOverview&phone=${encodeURIComponent(boundPhone)}&lineId=${encodeURIComponent(sysLineId)}&t=${Date.now()}`);
+        const data=await safeJsonParse(res);
+        memberOverviewData=data;
+        return data;
+      }finally{
+        memberOverviewFetchPromise=null;
+      }
+    })();
+    return memberOverviewFetchPromise;
+  }
+
   async function loadRealTrips(){
     if(!boundPhone){
       $('tripListArea').innerHTML='<div class="empty-box" style="margin-top:20px">請先在「我的」頁綁定手機號碼查看行程</div>';
@@ -2761,12 +2786,12 @@
     }
     $('tripListArea').innerHTML='<div class="empty-box" style="margin-top:20px">載入中…</div>';
     try{
-      const res=await fetch(`${GAS_URL}?action=getMemberOverview&phone=${encodeURIComponent(boundPhone)}&lineId=${encodeURIComponent(sysLineId)}&t=${Date.now()}`);
-      const data=await safeJsonParse(res);
-      if(!data.success){ $('tripListArea').innerHTML=`<div class="empty-box" style="margin-top:20px">${data.error||'查詢失敗'}</div>`; return; }
+      const data=await fetchMemberOverviewShared();
+      if(!data || !data.success){ $('tripListArea').innerHTML=`<div class="empty-box" style="margin-top:20px">${(data&&data.error)||'查詢失敗'}</div>`; return; }
       realTripOrders=data.orders||[];
       const s=data.stats||{};
       $('memberStatsText').textContent = s.totalOrders ? `共訂購 ${s.totalOrders} 趟・累計 $${(s.totalSpent||0).toLocaleString()}${s.lastRideDate?`・上次搭乘 ${s.lastRideDate}`:''}` : '尚無訂購紀錄';
+      renderCreditFromMemberOverview(data); // 順便把乘車金也更新掉，不用loadCreditInfo()再打第二次API
     }catch(err){
       realTripOrders=[];
       $('tripListArea').innerHTML='<div class="empty-box" style="margin-top:20px">查詢失敗，請確認網路連線</div>';
