@@ -452,6 +452,20 @@
           <p id="discountMsg"></p>
           <p id="earlyBirdHint"></p>
         </div>
+        <!-- 疊加折扣碼：客人可以再輸入更多組不同的折扣碼一起用，數量不限，
+             實際能不能疊加(有些活動設定不可併用)、疊加後總額上限500元都是後端送出時才會真正驗證，
+             這裡先讓客人看得到自己加了哪幾組、大概折抵多少，正式金額以送出結果為準。 -->
+        <button class="expand-row" id="addAnotherCodeToggle" type="button" style="margin-top:10px">
+          <span>+ 再加一組折扣碼</span>
+          <svg class="chev-svg"><use href="#i-chevron"/></svg>
+        </button>
+        <div class="addbox-body" id="addAnotherCodeBody">
+          <div class="two" style="grid-template-columns:2fr 1fr;gap:8px;margin-top:10px">
+            <input id="anotherDiscountCodeInput" placeholder="再輸入一組折扣碼" style="text-transform:uppercase;font-size:14px">
+            <button class="cta-purple" type="button" id="addAnotherCodeBtn" style="height:44px">加入</button>
+          </div>
+          <div id="additionalCodesList" style="margin-top:8px"></div>
+        </div>
         <button class="expand-row" id="queryDiscountBtn" type="button" style="margin-top:12px">
           <span>查詢我的專屬折扣碼</span>
           <svg class="chev-svg"><use href="#i-chevron"/></svg>
@@ -1493,8 +1507,10 @@
     const discountBlocksReturn = Boolean(currentDiscountCode && discountRule.allowReturn===false);
     const autoReturnDiscount = isSpecialDateBlocked ? 0 : (hasReturn && !earlyBirdEligible && !discountBlocksReturn ? 100 : 0);
     if(currentDiscountCode) currentDiscountAmt = getDiscountAmountForCurrentTrip(currentDiscountCode);
-    let combinedDiscount = earlyBirdDiscount || (currentDiscountAmt + autoReturnDiscount);
+    const additionalDiscountAmt = isSpecialDateBlocked ? 0 : additionalDiscountCodes.reduce((sum,code)=>sum+getDiscountAmountForCurrentTrip(code),0);
+    let combinedDiscount = earlyBirdDiscount || (currentDiscountAmt + autoReturnDiscount + additionalDiscountAmt);
     if(combinedDiscount>500) combinedDiscount=500;
+    renderAdditionalCodesList(); // 車型/路線變動可能影響疊加折扣碼各自的折抵金額，這裡跟著重新整理一次顯示
 
     const rawTotal=outQuote.subtotal+(retQuote?retQuote.subtotal:0)+sign;
     const total=Math.max(0, rawTotal-combinedDiscount);
@@ -1528,6 +1544,10 @@
     else{
       if(currentDiscountAmt) adjustLines.push([`折扣碼優惠(${currentDiscountCode})`,-currentDiscountAmt]);
       if(autoReturnDiscount) adjustLines.push(['預約來回優惠',-autoReturnDiscount]);
+      additionalDiscountCodes.forEach(code=>{
+        const amt=getDiscountAmountForCurrentTrip(code);
+        if(amt>0) adjustLines.push([`折扣碼優惠(${code})`,-amt]);
+      });
     }
     if(creditUsedAmount>0) adjustLines.push(['乘車金折抵',-creditUsedAmount]);
     adjustLines.push([hasReturn?'來回總額':'預估總額',finalTotal]);
@@ -1576,7 +1596,7 @@
     const hasReturn=$('roundTrip').checked;
     // 特殊節日恕無法使用任何優惠/折扣碼，去程或回程只要有一天落在特殊日期就整筆不給折扣。
     if(isAnyLegSpecialDate()){
-      return {earlyBirdEligible:false,earlyBirdDiscount:0,autoReturnDiscount:0,codeAmt:0,combined:0,label:'',blockedBySpecialDate:true};
+      return {earlyBirdEligible:false,earlyBirdDiscount:0,autoReturnDiscount:0,codeAmt:0,additionalAmt:0,combined:0,label:'',blockedBySpecialDate:true};
     }
     const earlyBirdEligible=isEarlyBirdReturnEligible();
     const earlyBirdDiscount=earlyBirdEligible?300:0;
@@ -1584,13 +1604,16 @@
     const discountBlocksReturn=Boolean(currentDiscountCode && rule.allowReturn===false);
     const autoReturnDiscount = hasReturn && !earlyBirdEligible && !discountBlocksReturn ? 100 : 0;
     const codeAmt = currentDiscountCode ? getDiscountAmountForCurrentTrip(currentDiscountCode) : 0;
-    let combined = earlyBirdDiscount || (codeAmt+autoReturnDiscount);
+    // 疊加的每一組折扣碼，各自查詢碼可以折抵多少加總起來，跟主要那組、來回優惠、早鳥優惠一起算進總折抵金額。
+    const additionalAmt = additionalDiscountCodes.reduce((sum,code)=>sum+getDiscountAmountForCurrentTrip(code),0);
+    let combined = earlyBirdDiscount || (codeAmt+autoReturnDiscount+additionalAmt);
     if(combined>500) combined=500;
     let label='';
     if(earlyBirdDiscount>0) label='早鳥優惠';
     else if(codeAmt>0) label = autoReturnDiscount>0 ? `折扣碼(${currentDiscountCode}) + 預約來回優惠` : `折扣碼(${currentDiscountCode})`;
     else if(autoReturnDiscount>0) label='預約來回優惠';
-    return {earlyBirdEligible,earlyBirdDiscount,autoReturnDiscount,codeAmt,combined,label,blockedBySpecialDate:false};
+    if(additionalAmt>0) label = label ? `${label} + ${additionalDiscountCodes.join(' + ')}` : `折扣碼(${additionalDiscountCodes.join(' + ')})`;
+    return {earlyBirdEligible,earlyBirdDiscount,autoReturnDiscount,codeAmt,additionalAmt,combined,label,blockedBySpecialDate:false};
   }
 
   function calcLegQuote(ctx){
@@ -1799,7 +1822,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.26'; // ①「報價明細」彈窗(quoteSheet)原本沒有把乘車金折抵金額算進去，客人折抵了$1,400、彈窗還是顯示折抵前的總額，補上「乘車金折抵」這一行，最後總額也改用finalTotal(已扣除乘車金)。②拿掉「使用乘車金折抵」跟「乘車金餘額」前面的💰emoji，改用系統既有的SVG icon(i-card)，跟其他card-title(i-pin/i-clock/i-spark等)的圖示風格一致
+  const APP_VERSION='TouchGo-UI-V5.27'; // 確認頁新增「+ 再加一組折扣碼」，客人除了主要那組折扣碼，可以不限組數再疊加輸入(實際能不能併用、疊加後500元上限，後端送出時才會真正驗證)。computeDiscountBreakdown()、update()裡的平行折扣計算、確認頁預覽、報價明細彈窗都已同步加上疊加金額顯示；送出的payload新增additionalDiscountCodesJson，對應gas.html v2.2.270新增的consumeAdditionalDiscountCodes_
   // 客人端一直沒有地方顯示版本號，客服/客人回報問題時完全沒辦法確認瀏覽器抓到的是不是最新版本，
   // 造成好幾次來回都在猜是不是快取問題。補在「我的」頁最下面，不影響版面，但至少查得到。
   // 畫面上只顯示簡短版號(例如「V5.8」)，不要把內部完整字串(含TouchGo等內部代稱)整個曝光給客人看到。
@@ -1890,6 +1913,9 @@
       discountCode: t(ctx==='_R' ? discBreak.label : (hasReturn ? '' : discBreak.label)),
       discountAmt: t(ctx==='_R' ? discBreak.combined : (hasReturn ? 0 : discBreak.combined)),
       creditUsed: t(ctx==='_R' ? creditRedeemAmount() : (hasReturn ? 0 : creditRedeemAmount())),
+      // 疊加折扣碼一律跟乘車金/主要折扣碼一樣，只掛在「最後送出的那一趟」(單程或回程)，
+      // 不會去程回程各自驗證一次(那樣同一組碼會被要求兩次、造成困惑)。
+      additionalDiscountCodesJson: t(JSON.stringify(ctx==='_R' ? additionalDiscountCodes : (hasReturn ? [] : additionalDiscountCodes))),
       ordererEmail: t($('ordererEmail').value.trim()),
       lineId: t(sysLineId),
       appVersion: t(APP_VERSION),
@@ -2431,6 +2457,31 @@
     toast(`已套用折扣碼 ${normalized}`);
   }
   $('applyDiscountBtn').onclick=()=>applyDiscountCode($('manualDiscountCode').value.trim());
+
+  // 疊加折扣碼：跟主要那組(currentDiscountCode)分開存，不限制可以加幾組，
+  // 實際能不能併用、疊加後總額上限500元，後端送出時才會真正驗證(前端這裡只是先讓客人看得到大概折抵多少)。
+  let additionalDiscountCodes=[];
+  $('addAnotherCodeToggle').onclick=()=>{ $('addAnotherCodeBody').classList.toggle('show'); };
+  $('addAnotherCodeBtn').onclick=()=>{
+    const normalized=String($('anotherDiscountCodeInput').value||'').trim().toUpperCase();
+    if(!normalized){ toast('請輸入折扣碼'); return; }
+    if(normalized===currentDiscountCode || additionalDiscountCodes.includes(normalized)){ toast('這組折扣碼已經加過了'); return; }
+    additionalDiscountCodes.push(normalized);
+    $('anotherDiscountCodeInput').value='';
+    renderAdditionalCodesList();
+    update();
+  };
+  function renderAdditionalCodesList(){
+    $('additionalCodesList').innerHTML = additionalDiscountCodes.map((code,idx)=>{
+      const amt=getDiscountAmountForCurrentTrip(code);
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--wash);border-radius:8px;margin-top:6px;font-size:13px">
+        <span>${code}${amt>0?`（-$${amt.toLocaleString()}）`:'（查無此折扣碼）'}</span>
+        <button type="button" onclick="removeAdditionalCode(${idx})" style="color:var(--pink);font-weight:700;background:none;border:none;font-size:16px;line-height:1">✕</button>
+      </div>`;
+    }).join('');
+  }
+  window.removeAdditionalCode=(idx)=>{ additionalDiscountCodes.splice(idx,1); renderAdditionalCodesList(); update(); };
+
   $('creditRedeemInput').addEventListener('input', update);
   $('creditRedeemMaxBtn').onclick=()=>{
     // 全額折抵：呼叫update()重算一次真正的可折抵上限(min(餘額,本次車資))，不能只用餘額，
