@@ -235,7 +235,7 @@
   .submit-spinner{width:36px;height:36px;border:3px solid #e7ddea;border-top-color:var(--purple);border-radius:50%;margin:0 auto 16px;animation:submitspin .8s linear infinite}
   @keyframes submitspin{to{transform:rotate(360deg)}}
   .submit-title{font-size:16px;font-weight:800;color:var(--ink);margin:0 0 6px}
-  .submit-text{font-size:12.5px;color:#7A6A82;margin:0;line-height:1.6}
+  .submit-text{font-size:12.5px;color:#7A6A82;margin:0;line-height:1.6;white-space:pre-line}
   .hidden{display:none!important}
   textarea{width:100%;border:1px solid #d9cee0;border-radius:9px;padding:10px 12px;background:#fff;color:#29212d;outline:none;resize:vertical;min-height:80px}
   textarea:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(87,66,102,.11)}
@@ -1661,7 +1661,17 @@
     const dateVal = ctx==='_R' ? $('returnDate').value : $('date').value;
     const timeVal = ctx==='_R' ? $('returnTime').value : $('time').value;
     const v=vehicleData.find(x=>x.id===selected);
-    const fare = v ? lookupFare(zip, district, airport(), v.col) : 0;
+    const ownFare = v ? lookupFare(zip, district, airport(), v.col) : 0;
+    // 同時預約來回時，基本車資改採「去程／回程兩個方向裡區域車資較高」的那個，兩腿共用同一個基本車資，
+    // 加點/夜間加成/急單服務費/特殊節日等其他加價項目仍各自依這一腿自己的條件計算，不受影響。
+    // 依使用者要求新增：避免回程剛好落在報價較低的區域時，來回整體車資反而比司機實際來回成本還低。
+    let fare = ownFare;
+    if($('roundTrip').checked && v){
+      const otherDistrictRaw = ctx==='_R' ? $('districtSel').value : ($('districtSel_R').value||$('districtSel').value);
+      const {zip:otherZip,district:otherDistrict}=parseDistrictOptionValue(otherDistrictRaw);
+      const otherFare = lookupFare(otherZip, otherDistrict, airport(), v.col) || 0;
+      fare = Math.max(ownFare, otherFare);
+    }
     const pickup = legMode==='pickup' && fare ? 200 : 0;
     const addFee = ctx==='_R' ? ($('addStop_R').checked ? extraStopFeeReturn : 0) : ($('addStop').checked ? extraStopFee : 0);
     const seats=(n('rearSeat'+ctx)+n('forwardSeat'+ctx)+n('booster'+ctx))*200;
@@ -1860,7 +1870,10 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.30'; // getAutoApplyMatches()新增「日期判斷基準」支援：dateBasis==='預約日期'時改用「今天」比對活動區間(不管乘車日期是哪天)，dateBasis是「乘車日期」(預設)才照原本邏輯比對去程/回程實際搭車日。對應gas.html v2.2.274新增的自動套用活動判斷基準欄位
+  const APP_VERSION='TouchGo-UI-V5.32'; // V5.31：calcLegQuote()來回同時預約時基本車資改採「去程/回程兩個方向裡區域車資較高」的那個，兩腿共用同一個基本車資，避免回程剛好落在報價較低區域時整體來回車資反而偏低。
+  // V5.32：依使用者要求，送出預約後如果偵測不到客人的LINE身分(sysLineId是空的，官方帳號無法主動找到這位客人)，
+  // 成功畫面改顯示明確提醒，請客人自己主動在LINE對話框傳訊息(姓名或單號)，客服才找得到人核對；
+  // sysLineId有值、只是LINE卡片剛好送不出去(已封鎖/API失敗等)的情況維持原本的說法不變。
   // 客人端一直沒有地方顯示版本號，客服/客人回報問題時完全沒辦法確認瀏覽器抓到的是不是最新版本，
   // 造成好幾次來回都在猜是不是快取問題。補在「我的」頁最下面，不影響版面，但至少查得到。
   // 畫面上只顯示簡短版號(例如「V5.8」)，不要把內部完整字串(含TouchGo等內部代稱)整個曝光給客人看到。
@@ -2067,7 +2080,14 @@
         return;
       }
       if(err.code==='line'){
-        showSubmitStatus('預約已成立','行事曆已建立完成，但 LINE 卡片未能送達，請勿重複預約，客服將協助補發通知。',false,true);
+        // 依使用者要求：卡片送不出去如果是因為沒偵測到客人的LINE身分(sysLineId是空的，通常是客人
+        // 沒有在LINE容器內用LINE登入開啟這個頁面)，官方帳號沒辦法主動找到這位客人聯繫，
+        // 改用比較明確的提示，請客人自己主動在對話框傳訊息，客服才找得到人核對訂單；
+        // 其他LINE卡片送不出去的原因(已封鎖/LINE API失敗等，sysLineId是有值的)維持原本的說法。
+        const lineFailMsg = !sysLineId
+          ? '行事曆已建立完成。\n\n⚠️ 系統目前無法辨識您的 LINE 身分，故無法主動傳送預約明細卡片給您。\n麻煩您在此對話框主動傳訊息告知姓名或單號，客服才能找到您並確認預約，謝謝！'
+          : '行事曆已建立完成，但 LINE 卡片未能送達，請勿重複預約，客服將協助補發通知。';
+        showSubmitStatus('預約已成立',lineFailMsg,false,true);
         btn.disabled=true; btn.innerText='預約已建立完成';
         return;
       }
