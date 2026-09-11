@@ -1870,10 +1870,16 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.32'; // V5.31：calcLegQuote()來回同時預約時基本車資改採「去程/回程兩個方向裡區域車資較高」的那個，兩腿共用同一個基本車資，避免回程剛好落在報價較低區域時整體來回車資反而偏低。
+  const APP_VERSION='TouchGo-UI-V5.33'; // V5.31：calcLegQuote()來回同時預約時基本車資改採「去程/回程兩個方向裡區域車資較高」的那個，兩腿共用同一個基本車資，避免回程剛好落在報價較低區域時整體來回車資反而偏低。
   // V5.32：依使用者要求，送出預約後如果偵測不到客人的LINE身分(sysLineId是空的，官方帳號無法主動找到這位客人)，
   // 成功畫面改顯示明確提醒，請客人自己主動在LINE對話框傳訊息(姓名或單號)，客服才找得到人核對；
   // sysLineId有值、只是LINE卡片剛好送不出去(已封鎖/API失敗等)的情況維持原本的說法不變。
+  // V5.33：🚨修正buildLegPayload送給後端的cardFeeJson漏掉舉牌服務(+$200)這筆明細——舉牌是update()裡
+  // 整趟預約只加一次的加價(見「const sign=...」)，不是calcLegQuote()逐腿算出來的項目，導致卡片費用明細
+  // 只列基本車資+其他calcLegQuote()算出來的加價，總額卻包含舉牌這$200，兩個數字兜不起來。這裡比照
+  // update()同一套判斷式(signFee只掛在去程ctx===''這一腿、不重複收費)，把舉牌服務補成cardFeeJson.extras
+  // 的一筆明細，baseFare後的total也一併加回這筆金額，roundTripSummary.outboundSubtotal同步更新。
+  // 對應gas.html v2.2.283：buildBookingFeeContents_的小計/總額改成優先信任cardFeeJson.total。
   // 客人端一直沒有地方顯示版本號，客服/客人回報問題時完全沒辦法確認瀏覽器抓到的是不是最新版本，
   // 造成好幾次來回都在猜是不是快取問題。補在「我的」頁最下面，不影響版面，但至少查得到。
   // 畫面上只顯示簡短版號(例如「V5.8」)，不要把內部完整字串(含TouchGo等內部代稱)整個曝光給客人看到。
@@ -1923,15 +1929,24 @@
     const extraStopVal = ctx==='_R' ? ($('addStop_R').checked?$('stopAddress_R').value.trim():'') : ($('addStop').checked?$('stopAddress').value.trim():'');
     const surchargeLabels=q.lines.filter(l=>!l[0].startsWith('基本車資')).map(l=>l[0]);
     const isMonthly=$('payment').value==='月結簽單(企業客戶)';
+    // 🚨修正：舉牌服務(+$200)是在update()裡整趟預約算一次的加價(見「const sign=...」那行，
+    // 不是calcLegQuote()裡逐腿計算的項目)，導致這裡q.lines/q.subtotal完全不包含舉牌這筆錢——
+    // 客人看到的畫面總額($('total').textContent、也就是下面的grandTotal)有正確加回這$200，
+    // 但卡片費用明細只列基本車資+其他calcLegQuote()算出來的加價項目，加總會比總額少$200，
+    // 客人會看不懂錢是哪裡來的。這裡重新比照update()同一套判斷式，把舉牌服務補成一筆明確的明細項目。
+    // 舉牌只掛在去程(ctx==='')這一腿，跟update()裡「sign」只加一次、不分去程回程重複收費的邏輯一致。
+    const signFee = (ctx==='' && $('optSign').checked && q.subtotal) ? 200 : 0;
     // 給後端組 LINE 預約卡片用的完整費用明細（含金額）。
     // 之前這裡固定送 '{}'，後端只能改用 surchargeDetails 純文字（沒有金額）反推，
     // 常常把加價項目的金額整個折進基本車資、或是把項目名稱誤當成金額印出來。
     // 這裡直接把 calcLegQuote() 算好的每一行（含金額）原封不動送過去，後端就不用再猜。
     const feeExtras=q.lines.filter(l=>!l[0].startsWith('基本車資')).map(l=>({label:l[0],amount:l[1]}));
-    const cardFeeObj={ baseFare:q.lines[0][1], extras:feeExtras, total:q.subtotal };
+    if(signFee) feeExtras.push({label:'舉牌服務',amount:signFee});
+    const cardFeeObj={ baseFare:q.lines[0][1], extras:feeExtras, total:q.subtotal+signFee };
     if(hasReturn && ctx==='_R'){
       const outQ=calcLegQuote(''); // 回程單獨送出時，順便算一次去程金額，才能在卡片底部顯示「去程小計+回程小計」與「來回總額」
-      cardFeeObj.roundTripSummary={ outboundSubtotal:outQ.subtotal, returnSubtotal:q.subtotal, total:outQ.subtotal+q.subtotal-discBreak.combined };
+      const outSignFee = ($('optSign').checked && outQ.subtotal) ? 200 : 0;
+      cardFeeObj.roundTripSummary={ outboundSubtotal:outQ.subtotal+outSignFee, returnSubtotal:q.subtotal, total:outQ.subtotal+outSignFee+q.subtotal-discBreak.combined };
     }
     return {
       timestamp: t(new Date().toLocaleString('zh-TW',{timeZone:'Asia/Taipei'})),
