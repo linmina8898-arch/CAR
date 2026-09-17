@@ -1870,7 +1870,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.33'; // V5.31：calcLegQuote()來回同時預約時基本車資改採「去程/回程兩個方向裡區域車資較高」的那個，兩腿共用同一個基本車資，避免回程剛好落在報價較低區域時整體來回車資反而偏低。
+  const APP_VERSION='TouchGo-UI-V5.34'; // V5.34：「我的」頁行程明細，非機場(單程)訂單的地址欄位標籤改用後端回傳的addressLabel(行程/地址)，對應gas.html v2.2.294把「行程」欄位改成客服自己斷行的原始文字、不再套用地址關鍵字過濾規則。V5.31：calcLegQuote()來回同時預約時基本車資改採「去程/回程兩個方向裡區域車資較高」的那個，兩腿共用同一個基本車資，避免回程剛好落在報價較低區域時整體來回車資反而偏低。
   // V5.32：依使用者要求，送出預約後如果偵測不到客人的LINE身分(sysLineId是空的，官方帳號無法主動找到這位客人)，
   // 成功畫面改顯示明確提醒，請客人自己主動在LINE對話框傳訊息(姓名或單號)，客服才找得到人核對；
   // sysLineId有值、只是LINE卡片剛好送不出去(已封鎖/API失敗等)的情況維持原本的說法不變。
@@ -3013,7 +3013,7 @@
     const f=d.fields||{};
     const fieldRows=[
       ['單號',d.orderId],['姓名',f.name],['電話',f.phone],['車型',f.carType],
-      ['人數',f.paxCount],['行李',f.luggage],['地址',f.address],['加點',f.extraStop],
+      ['人數',f.paxCount],['行李',f.luggage],[f.addressLabel||'地址',f.address],['加點',f.extraStop],
       ['付款',f.payment],['座椅',f.seat],['備註',f.remarks]
     ];
     $('tripDetailFields').innerHTML=fieldRows.map(([label,value])=>
