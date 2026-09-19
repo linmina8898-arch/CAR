@@ -1230,6 +1230,25 @@
     return row ? (row[col]||0) : 0;
   }
 
+  // 加點地址（客人自己打的門牌地址，不是下拉選單）反查「行政區域車資」：依使用者要求，基本車資要在
+  // 「起點」跟「加點」兩個行政區域裡取車資較高者，不能只看起點——客人不一定把車資較高的地點填在起點欄位。
+  // 跟gas.html後端guessAddressPartsFromFullText_同一套邏輯：拿地址文字開頭比對縣市，剩下文字再比對該縣市底下
+  // 哪個鄉鎮市區是前綴，同一份cityAreaMap資料（就是起點/回程縣市鄉鎮市區下拉選單用的那份報價表資料），
+  // 不是另外用文字瞎猜。反查不到（地址格式特殊、或加點根本不在報價表涵蓋範圍）就傳回null，
+  // 那一段基本車資仍只看起點，不影響原本行為，也不會因為反查失敗擋掉下單。
+  function guessZoneFromAddressText_(addrText){
+    const normalized=String(addrText||'').replace(/臺/g,'台').trim();
+    if(!normalized) return null;
+    const city=TW_CITIES.find(c=>normalized.startsWith(c));
+    if(!city || !cityAreaMap.has(city)) return null;
+    const afterCity=normalized.slice(city.length);
+    let best=null;
+    cityAreaMap.get(city).forEach(({district,zip})=>{
+      if(afterCity.startsWith(district) && (!best || district.length>best.district.length)) best={district,zip};
+    });
+    return best;
+  }
+
   /* ---------------------------------------------------------------
    * 加點服務距離計費：完全比照正式系統 index.html 的 calculateDistanceFee() 邏輯，
    * 用 Google DistanceMatrixService 算實際駕車距離，
@@ -1672,6 +1691,18 @@
       const otherFare = lookupFare(otherZip, otherDistrict, airport(), v.col) || 0;
       fare = Math.max(ownFare, otherFare);
     }
+    // 依使用者要求新增：基本車資改採「起點／加點」兩個行政區域裡車資較高的那個，不能只看起點——
+    // 客人不一定把車資較高的地點填在起點欄位，加點才是比較貴的行政區域時，原本只看起點會少算差額。
+    // 加點原本的「加點服務」(addFee，依實際駕車距離計費)完全不受影響，這裡只影響「基本車資」這一項。
+    const legAddStopChecked = ctx==='_R' ? $('addStop_R').checked : $('addStop').checked;
+    const legStopAddr = ctx==='_R' ? $('stopAddress_R').value.trim() : $('stopAddress').value.trim();
+    if(v && legAddStopChecked && legStopAddr){
+      const extraZone = guessZoneFromAddressText_(legStopAddr);
+      if(extraZone){
+        const extraZoneFare = lookupFare(extraZone.zip, extraZone.district, airport(), v.col) || 0;
+        fare = Math.max(fare, extraZoneFare);
+      }
+    }
     const pickup = legMode==='pickup' && fare ? 200 : 0;
     const addFee = ctx==='_R' ? ($('addStop_R').checked ? extraStopFeeReturn : 0) : ($('addStop').checked ? extraStopFee : 0);
     const seats=(n('rearSeat'+ctx)+n('forwardSeat'+ctx)+n('booster'+ctx))*200;
@@ -1870,7 +1901,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.34'; // V5.34：「我的」頁行程明細，非機場(單程)訂單的地址欄位標籤改用後端回傳的addressLabel(行程/地址)，對應gas.html v2.2.294把「行程」欄位改成客服自己斷行的原始文字、不再套用地址關鍵字過濾規則。V5.31：calcLegQuote()來回同時預約時基本車資改採「去程/回程兩個方向裡區域車資較高」的那個，兩腿共用同一個基本車資，避免回程剛好落在報價較低區域時整體來回車資反而偏低。
+  const APP_VERSION='TouchGo-UI-V5.35'; // V5.35：修正基本車資漏算問題——calcLegQuote()原本基本車資只查「起點」的行政區域車資，加點(stopAddress/stopAddress_R)完全只用Google駕車距離算「加點服務」這個獨立加價項目，從來沒有拿加點所在的行政區域去查報價表、跟起點車資比較。依使用者要求新增guessZoneFromAddressText_()：用起點/回程縣市鄉鎮市區下拉選單同一份報價表資料(cityAreaMap)反查加點地址文字屬於哪個行政區，查得到就跟起點車資取較高者當基本車資，查不到就維持原行為(只看起點)。跟V5.31「去程/回程取較高者」是不同的比較對象(那是兩個方向互比，這次是起點/加點互比)，兩者互不影響、可以同時成立。V5.34：「我的」頁行程明細，非機場(單程)訂單的地址欄位標籤改用後端回傳的addressLabel(行程/地址)，對應gas.html v2.2.294把「行程」欄位改成客服自己斷行的原始文字、不再套用地址關鍵字過濾規則。V5.31：calcLegQuote()來回同時預約時基本車資改採「去程/回程兩個方向裡區域車資較高」的那個，兩腿共用同一個基本車資，避免回程剛好落在報價較低區域時整體來回車資反而偏低。
   // V5.32：依使用者要求，送出預約後如果偵測不到客人的LINE身分(sysLineId是空的，官方帳號無法主動找到這位客人)，
   // 成功畫面改顯示明確提醒，請客人自己主動在LINE對話框傳訊息(姓名或單號)，客服才找得到人核對；
   // sysLineId有值、只是LINE卡片剛好送不出去(已封鎖/API失敗等)的情況維持原本的說法不變。
