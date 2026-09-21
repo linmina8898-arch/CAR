@@ -1901,7 +1901,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.35'; // V5.35：修正基本車資漏算問題——calcLegQuote()原本基本車資只查「起點」的行政區域車資，加點(stopAddress/stopAddress_R)完全只用Google駕車距離算「加點服務」這個獨立加價項目，從來沒有拿加點所在的行政區域去查報價表、跟起點車資比較。依使用者要求新增guessZoneFromAddressText_()：用起點/回程縣市鄉鎮市區下拉選單同一份報價表資料(cityAreaMap)反查加點地址文字屬於哪個行政區，查得到就跟起點車資取較高者當基本車資，查不到就維持原行為(只看起點)。跟V5.31「去程/回程取較高者」是不同的比較對象(那是兩個方向互比，這次是起點/加點互比)，兩者互不影響、可以同時成立。V5.34：「我的」頁行程明細，非機場(單程)訂單的地址欄位標籤改用後端回傳的addressLabel(行程/地址)，對應gas.html v2.2.294把「行程」欄位改成客服自己斷行的原始文字、不再套用地址關鍵字過濾規則。V5.31：calcLegQuote()來回同時預約時基本車資改採「去程/回程兩個方向裡區域車資較高」的那個，兩腿共用同一個基本車資，避免回程剛好落在報價較低區域時整體來回車資反而偏低。
+  const APP_VERSION='TouchGo-UI-V5.36'; // 🚨V5.36：修正單程(非來回)訂單卡片「總額」沒有扣折扣碼的問題：buildLegPayload()送給後端的cardFeeJson.total一直都是q.subtotal+signFee(折扣前的小計)，單程訂單只有這一趟、沒有另外的「來回總額」步驟去扣折扣，導致折扣碼套用了卻完全沒反映在客人看到、客服卡片顯示、以及最終送出的總額上。這個bug其實一直都在，只是gas.html v2.2.283之前「總額」優先看displayTotal(=row22/grandTotal，那個一直是對的)，v2.2.283之後改成優先信任fee.total，才把這個bug曝出來。修正只動單程(!hasReturn)這條路徑，來回程兩腿的fee.total維持原樣不扣(折扣是套在整趟來回總額，不是單腿小計，這裡先扣的話來回總額會被扣兩次)。V5.35：修正基本車資漏算問題——calcLegQuote()原本基本車資只查「起點」的行政區域車資，加點(stopAddress/stopAddress_R)完全只用Google駕車距離算「加點服務」這個獨立加價項目，從來沒有拿加點所在的行政區域去查報價表、跟起點車資比較。依使用者要求新增guessZoneFromAddressText_()：用起點/回程縣市鄉鎮市區下拉選單同一份報價表資料(cityAreaMap)反查加點地址文字屬於哪個行政區，查得到就跟起點車資取較高者當基本車資，查不到就維持原行為(只看起點)。跟V5.31「去程/回程取較高者」是不同的比較對象(那是兩個方向互比，這次是起點/加點互比)，兩者互不影響、可以同時成立。V5.34：「我的」頁行程明細，非機場(單程)訂單的地址欄位標籤改用後端回傳的addressLabel(行程/地址)，對應gas.html v2.2.294把「行程」欄位改成客服自己斷行的原始文字、不再套用地址關鍵字過濾規則。V5.31：calcLegQuote()來回同時預約時基本車資改採「去程/回程兩個方向裡區域車資較高」的那個，兩腿共用同一個基本車資，避免回程剛好落在報價較低區域時整體來回車資反而偏低。
   // V5.32：依使用者要求，送出預約後如果偵測不到客人的LINE身分(sysLineId是空的，官方帳號無法主動找到這位客人)，
   // 成功畫面改顯示明確提醒，請客人自己主動在LINE對話框傳訊息(姓名或單號)，客服才找得到人核對；
   // sysLineId有值、只是LINE卡片剛好送不出去(已封鎖/API失敗等)的情況維持原本的說法不變。
@@ -1973,7 +1973,17 @@
     // 這裡直接把 calcLegQuote() 算好的每一行（含金額）原封不動送過去，後端就不用再猜。
     const feeExtras=q.lines.filter(l=>!l[0].startsWith('基本車資')).map(l=>({label:l[0],amount:l[1]}));
     if(signFee) feeExtras.push({label:'舉牌服務',amount:signFee});
-    const cardFeeObj={ baseFare:q.lines[0][1], extras:feeExtras, total:q.subtotal+signFee };
+    // 🚨修正單程(非來回)訂單卡片「總額」沒有扣折扣碼的問題：這裡的cardFeeObj.total從以前就一直是
+    // q.subtotal+signFee，也就是折扣「前」的小計，從來沒有扣過discBreak.combined。單程訂單只有這一趟，
+    // gas.html buildBookingFeeContents_直接把這個total當成卡片最下面顯示的「總額」印出來，折扣碼套用
+    // 完全沒有反映在客人看到的總額上，客人少付、公司少收。這個bug一直都在，只是gas.html v2.2.283之前
+    // 「總額」優先看displayTotal(=row22/grandTotal，下面那個total-combinedDiscount算出來的才是對的)，
+    // v2.2.283之後改成優先信任這裡的fee.total，這個bug才被曝出來。
+    // 來回程兩腿(hasReturn===true)完全不能比照辦理：那兩腿各自的fee.total是「去程小計／回程小計」，
+    // 折扣是套在整趟「來回總額」上、不是套在單腿小計上(gas.html會另外用來回兩腿金額減一次合併折扣)，
+    // 這裡如果也先扣一次折扣，來回總額會被扣兩次折扣，所以只在真正單程(!hasReturn)才需要扣。
+    const legFinalDiscountAmt = hasReturn ? 0 : discBreak.combined;
+    const cardFeeObj={ baseFare:q.lines[0][1], extras:feeExtras, total:q.subtotal+signFee-legFinalDiscountAmt };
     if(hasReturn && ctx==='_R'){
       const outQ=calcLegQuote(''); // 回程單獨送出時，順便算一次去程金額，才能在卡片底部顯示「去程小計+回程小計」與「來回總額」
       const outSignFee = ($('optSign').checked && outQ.subtotal) ? 200 : 0;
