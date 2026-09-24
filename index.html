@@ -91,6 +91,18 @@
   .vehicle.locked{opacity:.45;background:#f7f4f7;cursor:not-allowed}
   .quote-note{font-size:11px;color:#84748c;margin-top:10px}
 
+  /* 行程摘要卡（唯讀，放在「選擇接送車型」前面，讓客人選車前不用往上滑就能核對已填的行程） */
+  .tripsum{background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:10px 12px 8px;margin-bottom:12px}
+  .tripsum-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+  .tripsum-route{font-size:13.5px;font-weight:700;color:var(--ink);line-height:1.3}
+  .tripsum-route .arrow{color:var(--purple)}
+  .tripsum-chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px}
+  .chip{display:inline-flex;align-items:center;gap:4px;background:#fff;border:1px solid var(--line);border-radius:7px;padding:2px 8px;font-size:11.5px;color:var(--ink);font-weight:600;white-space:nowrap;line-height:1.5}
+  .chip .ic-svg{width:12px;height:12px;color:var(--purple)}
+  .chip-pink{background:var(--pink);border-color:var(--pink);color:#fff;font-weight:700;flex:0 0 auto}
+  .tripsum-footer{text-align:right}
+  .tripsum-edit{font-size:11.5px;color:var(--purple);font-weight:700;cursor:pointer;background:none;border:0;padding:0}
+
   /* ===== 遮罩 + 底部彈出視窗（乘客/行李、費用明細共用）===== */
   .overlay{position:fixed;inset:0;background:rgba(26,11,61,.32);z-index:40;display:none}
   .overlay.show{display:block}
@@ -426,6 +438,24 @@
       </div>
     </div>
 
+    <!-- 行程摘要卡（唯讀，選車型前讓客人核對已填的行程內容，不用往上滑）-->
+    <div class="tripsum">
+      <div class="tripsum-head">
+        <div class="tripsum-route"><span id="tripSumFrom"></span> <span class="arrow">→</span> <span id="tripSumTo"></span></div>
+        <span class="chip chip-pink hidden" id="tripSumBadge">含回程</span>
+      </div>
+      <div class="tripsum-chips">
+        <span class="chip"><svg class="ic-svg"><use href="#i-clock"/></svg><span id="tripSumDate"></span></span>
+        <span class="chip" id="tripSumDirection"></span>
+        <span class="chip" id="tripSumFlight"></span>
+      </div>
+      <div class="tripsum-chips">
+        <span class="chip"><svg class="ic-svg"><use href="#i-users"/></svg><span id="tripSumPax"></span></span>
+        <span class="chip" id="tripSumLuggage"></span>
+      </div>
+      <div class="tripsum-footer"><button type="button" class="tripsum-edit" id="tripSumEdit">修改 ›</button></div>
+    </div>
+
     <!-- 車型選擇 -->
     <div class="card">
       <p class="card-title"><svg class="ic-svg"><use href="#i-car"/></svg> 選擇接送車型</p>
@@ -744,7 +774,7 @@
       <div class="counter"><button class="minus" type="button">−</button><span class="val">0</span><button class="plus" type="button">＋</button></div>
     </div>
     <div class="counter-row" data-counter data-target="checked" data-min="0" data-max="7">
-      <div class="lbl"><strong>托運箱</strong><span>21-29 吋</span></div>
+      <div class="lbl"><strong>托運箱</strong><span>21-29 吋（嬰幼兒推車視同一件托運行李）</span></div>
       <div class="counter"><button class="minus" type="button">−</button><span class="val">0</span><button class="plus" type="button">＋</button></div>
     </div>
     <div class="switch-row" style="padding-top:14px;border-top:1px solid #f2ecf3;margin-top:6px">
@@ -1430,7 +1460,7 @@
       const price=priceTableStatus==='error'?'客服人工確認':fare?'$'+fare.toLocaleString():'待試算';
       return `<button type="button" class="vehicle${selectedClass}${lock}" data-v="${v.id}" ${allowed?'':'disabled'}>
         <span class="mid"><span class="name">${v.name}${tag?`<span class="tag">${tag}</span>`:''}</span><span class="meta">${v.meta}</span></span>
-        <span class="price-wrap"><span class="price">${price}</span><span class="pricenote">固定價</span></span>
+        <span class="price-wrap"><span class="price">${price}</span></span>
       </button>`;
     }).join('');
     document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{selected=b.dataset.v;update()});
@@ -1447,6 +1477,32 @@
     const people=n('adult_R')+n('child_R')+n('toddler_R');
     const bags=n('checked_R')+n('carry_R');
     $('returnPaxSummary').textContent=(!people&&!bags)?'同去程':`${people} 位乘客・行李 ${bags} 件`;
+  }
+
+  /* 行程摘要卡（唯讀）：只讀取既有欄位值顯示，不做任何計算/驗證，跟報價、送出邏輯完全無關。
+   * 乘客/行李文字格式比照 buildLegReviewCard() 的 paxText/luggageText，跟確認頁維持一致寫法。 */
+  function renderTripSummaryCard(){
+    if(!$('tripSumFrom')) return;
+    const addr=getFullAddressText('');
+    const ap=airport();
+    const fromText = mode==='send' ? addr : ap;
+    const toText = mode==='send' ? ap : addr;
+    $('tripSumFrom').textContent = fromText;
+    $('tripSumTo').textContent = toText;
+    $('tripSumBadge').classList.toggle('hidden', !$('roundTrip').checked);
+    const dateVal=$('date').value, timeVal=$('time').value;
+    $('tripSumDate').textContent = `${formatDateWithWeekday(dateVal)} ${timeVal||'--'}`;
+    $('tripSumDirection').textContent = mode==='send' ? '送機' : '接機';
+    const flightVal=$('flight').value.trim();
+    $('tripSumFlight').textContent = `航班 ${flightVal||'—'}`;
+    const totalPax=n('adult')+n('child')+n('toddler');
+    $('tripSumPax').textContent = totalPax
+      ? `${n('adult')}大人${n('child')?`+${n('child')}兒童`:''}${n('toddler')?`+${n('toddler')}幼童`:''}`
+      : '尚未設定人數';
+    const luggageParts=[];
+    if(n('carry')>0) luggageParts.push(`${n('carry')}登機`);
+    if(n('checked')>0) luggageParts.push(`${n('checked')}托運`);
+    $('tripSumLuggage').textContent = `行李 ${luggageParts.length?luggageParts.join('+'):'無'}`;
   }
 
   function syncCounterDisplays(ctx){
@@ -1489,6 +1545,7 @@
     updateReturnPaxSummary();
 
     drawVehicles(s);
+    renderTripSummaryCard();
     const outQuote=calcLegQuote('');
     const hasReturn=$('roundTrip').checked;
     const retQuote=hasReturn?calcLegQuote('_R'):null;
@@ -1901,7 +1958,9 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.36'; // 🚨V5.36：修正單程(非來回)訂單卡片「總額」沒有扣折扣碼的問題：buildLegPayload()送給後端的cardFeeJson.total一直都是q.subtotal+signFee(折扣前的小計)，單程訂單只有這一趟、沒有另外的「來回總額」步驟去扣折扣，導致折扣碼套用了卻完全沒反映在客人看到、客服卡片顯示、以及最終送出的總額上。這個bug其實一直都在，只是gas.html v2.2.283之前「總額」優先看displayTotal(=row22/grandTotal，那個一直是對的)，v2.2.283之後改成優先信任fee.total，才把這個bug曝出來。修正只動單程(!hasReturn)這條路徑，來回程兩腿的fee.total維持原樣不扣(折扣是套在整趟來回總額，不是單腿小計，這裡先扣的話來回總額會被扣兩次)。V5.35：修正基本車資漏算問題——calcLegQuote()原本基本車資只查「起點」的行政區域車資，加點(stopAddress/stopAddress_R)完全只用Google駕車距離算「加點服務」這個獨立加價項目，從來沒有拿加點所在的行政區域去查報價表、跟起點車資比較。依使用者要求新增guessZoneFromAddressText_()：用起點/回程縣市鄉鎮市區下拉選單同一份報價表資料(cityAreaMap)反查加點地址文字屬於哪個行政區，查得到就跟起點車資取較高者當基本車資，查不到就維持原行為(只看起點)。跟V5.31「去程/回程取較高者」是不同的比較對象(那是兩個方向互比，這次是起點/加點互比)，兩者互不影響、可以同時成立。V5.34：「我的」頁行程明細，非機場(單程)訂單的地址欄位標籤改用後端回傳的addressLabel(行程/地址)，對應gas.html v2.2.294把「行程」欄位改成客服自己斷行的原始文字、不再套用地址關鍵字過濾規則。V5.31：calcLegQuote()來回同時預約時基本車資改採「去程/回程兩個方向裡區域車資較高」的那個，兩腿共用同一個基本車資，避免回程剛好落在報價較低區域時整體來回車資反而偏低。
+  const APP_VERSION='TouchGo-UI-V5.38'; // V5.38：依使用者要求(1)拿掉「選擇接送車型」每張車卡價格旁邊多餘的「固定價」三個字；(2)在「加值服務」卡跟「選擇接送車型」卡中間新增一張唯讀的「行程摘要卡」(renderTripSummaryCard())，即時反映已填的上車地點/機場方向、日期時間、送機接機、航班、乘客與行李，讓客人選車型時不用往上滑就能核對，「含回程」小標籤只在勾選同時預約回程時才顯示，右下角「修改」會捲動並highlight回上車地點欄位；純顯示用途，不影響任何報價/驗證/送出邏輯，跟原本drawVehicles()的price計算完全無關。
+  // V5.37：「乘客與行李」彈窗的「托運箱」欄位備註加上「嬰幼兒推車視同一件托運行李」，讓客人自己就能判斷推車算不算行李件數；純文字說明，不影響任何計算/驗證邏輯。
+  // 🚨V5.36：修正單程(非來回)訂單卡片「總額」沒有扣折扣碼的問題：buildLegPayload()送給後端的cardFeeJson.total一直都是q.subtotal+signFee(折扣前的小計)，單程訂單只有這一趟、沒有另外的「來回總額」步驟去扣折扣，導致折扣碼套用了卻完全沒反映在客人看到、客服卡片顯示、以及最終送出的總額上。這個bug其實一直都在，只是gas.html v2.2.283之前「總額」優先看displayTotal(=row22/grandTotal，那個一直是對的)，v2.2.283之後改成優先信任fee.total，才把這個bug曝出來。修正只動單程(!hasReturn)這條路徑，來回程兩腿的fee.total維持原樣不扣(折扣是套在整趟來回總額，不是單腿小計，這裡先扣的話來回總額會被扣兩次)。V5.35：修正基本車資漏算問題——calcLegQuote()原本基本車資只查「起點」的行政區域車資，加點(stopAddress/stopAddress_R)完全只用Google駕車距離算「加點服務」這個獨立加價項目，從來沒有拿加點所在的行政區域去查報價表、跟起點車資比較。依使用者要求新增guessZoneFromAddressText_()：用起點/回程縣市鄉鎮市區下拉選單同一份報價表資料(cityAreaMap)反查加點地址文字屬於哪個行政區，查得到就跟起點車資取較高者當基本車資，查不到就維持原行為(只看起點)。跟V5.31「去程/回程取較高者」是不同的比較對象(那是兩個方向互比，這次是起點/加點互比)，兩者互不影響、可以同時成立。V5.34：「我的」頁行程明細，非機場(單程)訂單的地址欄位標籤改用後端回傳的addressLabel(行程/地址)，對應gas.html v2.2.294把「行程」欄位改成客服自己斷行的原始文字、不再套用地址關鍵字過濾規則。V5.31：calcLegQuote()來回同時預約時基本車資改採「去程/回程兩個方向裡區域車資較高」的那個，兩腿共用同一個基本車資，避免回程剛好落在報價較低區域時整體來回車資反而偏低。
   // V5.32：依使用者要求，送出預約後如果偵測不到客人的LINE身分(sysLineId是空的，官方帳號無法主動找到這位客人)，
   // 成功畫面改顯示明確提醒，請客人自己主動在LINE對話框傳訊息(姓名或單號)，客服才找得到人核對；
   // sysLineId有值、只是LINE卡片剛好送不出去(已封鎖/API失敗等)的情況維持原本的說法不變。
@@ -2173,6 +2232,7 @@
   /* ---------------- 事件綁定 ---------------- */
   $('sendBtn').onclick=()=>setMode('send');
   $('pickupBtn').onclick=()=>setMode('pickup');
+  if($('tripSumEdit')) $('tripSumEdit').onclick=()=>focusField('address');
 
   $('addStopToggle').onclick=()=>{ $('addStop').checked=!$('addStop').checked; $('addStop').dispatchEvent(new Event('input',{bubbles:true})); calculateDistanceFee(); };
   $('roundTripSw').onclick=()=>{
