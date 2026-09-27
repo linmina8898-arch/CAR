@@ -1958,7 +1958,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.38'; // V5.38：依使用者要求(1)拿掉「選擇接送車型」每張車卡價格旁邊多餘的「固定價」三個字；(2)在「加值服務」卡跟「選擇接送車型」卡中間新增一張唯讀的「行程摘要卡」(renderTripSummaryCard())，即時反映已填的上車地點/機場方向、日期時間、送機接機、航班、乘客與行李，讓客人選車型時不用往上滑就能核對，「含回程」小標籤只在勾選同時預約回程時才顯示，右下角「修改」會捲動並highlight回上車地點欄位；純顯示用途，不影響任何報價/驗證/送出邏輯，跟原本drawVehicles()的price計算完全無關。
+  const APP_VERSION='TouchGo-UI-V5.39'; // V5.39：依使用者要求，預約送出後緊接著的那段說明文字(付款提醒/客服專線那則)，如果客人是在LINE App內用LIFF開啟這個頁面，改成用客人自己的身份透過liff.sendMessages()送出，卡片本身完全不動、還是官方帳號送(按鈕維持正常)。sendReservationConfirmationCard()新增判斷liff.isInClient()，帶clientWillSendFollowUpText旗標告訴後端「這段文字我們自己送」，後端就不會重複送出，回傳的followUpTextForClient內容原封不動交給liff.sendMessages()；如果客人不是在LINE App內開啟(一般瀏覽器)，或liff.sendMessages()失敗，都會自動退回原本由後端官方帳號送出的方式(失敗時改呼叫新增的sendReservationFollowUpTextFallback動作補送)，不會有任何客人漏收這段文字。對應後端gas.html v2.2.304。
   // V5.37：「乘客與行李」彈窗的「托運箱」欄位備註加上「嬰幼兒推車視同一件托運行李」，讓客人自己就能判斷推車算不算行李件數；純文字說明，不影響任何計算/驗證邏輯。
   // 🚨V5.36：修正單程(非來回)訂單卡片「總額」沒有扣折扣碼的問題：buildLegPayload()送給後端的cardFeeJson.total一直都是q.subtotal+signFee(折扣前的小計)，單程訂單只有這一趟、沒有另外的「來回總額」步驟去扣折扣，導致折扣碼套用了卻完全沒反映在客人看到、客服卡片顯示、以及最終送出的總額上。這個bug其實一直都在，只是gas.html v2.2.283之前「總額」優先看displayTotal(=row22/grandTotal，那個一直是對的)，v2.2.283之後改成優先信任fee.total，才把這個bug曝出來。修正只動單程(!hasReturn)這條路徑，來回程兩腿的fee.total維持原樣不扣(折扣是套在整趟來回總額，不是單腿小計，這裡先扣的話來回總額會被扣兩次)。V5.35：修正基本車資漏算問題——calcLegQuote()原本基本車資只查「起點」的行政區域車資，加點(stopAddress/stopAddress_R)完全只用Google駕車距離算「加點服務」這個獨立加價項目，從來沒有拿加點所在的行政區域去查報價表、跟起點車資比較。依使用者要求新增guessZoneFromAddressText_()：用起點/回程縣市鄉鎮市區下拉選單同一份報價表資料(cityAreaMap)反查加點地址文字屬於哪個行政區，查得到就跟起點車資取較高者當基本車資，查不到就維持原行為(只看起點)。跟V5.31「去程/回程取較高者」是不同的比較對象(那是兩個方向互比，這次是起點/加點互比)，兩者互不影響、可以同時成立。V5.34：「我的」頁行程明細，非機場(單程)訂單的地址欄位標籤改用後端回傳的addressLabel(行程/地址)，對應gas.html v2.2.294把「行程」欄位改成客服自己斷行的原始文字、不再套用地址關鍵字過濾規則。V5.31：calcLegQuote()來回同時預約時基本車資改採「去程/回程兩個方向裡區域車資較高」的那個，兩腿共用同一個基本車資，避免回程剛好落在報價較低區域時整體來回車資反而偏低。
   // V5.32：依使用者要求，送出預約後如果偵測不到客人的LINE身分(sysLineId是空的，官方帳號無法主動找到這位客人)，
@@ -2128,9 +2128,25 @@
   }
 
   async function sendReservationConfirmationCard(ids){
+    // v2.2.x：如果客人是在LINE App內用LIFF開啟這個頁面，卡片後面接的說明文字希望改成用客人自己的
+    // 身份送出(liff.sendMessages())，讓後端知道「這裡由客人端自己送文字」，後端就不會重複送。
+    const inLineApp=Boolean(window.liff && liff.isInClient && liff.isInClient());
     try{
-      const res=await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'sendReservationConfirmation',data:{reservationIds:ids}}),headers:{'Content-Type':'text/plain;charset=utf-8'}});
-      return await safeJsonParse(res);
+      const res=await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'sendReservationConfirmation',data:{reservationIds:ids,clientWillSendFollowUpText:inLineApp}}),headers:{'Content-Type':'text/plain;charset=utf-8'}});
+      const result=await safeJsonParse(res);
+      if(result && result.success && inLineApp && result.followUpTextForClient){
+        try{
+          await liff.sendMessages([{type:'text',text:result.followUpTextForClient}]);
+        }catch(sendErr){
+          // 客人端自己送這段文字失敗(權限被收回、LINE環境臨時出狀況等)：後端剛剛因為我們說了
+          // 「我們自己會送」而沒有送這段文字，這裡一定要補送一次，不然客人會漏收付款/客服提醒，
+          // 只補文字、不會重送卡片。
+          try{
+            await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'sendReservationFollowUpTextFallback',data:{reservationIds:ids}}),headers:{'Content-Type':'text/plain;charset=utf-8'}});
+          }catch(fallbackErr){ console.error('說明文字備援補送也失敗：',fallbackErr); }
+        }
+      }
+      return result;
     }catch(err){ return {success:false,error:err.message}; }
   }
 
