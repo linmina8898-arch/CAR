@@ -220,7 +220,8 @@
   /* 折扣碼互斥提示：客人常常沒看到小灰字，改成明顯的紅色警示框＋‼️ */
   .discount-warn-box{display:none;background:#fdecef;border:1.5px solid #e63c6e;border-radius:10px;padding:10px 12px;margin-top:8px}
   .discount-warn-box.show{display:block}
-  .discount-warn-box p{margin:0;font-size:11px;font-weight:700;color:#c2185b;line-height:1.5}
+  .discount-warn-box.no-border{border:none}
+  .discount-warn-box p{margin:0;font-size:12px;font-weight:700;color:#c2185b;line-height:1.5}
   .discount-warn-box p:empty{display:none}
   .discount-warn-box p+p:not(:empty){margin-top:6px}
   /* Step3「預約資訊確認」：拆成有明顯分區的卡片，而不是一長串一樣樣式的行 */
@@ -459,7 +460,7 @@
     <!-- 車型選擇 -->
     <div class="card">
       <p class="card-title"><svg class="ic-svg"><use href="#i-car"/></svg> 選擇接送車型</p>
-      <div class="discount-warn-box" id="vehicleSpecialDateWarnBox">
+      <div class="discount-warn-box no-border" id="vehicleSpecialDateWarnBox">
         <p id="vehicleSpecialDateMsg"></p>
       </div>
       <div id="vehicleList" class="vehicle-list"></div>
@@ -476,10 +477,12 @@
       <!-- 折扣優惠（照正式系統放最前面） -->
       <div class="card">
         <p class="card-title"><svg class="ic-svg"><use href="#i-ticket"/></svg> 專屬優惠與折扣</p>
-        <label class="label" for="manualDiscountCode">折扣碼 <span style="color:#9a8ca0;font-weight:400">(單筆總折抵上限 500 元)</span></label>
-        <div class="two" style="grid-template-columns:2fr 1fr;gap:8px">
-          <input id="manualDiscountCode" placeholder="客服提供的折扣碼（沒有請略過）" style="text-transform:uppercase;font-size:14px">
-          <button class="cta-purple" type="button" id="applyDiscountBtn" style="height:44px">套用</button>
+        <div id="discountCodeApplyRow">
+          <label class="label" for="manualDiscountCode">折扣碼 <span style="color:#9a8ca0;font-weight:400">(單筆總折抵上限 500 元)</span></label>
+          <div class="two" style="grid-template-columns:2fr 1fr;gap:8px">
+            <input id="manualDiscountCode" placeholder="客服提供的折扣碼（沒有請略過）" style="text-transform:uppercase;font-size:14px">
+            <button class="cta-purple" type="button" id="applyDiscountBtn" style="height:44px">套用</button>
+          </div>
         </div>
         <div class="discount-warn-box" id="discountWarnBox">
           <p id="discountMsg"></p>
@@ -487,17 +490,21 @@
         </div>
         <!-- 疊加折扣碼：客人可以再輸入更多組不同的折扣碼一起用，數量不限，
              實際能不能疊加(有些活動設定不可併用)、疊加後總額上限500元都是後端送出時才會真正驗證，
-             這裡先讓客人看得到自己加了哪幾組、大概折抵多少，正式金額以送出結果為準。 -->
-        <button class="expand-row" id="addAnotherCodeToggle" type="button" style="margin-top:10px">
-          <span>+ 再加一組折扣碼</span>
-          <svg class="chev-svg"><use href="#i-chevron"/></svg>
-        </button>
-        <div class="addbox-body" id="addAnotherCodeBody">
-          <div class="two" style="grid-template-columns:2fr 1fr;gap:8px;margin-top:10px">
-            <input id="anotherDiscountCodeInput" placeholder="再輸入一組折扣碼" style="text-transform:uppercase;font-size:14px">
-            <button class="cta-purple" type="button" id="addAnotherCodeBtn" style="height:44px">加入</button>
+             這裡先讓客人看得到自己加了哪幾組、大概折抵多少，正式金額以送出結果為準。
+             特殊日期整組折扣都不能用時，這裡(跟上面折扣碼輸入框)一起隱藏，只留紅字提示，
+             不需要的空欄位不要一起留在畫面上。 -->
+        <div id="additionalDiscountCodeSection">
+          <button class="expand-row" id="addAnotherCodeToggle" type="button" style="margin-top:10px">
+            <span>+ 再加一組折扣碼</span>
+            <svg class="chev-svg"><use href="#i-chevron"/></svg>
+          </button>
+          <div class="addbox-body" id="addAnotherCodeBody">
+            <div class="two" style="grid-template-columns:2fr 1fr;gap:8px;margin-top:10px">
+              <input id="anotherDiscountCodeInput" placeholder="再輸入一組折扣碼" style="text-transform:uppercase;font-size:14px">
+              <button class="cta-purple" type="button" id="addAnotherCodeBtn" style="height:44px">加入</button>
+            </div>
+            <div id="additionalCodesList" style="margin-top:8px"></div>
           </div>
-          <div id="additionalCodesList" style="margin-top:8px"></div>
         </div>
         <button class="expand-row" id="queryDiscountBtn" type="button" style="margin-top:12px">
           <span>查詢我的專屬折扣碼</span>
@@ -1593,6 +1600,10 @@
     // 客人不用點進折扣碼畫面才知道這天不能用折扣，比較不會漏看。只在isSpecialDateBlocked時顯示，其他情況(例如早鳥互斥提示)不重複顯示在這兩處。
     if($('vehicleSpecialDateMsg')){ $('vehicleSpecialDateMsg').textContent = isSpecialDateBlocked ? SPECIAL_DATE_DISCOUNT_WARN_TEXT : ''; }
     if($('vehicleSpecialDateWarnBox')){ $('vehicleSpecialDateWarnBox').classList.toggle('show', isSpecialDateBlocked); }
+    // 特殊日期整組折扣都不能用時，折扣碼輸入框、套用鈕、「+再加一組折扣碼」這些「填的格子」都用不到了，
+    // 直接隱藏只留紅字提示；「查詢我的專屬折扣碼」是查看客人自己已經領到的券(不是這張單要套用的欄位)，維持顯示不受影響。
+    if($('discountCodeApplyRow')){ $('discountCodeApplyRow').classList.toggle('hidden', isSpecialDateBlocked); }
+    if($('additionalDiscountCodeSection')){ $('additionalDiscountCodeSection').classList.toggle('hidden', isSpecialDateBlocked); }
     if($('quoteSpecialDateMsg')){ $('quoteSpecialDateMsg').textContent = isSpecialDateBlocked ? SPECIAL_DATE_DISCOUNT_WARN_TEXT : ''; }
     if($('quoteSpecialDateWarnBox')){ $('quoteSpecialDateWarnBox').classList.toggle('show', isSpecialDateBlocked); }
     const earlyBirdDiscount = earlyBirdEligible ? 300 : 0;
@@ -1976,7 +1987,8 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.42'; // V5.42：依使用者要求(先確認示意圖才動手)：①特殊節日恕無法使用折扣的警示文字內容改成「‼️ 農曆春節/連續假期恕無法使用任何折扣碼或優惠折抵。」(原本是「‼️ 特殊節日期間...」)，集中存成共用常數SPECIAL_DATE_DISCOUNT_WARN_TEXT，三處共用同一句、以後要再調整文字不用分開改；②.discount-warn-box文字字級縮小兩階(13px→11px)，避免新文字比較長換行成兩行；③這句警示原本只會顯示在「折扣碼」畫面(#discountWarnBox)，現在新增顯示在「選擇接送車型」畫面車型清單上方(#vehicleSpecialDateWarnBox，客人選車前就先看到)跟「報價明細」彈窗來回總額下面(#quoteSpecialDateWarnBox)，三處顯示時機都跟着isSpecialDateBlocked同步(update()裡統一控制)，客人不用點進折扣碼頁面才知道這天不能用折扣。只新增這兩個提示框跟改文字/字級，車型清單、金額計算、其他版面/邏輯完全沒有更動。
+  const APP_VERSION='TouchGo-UI-V5.43'; // V5.43：依使用者實測v5.42畫面後的回饋微調：①.discount-warn-box文字字級13px→11px調過頭，改回12px；②「選擇接送車型」畫面的提示框(#vehicleSpecialDateWarnBox)拿掉外框線，新增.discount-warn-box.no-border修飾類別(只套用在這一個位置，折扣碼畫面跟報價明細彈窗的提示框維持原本紅色外框不變)；③「專屬優惠與折扣」卡片在isSpecialDateBlocked時，折扣碼輸入框+套用鈕(#discountCodeApplyRow)跟「+再加一組折扣碼」整段(#additionalDiscountCodeSection，含展開後的第二組輸入框)一起隱藏，只留紅字提示，這些「填的格子」反正也不能用了不需要留著；「查詢我的專屬折扣碼」(#queryDiscountBtn)是查看客人自己已領到的券、不是這張單要套用的欄位，維持顯示不受影響。
+  // V5.42：依使用者要求(先確認示意圖才動手)：①特殊節日恕無法使用折扣的警示文字內容改成「‼️ 農曆春節/連續假期恕無法使用任何折扣碼或優惠折抵。」(原本是「‼️ 特殊節日期間...」)，集中存成共用常數SPECIAL_DATE_DISCOUNT_WARN_TEXT，三處共用同一句、以後要再調整文字不用分開改；②.discount-warn-box文字字級縮小兩階(13px→11px)，避免新文字比較長換行成兩行；③這句警示原本只會顯示在「折扣碼」畫面(#discountWarnBox)，現在新增顯示在「選擇接送車型」畫面車型清單上方(#vehicleSpecialDateWarnBox，客人選車前就先看到)跟「報價明細」彈窗來回總額下面(#quoteSpecialDateWarnBox)，三處顯示時機都跟着isSpecialDateBlocked同步(update()裡統一控制)，客人不用點進折扣碼頁面才知道這天不能用折扣。只新增這兩個提示框跟改文字/字級，車型清單、金額計算、其他版面/邏輯完全沒有更動。
   // V5.41：🚨配合gas.html v2.2.307修正「來回預約只查回程日期，漏掉去程特殊日期」的折扣驗證漏洞。來回預約的折扣碼/早鳥優惠/預約來回優惠原本只掛在回程那一腿(discountCode/discountAmt只在ctx==='_R'送出)，後端consumeReservationDiscount_只看得到回程那天的日期，如果去程那天才是被擋的特殊日期、回程是普通日期，後端這關會漏放行(雖然客人端試算isAnyLegSpecialDate()本來就會同時看兩天、正常下單不會踩到，但後端這關是防止被繞過的最後防線，不該只靠前端)。修法：buildLegPayload()送回程資料(ctx==='_R'且有勾來回)時，新增欄位outboundRideDate=去程日期一併帶給後端查表，單程訂單不受影響。
   // V5.40：依使用者要求，「特殊日期」表新增G欄「禁用折扣」，讓某天可以只擋折扣、不用一定要順便加價(金額=0也能生效)。calcLegQuote()的isSpecialDate判斷加回blockDiscount(後端SPECIAL_DATE_SURCHARGES[日期].blockDiscount)，只要後端這個日期有標記禁用折扣，就算沒有加價金額也視為特殊日期，客人端試算跟能不能用折扣碼的判斷才會跟後端consumeReservationDiscount_保持一致，避免試算階段看得到折扣、送出時卻被擋掉。對應後端gas.html v2.2.306。
   // V5.37：「乘客與行李」彈窗的「托運箱」欄位備註加上「嬰幼兒推車視同一件托運行李」，讓客人自己就能判斷推車算不算行李件數；純文字說明，不影響任何計算/驗證邏輯。
