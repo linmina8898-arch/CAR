@@ -220,7 +220,7 @@
   /* 折扣碼互斥提示：客人常常沒看到小灰字，改成明顯的紅色警示框＋‼️ */
   .discount-warn-box{display:none;background:#fdecef;border:1.5px solid #e63c6e;border-radius:10px;padding:10px 12px;margin-top:8px}
   .discount-warn-box.show{display:block}
-  .discount-warn-box p{margin:0;font-size:13px;font-weight:700;color:#c2185b;line-height:1.5}
+  .discount-warn-box p{margin:0;font-size:11px;font-weight:700;color:#c2185b;line-height:1.5}
   .discount-warn-box p:empty{display:none}
   .discount-warn-box p+p:not(:empty){margin-top:6px}
   /* Step3「預約資訊確認」：拆成有明顯分區的卡片，而不是一長串一樣樣式的行 */
@@ -459,6 +459,9 @@
     <!-- 車型選擇 -->
     <div class="card">
       <p class="card-title"><svg class="ic-svg"><use href="#i-car"/></svg> 選擇接送車型</p>
+      <div class="discount-warn-box" id="vehicleSpecialDateWarnBox">
+        <p id="vehicleSpecialDateMsg"></p>
+      </div>
       <div id="vehicleList" class="vehicle-list"></div>
       <p class="quote-note" id="vehicleHint"></p>
     </div>
@@ -830,6 +833,9 @@
       <div id="detailsReturn"></div>
     </div>
     <div id="detailsAdjust" style="border-top:1px solid #e9e1eb;margin-top:10px;padding-top:6px"></div>
+    <div class="discount-warn-box" id="quoteSpecialDateWarnBox">
+      <p id="quoteSpecialDateMsg"></p>
+    </div>
     <button class="sheet-cta" id="closeQuote" type="button">關閉</button>
   </div>
 </div>
@@ -1160,6 +1166,9 @@
   let DISCOUNT_CODES={}, DISCOUNT_RULES={}, AUTO_APPLY_CAMPAIGNS=[];
   let USER_COUPON_MAP={}; // 個人專屬折扣券（來自 getUserDiscounts），key 為大寫折扣碼，value 為完整券資料（含 amount / vehicleDiscounts）
   let currentDiscountCode='', currentDiscountAmt=0;
+  // 特殊節日恕無法使用折扣的警示文字：折扣碼畫面、報價明細彈窗、選車畫面三處共用同一句，
+  // 集中在這裡管理，之後要再調整文字不用三個地方分別改、避免哪裡漏改導致三邊文字兜不起來。
+  const SPECIAL_DATE_DISCOUNT_WARN_TEXT = '‼️ 農曆春節/連續假期恕無法使用任何折扣碼或優惠折抵。';
   let creditBalanceCache=0; // 乘車金餘額快取，loadCreditInfo()查到之後更新，update()算總額時會用到
   function creditRedeemAmount(){
     // 跟update()裡算折抵上限用同一套邏輯：不能超過餘額、也不能超過本次車資(用畫面上顯示的total反推)。
@@ -1570,7 +1579,7 @@
     }
     const earlyBirdEligible = isSpecialDateBlocked ? false : isEarlyBirdReturnEligible();
     if(isSpecialDateBlocked){
-      $('discountMsg').textContent='‼️ 特殊節日期間恕無法使用任何折扣碼或優惠折抵。';
+      $('discountMsg').textContent=SPECIAL_DATE_DISCOUNT_WARN_TEXT;
     }else if(earlyBirdEligible && currentDiscountCode){
       currentDiscountCode=''; currentDiscountAmt=0; $('manualDiscountCode').value='';
       clearDiscountRadioSelection();
@@ -1580,6 +1589,12 @@
     }
     $('earlyBirdHint').textContent = earlyBirdEligible ? '‼️ 符合早鳥回程優惠：出發日距今超過 30 天且已加訂回程，自動折抵 $300（不可與其他折扣碼併用）。' : '';
     $('discountWarnBox').classList.toggle('show', Boolean($('discountMsg').textContent||$('earlyBirdHint').textContent));
+    // 同一句警示文字，額外同步顯示在「選擇接送車型」畫面(客人選車前就先看到)跟「報價明細」彈窗(來回總額下面)，
+    // 客人不用點進折扣碼畫面才知道這天不能用折扣，比較不會漏看。只在isSpecialDateBlocked時顯示，其他情況(例如早鳥互斥提示)不重複顯示在這兩處。
+    if($('vehicleSpecialDateMsg')){ $('vehicleSpecialDateMsg').textContent = isSpecialDateBlocked ? SPECIAL_DATE_DISCOUNT_WARN_TEXT : ''; }
+    if($('vehicleSpecialDateWarnBox')){ $('vehicleSpecialDateWarnBox').classList.toggle('show', isSpecialDateBlocked); }
+    if($('quoteSpecialDateMsg')){ $('quoteSpecialDateMsg').textContent = isSpecialDateBlocked ? SPECIAL_DATE_DISCOUNT_WARN_TEXT : ''; }
+    if($('quoteSpecialDateWarnBox')){ $('quoteSpecialDateWarnBox').classList.toggle('show', isSpecialDateBlocked); }
     const earlyBirdDiscount = earlyBirdEligible ? 300 : 0;
     const discountBlocksReturn = Boolean(currentDiscountCode && discountRule.allowReturn===false);
     const autoReturnDiscount = isSpecialDateBlocked ? 0 : (hasReturn && !earlyBirdEligible && !discountBlocksReturn ? 100 : 0);
@@ -1961,7 +1976,8 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.41'; // V5.41：🚨配合gas.html v2.2.307修正「來回預約只查回程日期，漏掉去程特殊日期」的折扣驗證漏洞。來回預約的折扣碼/早鳥優惠/預約來回優惠原本只掛在回程那一腿(discountCode/discountAmt只在ctx==='_R'送出)，後端consumeReservationDiscount_只看得到回程那天的日期，如果去程那天才是被擋的特殊日期、回程是普通日期，後端這關會漏放行(雖然客人端試算isAnyLegSpecialDate()本來就會同時看兩天、正常下單不會踩到，但後端這關是防止被繞過的最後防線，不該只靠前端)。修法：buildLegPayload()送回程資料(ctx==='_R'且有勾來回)時，新增欄位outboundRideDate=去程日期一併帶給後端查表，單程訂單不受影響。
+  const APP_VERSION='TouchGo-UI-V5.42'; // V5.42：依使用者要求(先確認示意圖才動手)：①特殊節日恕無法使用折扣的警示文字內容改成「‼️ 農曆春節/連續假期恕無法使用任何折扣碼或優惠折抵。」(原本是「‼️ 特殊節日期間...」)，集中存成共用常數SPECIAL_DATE_DISCOUNT_WARN_TEXT，三處共用同一句、以後要再調整文字不用分開改；②.discount-warn-box文字字級縮小兩階(13px→11px)，避免新文字比較長換行成兩行；③這句警示原本只會顯示在「折扣碼」畫面(#discountWarnBox)，現在新增顯示在「選擇接送車型」畫面車型清單上方(#vehicleSpecialDateWarnBox，客人選車前就先看到)跟「報價明細」彈窗來回總額下面(#quoteSpecialDateWarnBox)，三處顯示時機都跟着isSpecialDateBlocked同步(update()裡統一控制)，客人不用點進折扣碼頁面才知道這天不能用折扣。只新增這兩個提示框跟改文字/字級，車型清單、金額計算、其他版面/邏輯完全沒有更動。
+  // V5.41：🚨配合gas.html v2.2.307修正「來回預約只查回程日期，漏掉去程特殊日期」的折扣驗證漏洞。來回預約的折扣碼/早鳥優惠/預約來回優惠原本只掛在回程那一腿(discountCode/discountAmt只在ctx==='_R'送出)，後端consumeReservationDiscount_只看得到回程那天的日期，如果去程那天才是被擋的特殊日期、回程是普通日期，後端這關會漏放行(雖然客人端試算isAnyLegSpecialDate()本來就會同時看兩天、正常下單不會踩到，但後端這關是防止被繞過的最後防線，不該只靠前端)。修法：buildLegPayload()送回程資料(ctx==='_R'且有勾來回)時，新增欄位outboundRideDate=去程日期一併帶給後端查表，單程訂單不受影響。
   // V5.40：依使用者要求，「特殊日期」表新增G欄「禁用折扣」，讓某天可以只擋折扣、不用一定要順便加價(金額=0也能生效)。calcLegQuote()的isSpecialDate判斷加回blockDiscount(後端SPECIAL_DATE_SURCHARGES[日期].blockDiscount)，只要後端這個日期有標記禁用折扣，就算沒有加價金額也視為特殊日期，客人端試算跟能不能用折扣碼的判斷才會跟後端consumeReservationDiscount_保持一致，避免試算階段看得到折扣、送出時卻被擋掉。對應後端gas.html v2.2.306。
   // V5.37：「乘客與行李」彈窗的「托運箱」欄位備註加上「嬰幼兒推車視同一件托運行李」，讓客人自己就能判斷推車算不算行李件數；純文字說明，不影響任何計算/驗證邏輯。
   // 🚨V5.36：修正單程(非來回)訂單卡片「總額」沒有扣折扣碼的問題：buildLegPayload()送給後端的cardFeeJson.total一直都是q.subtotal+signFee(折扣前的小計)，單程訂單只有這一趟、沒有另外的「來回總額」步驟去扣折扣，導致折扣碼套用了卻完全沒反映在客人看到、客服卡片顯示、以及最終送出的總額上。這個bug其實一直都在，只是gas.html v2.2.283之前「總額」優先看displayTotal(=row22/grandTotal，那個一直是對的)，v2.2.283之後改成優先信任fee.total，才把這個bug曝出來。修正只動單程(!hasReturn)這條路徑，來回程兩腿的fee.total維持原樣不扣(折扣是套在整趟來回總額，不是單腿小計，這裡先扣的話來回總額會被扣兩次)。V5.35：修正基本車資漏算問題——calcLegQuote()原本基本車資只查「起點」的行政區域車資，加點(stopAddress/stopAddress_R)完全只用Google駕車距離算「加點服務」這個獨立加價項目，從來沒有拿加點所在的行政區域去查報價表、跟起點車資比較。依使用者要求新增guessZoneFromAddressText_()：用起點/回程縣市鄉鎮市區下拉選單同一份報價表資料(cityAreaMap)反查加點地址文字屬於哪個行政區，查得到就跟起點車資取較高者當基本車資，查不到就維持原行為(只看起點)。跟V5.31「去程/回程取較高者」是不同的比較對象(那是兩個方向互比，這次是起點/加點互比)，兩者互不影響、可以同時成立。V5.34：「我的」頁行程明細，非機場(單程)訂單的地址欄位標籤改用後端回傳的addressLabel(行程/地址)，對應gas.html v2.2.294把「行程」欄位改成客服自己斷行的原始文字、不再套用地址關鍵字過濾規則。V5.31：calcLegQuote()來回同時預約時基本車資改採「去程/回程兩個方向裡區域車資較高」的那個，兩腿共用同一個基本車資，避免回程剛好落在報價較低區域時整體來回車資反而偏低。
