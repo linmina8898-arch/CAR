@@ -1778,7 +1778,10 @@
     if(nightFee) lines.push(['夜間加成(23-05)',nightFee]);
     if(urgentFee) lines.push(['24小時內急單服務費',urgentFee]);
     if(specialFee) lines.push([specialDate.label,specialFee]);
-    return {subtotal,lines,isPast,isSpecialDate:Boolean(specialFee>0)};
+    // isSpecialDate也要看blockDiscount(後端「特殊日期」表G欄「禁用折扣」)：即使這天沒設定加價金額
+    // (specialFee=0)，只要後端標記了禁用折扣，這裡也要視為特殊日期，客人端才不會顯示能套用折扣碼，
+    // 跟後端consumeReservationDiscount_的判斷保持一致，避免畫面上看起來能用、送出卻被擋掉。
+    return {subtotal,lines,isPast,isSpecialDate:Boolean(specialFee>0||(specialDate&&specialDate.blockDiscount))};
   }
   // 判斷去程或回程是不是落在特殊節日：特殊日期恕無法使用任何折扣/優惠，這裡給computeDiscountBreakdown()判斷用。
   function isAnyLegSpecialDate(){
@@ -1958,7 +1961,8 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.39'; // V5.39：依使用者要求，預約送出後緊接著的那段說明文字(付款提醒/客服專線那則)，如果客人是在LINE App內用LIFF開啟這個頁面，改成用客人自己的身份透過liff.sendMessages()送出，卡片本身完全不動、還是官方帳號送(按鈕維持正常)。sendReservationConfirmationCard()新增判斷liff.isInClient()，帶clientWillSendFollowUpText旗標告訴後端「這段文字我們自己送」，後端就不會重複送出，回傳的followUpTextForClient內容原封不動交給liff.sendMessages()；如果客人不是在LINE App內開啟(一般瀏覽器)，或liff.sendMessages()失敗，都會自動退回原本由後端官方帳號送出的方式(失敗時改呼叫新增的sendReservationFollowUpTextFallback動作補送)，不會有任何客人漏收這段文字。對應後端gas.html v2.2.304。
+  const APP_VERSION='TouchGo-UI-V5.41'; // V5.41：🚨配合gas.html v2.2.307修正「來回預約只查回程日期，漏掉去程特殊日期」的折扣驗證漏洞。來回預約的折扣碼/早鳥優惠/預約來回優惠原本只掛在回程那一腿(discountCode/discountAmt只在ctx==='_R'送出)，後端consumeReservationDiscount_只看得到回程那天的日期，如果去程那天才是被擋的特殊日期、回程是普通日期，後端這關會漏放行(雖然客人端試算isAnyLegSpecialDate()本來就會同時看兩天、正常下單不會踩到，但後端這關是防止被繞過的最後防線，不該只靠前端)。修法：buildLegPayload()送回程資料(ctx==='_R'且有勾來回)時，新增欄位outboundRideDate=去程日期一併帶給後端查表，單程訂單不受影響。
+  // V5.40：依使用者要求，「特殊日期」表新增G欄「禁用折扣」，讓某天可以只擋折扣、不用一定要順便加價(金額=0也能生效)。calcLegQuote()的isSpecialDate判斷加回blockDiscount(後端SPECIAL_DATE_SURCHARGES[日期].blockDiscount)，只要後端這個日期有標記禁用折扣，就算沒有加價金額也視為特殊日期，客人端試算跟能不能用折扣碼的判斷才會跟後端consumeReservationDiscount_保持一致，避免試算階段看得到折扣、送出時卻被擋掉。對應後端gas.html v2.2.306。
   // V5.37：「乘客與行李」彈窗的「托運箱」欄位備註加上「嬰幼兒推車視同一件托運行李」，讓客人自己就能判斷推車算不算行李件數；純文字說明，不影響任何計算/驗證邏輯。
   // 🚨V5.36：修正單程(非來回)訂單卡片「總額」沒有扣折扣碼的問題：buildLegPayload()送給後端的cardFeeJson.total一直都是q.subtotal+signFee(折扣前的小計)，單程訂單只有這一趟、沒有另外的「來回總額」步驟去扣折扣，導致折扣碼套用了卻完全沒反映在客人看到、客服卡片顯示、以及最終送出的總額上。這個bug其實一直都在，只是gas.html v2.2.283之前「總額」優先看displayTotal(=row22/grandTotal，那個一直是對的)，v2.2.283之後改成優先信任fee.total，才把這個bug曝出來。修正只動單程(!hasReturn)這條路徑，來回程兩腿的fee.total維持原樣不扣(折扣是套在整趟來回總額，不是單腿小計，這裡先扣的話來回總額會被扣兩次)。V5.35：修正基本車資漏算問題——calcLegQuote()原本基本車資只查「起點」的行政區域車資，加點(stopAddress/stopAddress_R)完全只用Google駕車距離算「加點服務」這個獨立加價項目，從來沒有拿加點所在的行政區域去查報價表、跟起點車資比較。依使用者要求新增guessZoneFromAddressText_()：用起點/回程縣市鄉鎮市區下拉選單同一份報價表資料(cityAreaMap)反查加點地址文字屬於哪個行政區，查得到就跟起點車資取較高者當基本車資，查不到就維持原行為(只看起點)。跟V5.31「去程/回程取較高者」是不同的比較對象(那是兩個方向互比，這次是起點/加點互比)，兩者互不影響、可以同時成立。V5.34：「我的」頁行程明細，非機場(單程)訂單的地址欄位標籤改用後端回傳的addressLabel(行程/地址)，對應gas.html v2.2.294把「行程」欄位改成客服自己斷行的原始文字、不再套用地址關鍵字過濾規則。V5.31：calcLegQuote()來回同時預約時基本車資改採「去程/回程兩個方向裡區域車資較高」的那個，兩腿共用同一個基本車資，避免回程剛好落在報價較低區域時整體來回車資反而偏低。
   // V5.32：依使用者要求，送出預約後如果偵測不到客人的LINE身分(sysLineId是空的，官方帳號無法主動找到這位客人)，
@@ -2078,6 +2082,10 @@
       surchargeDetails: t(surchargeLabels.join('、')||'無'),
       discountCode: t(ctx==='_R' ? discBreak.label : (hasReturn ? '' : discBreak.label)),
       discountAmt: t(ctx==='_R' ? discBreak.combined : (hasReturn ? 0 : discBreak.combined)),
+      // 🚨v5.41：折扣碼/早鳥優惠/預約來回優惠只掛在回程這一腿(ctx==='_R')，後端consumeReservationDiscount_
+      // 原本只看得到這一腿自己的rideDate(回程日期)，如果去程那天才是被擋的特殊日期，後端會漏放行。
+      // 這裡把去程日期一併送給後端查表，讓後端能同時檢查兩天(單程訂單沒有hasReturn，這個欄位就是空字串)。
+      outboundRideDate: t(ctx==='_R' && hasReturn ? $('date').value : ''),
       creditUsed: t(ctx==='_R' ? creditRedeemAmount() : (hasReturn ? 0 : creditRedeemAmount())),
       // 疊加折扣碼一律跟乘車金/主要折扣碼一樣，只掛在「最後送出的那一趟」(單程或回程)，
       // 不會去程回程各自驗證一次(那樣同一組碼會被要求兩次、造成困惑)。
