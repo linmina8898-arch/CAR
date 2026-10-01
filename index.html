@@ -706,7 +706,7 @@
       </div>
     </div>
     <div class="card" style="padding:0 16px">
-      <div class="setting-row"><span class="ic"><svg class="ic-svg"><use href="#i-phone"/></svg></span><span class="t">聯絡客服</span><span class="v">0955-311-306 ›</span></div>
+      <a href="tel:0955311306" class="setting-row" style="text-decoration:none;color:inherit"><span class="ic"><svg class="ic-svg"><use href="#i-phone"/></svg></span><span class="t">聯絡客服</span><span class="v">0955-311-306 ›</span></a>
     </div>
     <p style="text-align:center;color:#c9bccf;font-size:11px;margin:14px 0 4px">版本 <span id="appVersionDisplay"></span></p>
   </section>
@@ -1987,7 +1987,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.43'; // V5.43：依使用者實測v5.42畫面後的回饋微調：①.discount-warn-box文字字級13px→11px調過頭，改回12px；②「選擇接送車型」畫面的提示框(#vehicleSpecialDateWarnBox)拿掉外框線，新增.discount-warn-box.no-border修飾類別(只套用在這一個位置，折扣碼畫面跟報價明細彈窗的提示框維持原本紅色外框不變)；③「專屬優惠與折扣」卡片在isSpecialDateBlocked時，折扣碼輸入框+套用鈕(#discountCodeApplyRow)跟「+再加一組折扣碼」整段(#additionalDiscountCodeSection，含展開後的第二組輸入框)一起隱藏，只留紅字提示，這些「填的格子」反正也不能用了不需要留著；「查詢我的專屬折扣碼」(#queryDiscountBtn)是查看客人自己已領到的券、不是這張單要套用的欄位，維持顯示不受影響。
+  const APP_VERSION='TouchGo-UI-V5.44'; // V5.44：依使用者要求，「我的」頁「聯絡客服」那一列(電話號碼0955-311-306)原本只是純文字顯示、點了沒反應，改成<a href="tel:...">連結，點擊後直接開啟手機撥號畫面，不用再手動複製號碼。只改這一列的HTML標籤(div改成a並加tel:連結+樣式讓它看起來跟原本一樣，不是底線藍字的連結外觀)，版面/其他設定列完全沒有變動。V5.43：依使用者實測v5.42畫面後的回饋微調：①.discount-warn-box文字字級13px→11px調過頭，改回12px；②「選擇接送車型」畫面的提示框(#vehicleSpecialDateWarnBox)拿掉外框線，新增.discount-warn-box.no-border修飾類別(只套用在這一個位置，折扣碼畫面跟報價明細彈窗的提示框維持原本紅色外框不變)；③「專屬優惠與折扣」卡片在isSpecialDateBlocked時，折扣碼輸入框+套用鈕(#discountCodeApplyRow)跟「+再加一組折扣碼」整段(#additionalDiscountCodeSection，含展開後的第二組輸入框)一起隱藏，只留紅字提示，這些「填的格子」反正也不能用了不需要留著；「查詢我的專屬折扣碼」(#queryDiscountBtn)是查看客人自己已領到的券、不是這張單要套用的欄位，維持顯示不受影響。
   // V5.42：依使用者要求(先確認示意圖才動手)：①特殊節日恕無法使用折扣的警示文字內容改成「‼️ 農曆春節/連續假期恕無法使用任何折扣碼或優惠折抵。」(原本是「‼️ 特殊節日期間...」)，集中存成共用常數SPECIAL_DATE_DISCOUNT_WARN_TEXT，三處共用同一句、以後要再調整文字不用分開改；②.discount-warn-box文字字級縮小兩階(13px→11px)，避免新文字比較長換行成兩行；③這句警示原本只會顯示在「折扣碼」畫面(#discountWarnBox)，現在新增顯示在「選擇接送車型」畫面車型清單上方(#vehicleSpecialDateWarnBox，客人選車前就先看到)跟「報價明細」彈窗來回總額下面(#quoteSpecialDateWarnBox)，三處顯示時機都跟着isSpecialDateBlocked同步(update()裡統一控制)，客人不用點進折扣碼頁面才知道這天不能用折扣。只新增這兩個提示框跟改文字/字級，車型清單、金額計算、其他版面/邏輯完全沒有更動。
   // V5.41：🚨配合gas.html v2.2.307修正「來回預約只查回程日期，漏掉去程特殊日期」的折扣驗證漏洞。來回預約的折扣碼/早鳥優惠/預約來回優惠原本只掛在回程那一腿(discountCode/discountAmt只在ctx==='_R'送出)，後端consumeReservationDiscount_只看得到回程那天的日期，如果去程那天才是被擋的特殊日期、回程是普通日期，後端這關會漏放行(雖然客人端試算isAnyLegSpecialDate()本來就會同時看兩天、正常下單不會踩到，但後端這關是防止被繞過的最後防線，不該只靠前端)。修法：buildLegPayload()送回程資料(ctx==='_R'且有勾來回)時，新增欄位outboundRideDate=去程日期一併帶給後端查表，單程訂單不受影響。
   // V5.40：依使用者要求，「特殊日期」表新增G欄「禁用折扣」，讓某天可以只擋折扣、不用一定要順便加價(金額=0也能生效)。calcLegQuote()的isSpecialDate判斷加回blockDiscount(後端SPECIAL_DATE_SURCHARGES[日期].blockDiscount)，只要後端這個日期有標記禁用折扣，就算沒有加價金額也視為特殊日期，客人端試算跟能不能用折扣碼的判斷才會跟後端consumeReservationDiscount_保持一致，避免試算階段看得到折扣、送出時卻被擋掉。對應後端gas.html v2.2.306。
