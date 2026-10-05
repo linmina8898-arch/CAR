@@ -47,6 +47,12 @@
   .label{display:block;margin:11px 0 6px;color:#62546a;font-size:12px;font-weight:700}
   input,select,button{font:inherit}
   input,select{width:100%;height:44px;border:1px solid #d9cee0;border-radius:9px;padding:0 12px;background:#fff;color:#29212d;outline:none}
+  /* 航班編號 + 航廈(桃園機場才出現)：航班編號縮短、航廈選單文字不換行 */
+  .flight-row{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:10px}
+  .flight-row .label{margin-top:0}
+  .flight-row select{white-space:nowrap;text-overflow:ellipsis;font-size:14px;padding:0 6px 0 10px}
+  .flight-row.no-terminal{grid-template-columns:minmax(0,1fr)}
+  .flight-row.no-terminal .terminal-wrap{display:none}
   input:focus,select:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(87,66,102,.11)}
   .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .hint{margin:6px 0 0;color:var(--muted);font-size:11.5px;line-height:1.55}
@@ -365,8 +371,12 @@
       <input id="date" type="date" class="dt-hidden-native" tabindex="-1" aria-hidden="true">
       <input id="time" type="time" step="300" class="dt-hidden-native" tabindex="-1" aria-hidden="true">
       <p class="hint" id="rideTimeHint" style="margin-top:8px">送機提示：請填寫家裡/公司出發的時間</p>
-      <label class="label" for="flight" style="margin-top:14px">航班編號</label>
-      <input id="flight" placeholder="例如 BR123" autocomplete="off" style="text-transform:uppercase">
+      <div class="flight-row" id="flightRow" style="margin-top:14px">
+        <div><label class="label" for="flight">航班編號</label>
+        <input id="flight" placeholder="例如 BR123" autocomplete="off" style="text-transform:uppercase"></div>
+        <div class="terminal-wrap"><label class="label" for="flightTerminal">航廈</label>
+        <select id="flightTerminal"><option value="">請選擇</option><option value="T1">第一航廈 T1</option><option value="T2">第二航廈 T2</option><option value="?">不確定，幫我查詢</option></select></div>
+      </div>
       <p class="hint" id="flightHint">送機請填出發航班；接機請填抵台航班。</p>
     </div>
 
@@ -397,8 +407,12 @@
         </button>
         <input id="returnDate" type="date" class="dt-hidden-native" tabindex="-1" aria-hidden="true">
         <input id="returnTime" type="time" step="300" class="dt-hidden-native" tabindex="-1" aria-hidden="true">
-        <label class="label" for="returnFlight">回程航班編號</label>
-        <input id="returnFlight" placeholder="例如 BR456" style="text-transform:uppercase">
+        <div class="flight-row" id="returnFlightRow">
+          <div><label class="label" for="returnFlight">回程航班編號</label>
+          <input id="returnFlight" placeholder="例如 BR456" style="text-transform:uppercase"></div>
+          <div class="terminal-wrap"><label class="label" for="returnFlightTerminal">回程航廈</label>
+          <select id="returnFlightTerminal"><option value="">請選擇</option><option value="T1">第一航廈 T1</option><option value="T2">第二航廈 T2</option><option value="?">不確定，幫我查詢</option></select></div>
+        </div>
 
         <button class="expand-row" id="returnDetailToggle" type="button">
           <span>地址、加點、人數與行李<b>預設沿用去程</b>，如需修改請點開</span>
@@ -1509,7 +1523,7 @@
     const dateVal=$('date').value, timeVal=$('time').value;
     $('tripSumDate').textContent = `${formatDateWithWeekday(dateVal)} ${timeVal||'--'}`;
     $('tripSumDirection').textContent = mode==='send' ? '送機' : '接機';
-    const flightVal=$('flight').value.trim();
+    const flightVal=flightWithTerminal('');
     $('tripSumFlight').textContent = `航班 ${flightVal||'—'}`;
     const totalPax=n('adult')+n('child')+n('toddler');
     $('tripSumPax').textContent = totalPax
@@ -1528,7 +1542,22 @@
     });
   }
 
+  // 航廈：只有「桃園機場」有 T1/T2，選了就把「｜T1 / ｜T2 / ｜？」直接接在航班編號後面一起存(例如 CI108｜T2)，
+  // 後端、行事曆、客人卡片、司機畫面、中控台都直接顯示這個字串；非桃園機場不顯示、不用選，舊訂單維持只有航班編號。
+  function isTaoyuanAirport(){ return $('airport').value==='桃園機場'; }
+  function syncTerminalVisibility(){
+    const show=isTaoyuanAirport();
+    ['flightRow','returnFlightRow'].forEach(id=>{ const el=$(id); if(el) el.classList.toggle('no-terminal',!show); });
+  }
+  function flightWithTerminal(ctx){
+    const flight=(ctx==='_R'?$('returnFlight'):$('flight')).value.trim();
+    if(!flight || !isTaoyuanAirport()) return flight;
+    const tv=(ctx==='_R'?$('returnFlightTerminal'):$('flightTerminal')).value;
+    const tt=tv==='T1'?'T1':(tv==='T2'?'T2':(tv==='?'?'？':''));
+    return tt ? `${flight}｜${tt}` : flight;
+  }
   function update(){
+    syncTerminalVisibility();
     updateSeatVisibility();
     enforceSeats();
     const s=state();
@@ -1987,7 +2016,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.44'; // V5.44：依使用者要求，「我的」頁「聯絡客服」那一列(電話號碼0955-311-306)原本只是純文字顯示、點了沒反應，改成<a href="tel:...">連結，點擊後直接開啟手機撥號畫面，不用再手動複製號碼。只改這一列的HTML標籤(div改成a並加tel:連結+樣式讓它看起來跟原本一樣，不是底線藍字的連結外觀)，版面/其他設定列完全沒有變動。V5.43：依使用者實測v5.42畫面後的回饋微調：①.discount-warn-box文字字級13px→11px調過頭，改回12px；②「選擇接送車型」畫面的提示框(#vehicleSpecialDateWarnBox)拿掉外框線，新增.discount-warn-box.no-border修飾類別(只套用在這一個位置，折扣碼畫面跟報價明細彈窗的提示框維持原本紅色外框不變)；③「專屬優惠與折扣」卡片在isSpecialDateBlocked時，折扣碼輸入框+套用鈕(#discountCodeApplyRow)跟「+再加一組折扣碼」整段(#additionalDiscountCodeSection，含展開後的第二組輸入框)一起隱藏，只留紅字提示，這些「填的格子」反正也不能用了不需要留著；「查詢我的專屬折扣碼」(#queryDiscountBtn)是查看客人自己已領到的券、不是這張單要套用的欄位，維持顯示不受影響。
+  const APP_VERSION='TouchGo-UI-V5.45'; // V5.45：依使用者要求，航班編號旁邊新增「航廈」選單(第一航廈T1/第二航廈T2/不確定，幫我查詢)，只有選「桃園機場」才會出現且必選(沒選比照其他必填欄位的toast+聚焦提示)，來回預約的回程航班也同樣加；選了之後以「航班｜T1/T2/？」(例如CI108｜T2)接在航班編號後面一起送出，行事曆/卡片/司機畫面等後端與各畫面直接顯示這個字串。航班編號欄縮短、航廈選單文字不換行。 V5.44： V5.44：依使用者要求，「我的」頁「聯絡客服」那一列(電話號碼0955-311-306)原本只是純文字顯示、點了沒反應，改成<a href="tel:...">連結，點擊後直接開啟手機撥號畫面，不用再手動複製號碼。只改這一列的HTML標籤(div改成a並加tel:連結+樣式讓它看起來跟原本一樣，不是底線藍字的連結外觀)，版面/其他設定列完全沒有變動。V5.43：依使用者實測v5.42畫面後的回饋微調：①.discount-warn-box文字字級13px→11px調過頭，改回12px；②「選擇接送車型」畫面的提示框(#vehicleSpecialDateWarnBox)拿掉外框線，新增.discount-warn-box.no-border修飾類別(只套用在這一個位置，折扣碼畫面跟報價明細彈窗的提示框維持原本紅色外框不變)；③「專屬優惠與折扣」卡片在isSpecialDateBlocked時，折扣碼輸入框+套用鈕(#discountCodeApplyRow)跟「+再加一組折扣碼」整段(#additionalDiscountCodeSection，含展開後的第二組輸入框)一起隱藏，只留紅字提示，這些「填的格子」反正也不能用了不需要留著；「查詢我的專屬折扣碼」(#queryDiscountBtn)是查看客人自己已領到的券、不是這張單要套用的欄位，維持顯示不受影響。
   // V5.42：依使用者要求(先確認示意圖才動手)：①特殊節日恕無法使用折扣的警示文字內容改成「‼️ 農曆春節/連續假期恕無法使用任何折扣碼或優惠折抵。」(原本是「‼️ 特殊節日期間...」)，集中存成共用常數SPECIAL_DATE_DISCOUNT_WARN_TEXT，三處共用同一句、以後要再調整文字不用分開改；②.discount-warn-box文字字級縮小兩階(13px→11px)，避免新文字比較長換行成兩行；③這句警示原本只會顯示在「折扣碼」畫面(#discountWarnBox)，現在新增顯示在「選擇接送車型」畫面車型清單上方(#vehicleSpecialDateWarnBox，客人選車前就先看到)跟「報價明細」彈窗來回總額下面(#quoteSpecialDateWarnBox)，三處顯示時機都跟着isSpecialDateBlocked同步(update()裡統一控制)，客人不用點進折扣碼頁面才知道這天不能用折扣。只新增這兩個提示框跟改文字/字級，車型清單、金額計算、其他版面/邏輯完全沒有更動。
   // V5.41：🚨配合gas.html v2.2.307修正「來回預約只查回程日期，漏掉去程特殊日期」的折扣驗證漏洞。來回預約的折扣碼/早鳥優惠/預約來回優惠原本只掛在回程那一腿(discountCode/discountAmt只在ctx==='_R'送出)，後端consumeReservationDiscount_只看得到回程那天的日期，如果去程那天才是被擋的特殊日期、回程是普通日期，後端這關會漏放行(雖然客人端試算isAnyLegSpecialDate()本來就會同時看兩天、正常下單不會踩到，但後端這關是防止被繞過的最後防線，不該只靠前端)。修法：buildLegPayload()送回程資料(ctx==='_R'且有勾來回)時，新增欄位outboundRideDate=去程日期一併帶給後端查表，單程訂單不受影響。
   // V5.40：依使用者要求，「特殊日期」表新增G欄「禁用折扣」，讓某天可以只擋折扣、不用一定要順便加價(金額=0也能生效)。calcLegQuote()的isSpecialDate判斷加回blockDiscount(後端SPECIAL_DATE_SURCHARGES[日期].blockDiscount)，只要後端這個日期有標記禁用折扣，就算沒有加價金額也視為特殊日期，客人端試算跟能不能用折扣碼的判斷才會跟後端consumeReservationDiscount_保持一致，避免試算階段看得到折扣、送出時卻被擋掉。對應後端gas.html v2.2.306。
@@ -2032,7 +2061,7 @@
     const addrFull=getFullAddressText(ctx);
     const dateVal = ctx==='_R' ? $('returnDate').value : $('date').value;
     const timeVal = ctx==='_R' ? $('returnTime').value : $('time').value;
-    const flightVal = ctx==='_R' ? $('returnFlight').value : $('flight').value;
+    const flightVal = flightWithTerminal(ctx==='_R'?'_R':'');
     const paxCountStr=`${n('adult'+ctx)}大 ${n('child'+ctx)}中 ${n('toddler'+ctx)}小`;
     const luggageArr=[];
     if(n('checked'+ctx)>0) luggageArr.push(`${n('checked'+ctx)}大`);
@@ -2349,6 +2378,9 @@
   ['address','airport','date','time','flight','addStop','stopAddress','roundTrip','returnDate','returnTime','returnFlight','adult','child','toddler','rearSeat','forwardSeat','booster','checked','carry','noLuggage','sportLuggage','optSign']
     .forEach(id=>$(id).addEventListener('input',update));
   $('noLuggage').addEventListener('change',update);
+  ['flightTerminal','returnFlightTerminal'].forEach(id=>$(id).addEventListener('change',update));
+  ['airport'].forEach(id=>$(id).addEventListener('change',()=>{ syncTerminalVisibility(); update(); }));
+  syncTerminalVisibility();
 
   // 計數器 +/-：寫回隱藏 select，再照原邏輯 dispatch input
   function dynamicMax(target,staticMax){
@@ -2479,7 +2511,7 @@
     const toText = legMode==='send' ? ap : addr;
     const dateVal = ctx==='_R' ? $('returnDate').value : $('date').value;
     const timeVal = ctx==='_R' ? $('returnTime').value : $('time').value;
-    const flightVal = ctx==='_R' ? $('returnFlight').value : $('flight').value;
+    const flightVal = flightWithTerminal(ctx==='_R'?'_R':'');
     const paxText = `${n('adult'+ctx)}大人${n('child'+ctx)?`+${n('child'+ctx)}兒童`:''}${n('toddler'+ctx)?`+${n('toddler'+ctx)}幼童`:''}`;
     // 胖胖箱是整趟行程共用的設定（不分去程回程），併進「行李」這一列一起顯示，
     // 不要另外開一個獨立欄位放在「車輛與付款」卡片裡，跟行李件數放一起客人比較看得懂關聯性。
@@ -2576,7 +2608,9 @@
       if($('roundTrip').checked && !$('returnTime').value) errs.push(['請選擇回程時間','returnTime']);
       if(!n('adult') && !n('child') && !n('toddler')){ errs.push(['請設定乘客人數','openPax']); needPaxSheet=true; }
       if(!$('flight').value.trim()) errs.push(['請輸入去程航班編號','flight']);
+      if(isTaoyuanAirport() && !$('flightTerminal').value) errs.push(['請選擇去程航廈（不確定請選「不確定，幫我查詢」）','flightTerminal']);
       if($('roundTrip').checked && !$('returnFlight').value.trim()) errs.push(['請輸入回程航班編號','returnFlight']);
+      if($('roundTrip').checked && isTaoyuanAirport() && !$('returnFlightTerminal').value) errs.push(['請選擇回程航廈（不確定請選「不確定，幫我查詢」）','returnFlightTerminal']);
       // 幼童依法須有安全座椅：後向+前向+增高墊總數需 ≥ 幼童人數（比照正式系統 validatePassengerAndLuggageStep）
       if(n('toddler')>0 && (n('rearSeat')+n('forwardSeat')+n('booster'))<n('toddler')){ errs.push(['幼童依法須使用安全座椅，數量需 ≥ 幼童人數','openPax']); needPaxSheet=true; }
       // 行李件數若都是0，一定要勾選「我沒有行李」，不能就這樣跳過（比照正式系統 isLuggageConfirmed）
