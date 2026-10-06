@@ -9,7 +9,7 @@
 <style>
   :root{--ink:#1A0B3D;--purple:#574266;--purple-dark:#463451;--muted:#7A6A82;--line:#e7ddea;--paper:#fff;--wash:#faf7fb;--pink:#d9578a;--soft:#f7eff7}
   *{box-sizing:border-box}
-  body{margin:0;background:var(--wash);color:#26202a;font-family:"Microsoft JhengHei",Arial,sans-serif;font-size:14px;letter-spacing:0}
+  body{margin:0;background:#e4d8e9;color:#26202a;font-family:"Microsoft JhengHei",Arial,sans-serif;font-size:14px;letter-spacing:0}
   .app{max-width:560px;margin:0 auto;padding:16px 16px 190px;position:relative}
 
   .brandbar{display:flex;align-items:center;justify-content:space-between;padding:2px 0 12px}
@@ -22,6 +22,12 @@
   .trip{display:flex;gap:8px;background:#f3edf4;border-radius:11px;padding:4px;margin-bottom:12px}
   .trip button{border:0;border-radius:8px;background:transparent;color:#75677b;padding:11px 4px;flex:1;font-weight:700;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px}
   .trip button.active{background:#fff;color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  /* V5.48：送機/接機切換鈕改小圓角(外框6px、按鈕4px)，軌道底色隨頁面背景加深一階；只套用在訂車頁最上面這組，行程頁的篩選鈕(同樣用.trip)不受影響 */
+  .trip.trip-mode{background:#d3c5da;border-radius:6px;padding:3px}
+  .trip.trip-mode button{border-radius:4px}
+  /* V5.48：特殊需求提醒框(粉紅左線)，三處共用 */
+  .special-note{border-left:4px solid var(--pink);background:#fdf3f6;border-radius:0 8px 8px 0;padding:8px 10px;margin:10px 0 0;font-size:12.5px;line-height:1.6;color:#26202a}
+  .special-note b{color:var(--pink)}
 
   /* ===== 卡片（仿 TouchGo 行程路線 / 乘客與行李 卡片）===== */
   .card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 4px 16px rgba(43,24,53,.045)}
@@ -318,7 +324,7 @@
       <input id="adminLookupPhone" placeholder="輸入客人電話，自動帶入常用地址" inputmode="tel" autocomplete="off">
       <p class="hint" style="margin-top:6px">查到資料後會自動帶入下方地址欄位，進到下一頁也會順便帶入姓名/電話/Email。</p>
     </div>
-    <div class="trip">
+    <div class="trip trip-mode">
       <button id="sendBtn" class="active" type="button"><svg class="ic-svg" style="width:16px;height:16px"><use href="#i-send"/></svg> 送機</button>
       <button id="pickupBtn" type="button"><svg class="ic-svg flip" style="width:16px;height:16px"><use href="#i-send"/></svg> 接機</button>
     </div>
@@ -338,7 +344,7 @@
           <div id="favAddrPickList" class="addbox-body"></div>
         </div>
         <div class="route-line" id="airportLine">
-          <span id="airportLabel">送機地點・機場</span>
+          <span id="airportLabel">送機地點｜機場</span>
           <select id="airport">
             <option value="桃園機場">桃園機場</option>
             <option value="松山機場">松山機場</option>
@@ -479,6 +485,7 @@
       </div>
       <div id="vehicleList" class="vehicle-list"></div>
       <p class="quote-note" id="vehicleHint"></p>
+      <div class="special-note"><b>特殊需求，敬請於預約時告知：</b>車型依預約類別派遣。如需指定車款、車色，或希望僅派小車、不升級車型，煩請於預約時在備註欄說明，經客服確認可配合後，方可為您接單，恕無法保證一定能配合。</div>
     </div>
     </div>
 
@@ -595,6 +602,7 @@
 
         <p class="label" style="margin-top:16px">其他備註</p>
         <p class="hint" style="margin-bottom:8px">如攜帶紙箱、高爾夫球具、雪板、輪椅、腳踏車箱、大型樂器等，請務必告知；胖胖箱請於上一步的乘客與行李內註記。其他需要注意的事項也可在這說明。</p>
+        <div class="special-note" style="margin:0 0 10px"><b>特殊需求，敬請於預約時填寫：</b>例如地下室接送、指定車款或車色、希望不升級車型等。經客服確認可配合後，方可為您接單；預約成立後才提出的需求，恕無法保證能為您安排。</div>
         <textarea id="remarks" rows="3" placeholder="輸入其他特殊需求..." maxlength="200"></textarea>
       </div>
     </div>
@@ -620,6 +628,7 @@
         <div id="detailsContent" class="addbox-body">
           <p class="hint"><b style="color:var(--ink)">臨時加點：</b>司機無法私自增加停靠點（車輛皆有 GPS）。如需臨時加點，請告知司機回報公司後方可執行。</p>
           <p class="hint"><b style="color:var(--ink)">預約車型：</b>請務必依「實際乘車人數」與「行李件數尺寸」預約合適車款，以免當天車輛乘載不下耽誤貴賓寶貴的時間。</p>
+          <div class="special-note" style="margin:8px 0"><b>特殊需求：</b>如地下室接送、指定車款或車色、希望不升級車型等，敬請於預約時一併於備註欄告知，經客服確認可配合後，方可接單。預約後才提出的需求，恕無法保證能配合。</div>
           <p class="hint"><b style="color:var(--ink)">行李與乘車規範：</b>全程請繫妥安全帶，座位及腳踏區僅限放隨身背包。如攜帶高爾夫球具、雪板等特殊尺寸行李，請務必提前告知客服；若現場行李過多不符預約車型，公司有權拒載，且該趟行程恕不退費。</p>
           <p class="hint"><b style="color:var(--ink)">車內禁食：</b>為維護乘車品質，顧及每位貴賓權益，車內全面禁止飲食、吸菸（包含電子菸、加熱菸）、吃檳榔。</p>
           <p class="hint"><b style="color:var(--ink)">兒童安全座椅：</b>0～12 歲（18 公斤內）兒童依法須使用安全座椅或增高墊，若未依需求加購導致違規，相關罰款由乘客自行負擔。</p>
@@ -1445,7 +1454,7 @@
     $('pickupBtn').classList.toggle('active',mode==='pickup');
     document.querySelector('.route-lines').classList.toggle('pickup',mode==='pickup');
     $('addressLabel').textContent=mode==='send'?'上車地點':'下車地點';
-    $('airportLabel').textContent=mode==='send'?'送機地點・機場':'接機地點・機場';
+    $('airportLabel').textContent=mode==='send'?'送機地點｜機場':'接機地點｜機場';
     $('flightHint').textContent=mode==='send'?'送機請填出發航班；接機請填抵台航班。':'接機請填抵台航班；送機請填出發航班。';
     $('rideTimeHint').innerHTML=mode==='send'?'送機提示：請填寫家裡/公司出發的時間':'接機提示：請填寫航班表定抵台時間<br><span style="color:var(--pink)">接機請提供電子機票至官方LINE，客服幫您做訂單的雙重確認。</span>';
     $('address').placeholder=mode==='send'?'請輸入完整上車地址':'請輸入完整下車地址';
@@ -1500,13 +1509,13 @@
   function paxSummaryText(s){
     const bagCount=n('checked')+n('carry');
     if(!s.people && !bagCount) return '請設定人數與行李';
-    return `${s.people} 位乘客・行李 ${bagCount} 件`;
+    return `${s.people} 位乘客｜行李 ${bagCount} 件`;
   }
 
   function updateReturnPaxSummary(){
     const people=n('adult_R')+n('child_R')+n('toddler_R');
     const bags=n('checked_R')+n('carry_R');
-    $('returnPaxSummary').textContent=(!people&&!bags)?'同去程':`${people} 位乘客・行李 ${bags} 件`;
+    $('returnPaxSummary').textContent=(!people&&!bags)?'同去程':`${people} 位乘客｜行李 ${bags} 件`;
   }
 
   /* 行程摘要卡（唯讀）：只讀取既有欄位值顯示，不做任何計算/驗證，跟報價、送出邏輯完全無關。
@@ -2016,7 +2025,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.47'; // V5.47：依使用者要求，來回預約有加點時，回程的行程順序要跟去程相反(去程 起點→加點→機場，回程 機場→加點→起點)：回程那腿沒勾「與去程不同」(加點是自動從去程同步過來的)時，送給後端的主地址/加點對調(主地址放加點、加點放地址)，卡片/行事曆/中控台就會依「機場→加點→回到起點」顯示；客人自己勾了「與去程不同」、自己填回程加點的情況不動，維持客人填的順序；去程、單程、沒有加點的預約完全不受影響，距離加價費用算法沒動(兩點距離對稱)。配合gas.html v2.2.345。 V5.46：依使用者要求，預約送出後的文字改版＋修正文字常變成官方端送出：送出預約時就在addReservation payload帶clientWillSendFollowUpText(是否在LINE App內)，後端自動送卡片時就只送卡片，客人端自己用liff.sendMessages()送第一則「📋 預約資料」，送完呼叫新動作sendReservationExplainText由官方送第二則說明文字；客人端送失敗則請官方補送兩則。不再靠2秒競速。 V5.45：依使用者要求，航班編號旁邊新增「航廈」選單(第一航廈T1/第二航廈T2/不確定，幫我查詢)，只有選「桃園機場」才會出現且必選(沒選比照其他必填欄位的toast+聚焦提示)，來回預約的回程航班也同樣加；選了之後以「航班｜T1/T2/？」(例如CI108｜T2)接在航班編號後面一起送出，行事曆/卡片/司機畫面等後端與各畫面直接顯示這個字串。航班編號欄縮短、航廈選單文字不換行。 V5.44： V5.44：依使用者要求，「我的」頁「聯絡客服」那一列(電話號碼0955-311-306)原本只是純文字顯示、點了沒反應，改成<a href="tel:...">連結，點擊後直接開啟手機撥號畫面，不用再手動複製號碼。只改這一列的HTML標籤(div改成a並加tel:連結+樣式讓它看起來跟原本一樣，不是底線藍字的連結外觀)，版面/其他設定列完全沒有變動。V5.43：依使用者實測v5.42畫面後的回饋微調：①.discount-warn-box文字字級13px→11px調過頭，改回12px；②「選擇接送車型」畫面的提示框(#vehicleSpecialDateWarnBox)拿掉外框線，新增.discount-warn-box.no-border修飾類別(只套用在這一個位置，折扣碼畫面跟報價明細彈窗的提示框維持原本紅色外框不變)；③「專屬優惠與折扣」卡片在isSpecialDateBlocked時，折扣碼輸入框+套用鈕(#discountCodeApplyRow)跟「+再加一組折扣碼」整段(#additionalDiscountCodeSection，含展開後的第二組輸入框)一起隱藏，只留紅字提示，這些「填的格子」反正也不能用了不需要留著；「查詢我的專屬折扣碼」(#queryDiscountBtn)是查看客人自己已領到的券、不是這張單要套用的欄位，維持顯示不受影響。
+  const APP_VERSION='TouchGo-UI-V5.48'; // V5.48：依使用者要求(第一批，先確認示意圖才動手)：①訂車頁三處新增「特殊需求」提醒(粉紅左線提示框.special-note)：選車型區塊下方、其他備註上方、「確認送出前請閱讀」的詳細說明新增一條，語氣統一用敬語，原則是預約當下就要告知、客服確認可配合後才接單；②送機/接機切換鈕改小圓角(只套用.trip-mode，行程頁篩選鈕不變)；③頁面背景由淺紫加深一階(#e4d8e9)，切換鈕軌道同步加深；④乘客與行李摘要、機場標籤等「・」改成「｜」。只改文字/樣式，計價、驗證、送出邏輯完全沒動。 V5.47：依使用者要求，來回預約有加點時，回程的行程順序要跟去程相反(去程 起點→加點→機場，回程 機場→加點→起點)：回程那腿沒勾「與去程不同」(加點是自動從去程同步過來的)時，送給後端的主地址/加點對調(主地址放加點、加點放地址)，卡片/行事曆/中控台就會依「機場→加點→回到起點」顯示；客人自己勾了「與去程不同」、自己填回程加點的情況不動，維持客人填的順序；去程、單程、沒有加點的預約完全不受影響，距離加價費用算法沒動(兩點距離對稱)。配合gas.html v2.2.345。 V5.46：依使用者要求，預約送出後的文字改版＋修正文字常變成官方端送出：送出預約時就在addReservation payload帶clientWillSendFollowUpText(是否在LINE App內)，後端自動送卡片時就只送卡片，客人端自己用liff.sendMessages()送第一則「📋 預約資料」，送完呼叫新動作sendReservationExplainText由官方送第二則說明文字；客人端送失敗則請官方補送兩則。不再靠2秒競速。 V5.45：依使用者要求，航班編號旁邊新增「航廈」選單(第一航廈T1/第二航廈T2/不確定，幫我查詢)，只有選「桃園機場」才會出現且必選(沒選比照其他必填欄位的toast+聚焦提示)，來回預約的回程航班也同樣加；選了之後以「航班｜T1/T2/？」(例如CI108｜T2)接在航班編號後面一起送出，行事曆/卡片/司機畫面等後端與各畫面直接顯示這個字串。航班編號欄縮短、航廈選單文字不換行。 V5.44： V5.44：依使用者要求，「我的」頁「聯絡客服」那一列(電話號碼0955-311-306)原本只是純文字顯示、點了沒反應，改成<a href="tel:...">連結，點擊後直接開啟手機撥號畫面，不用再手動複製號碼。只改這一列的HTML標籤(div改成a並加tel:連結+樣式讓它看起來跟原本一樣，不是底線藍字的連結外觀)，版面/其他設定列完全沒有變動。V5.43：依使用者實測v5.42畫面後的回饋微調：①.discount-warn-box文字字級13px→11px調過頭，改回12px；②「選擇接送車型」畫面的提示框(#vehicleSpecialDateWarnBox)拿掉外框線，新增.discount-warn-box.no-border修飾類別(只套用在這一個位置，折扣碼畫面跟報價明細彈窗的提示框維持原本紅色外框不變)；③「專屬優惠與折扣」卡片在isSpecialDateBlocked時，折扣碼輸入框+套用鈕(#discountCodeApplyRow)跟「+再加一組折扣碼」整段(#additionalDiscountCodeSection，含展開後的第二組輸入框)一起隱藏，只留紅字提示，這些「填的格子」反正也不能用了不需要留著；「查詢我的專屬折扣碼」(#queryDiscountBtn)是查看客人自己已領到的券、不是這張單要套用的欄位，維持顯示不受影響。
   // V5.42：依使用者要求(先確認示意圖才動手)：①特殊節日恕無法使用折扣的警示文字內容改成「‼️ 農曆春節/連續假期恕無法使用任何折扣碼或優惠折抵。」(原本是「‼️ 特殊節日期間...」)，集中存成共用常數SPECIAL_DATE_DISCOUNT_WARN_TEXT，三處共用同一句、以後要再調整文字不用分開改；②.discount-warn-box文字字級縮小兩階(13px→11px)，避免新文字比較長換行成兩行；③這句警示原本只會顯示在「折扣碼」畫面(#discountWarnBox)，現在新增顯示在「選擇接送車型」畫面車型清單上方(#vehicleSpecialDateWarnBox，客人選車前就先看到)跟「報價明細」彈窗來回總額下面(#quoteSpecialDateWarnBox)，三處顯示時機都跟着isSpecialDateBlocked同步(update()裡統一控制)，客人不用點進折扣碼頁面才知道這天不能用折扣。只新增這兩個提示框跟改文字/字級，車型清單、金額計算、其他版面/邏輯完全沒有更動。
   // V5.41：🚨配合gas.html v2.2.307修正「來回預約只查回程日期，漏掉去程特殊日期」的折扣驗證漏洞。來回預約的折扣碼/早鳥優惠/預約來回優惠原本只掛在回程那一腿(discountCode/discountAmt只在ctx==='_R'送出)，後端consumeReservationDiscount_只看得到回程那天的日期，如果去程那天才是被擋的特殊日期、回程是普通日期，後端這關會漏放行(雖然客人端試算isAnyLegSpecialDate()本來就會同時看兩天、正常下單不會踩到，但後端這關是防止被繞過的最後防線，不該只靠前端)。修法：buildLegPayload()送回程資料(ctx==='_R'且有勾來回)時，新增欄位outboundRideDate=去程日期一併帶給後端查表，單程訂單不受影響。
   // V5.40：依使用者要求，「特殊日期」表新增G欄「禁用折扣」，讓某天可以只擋折扣、不用一定要順便加價(金額=0也能生效)。calcLegQuote()的isSpecialDate判斷加回blockDiscount(後端SPECIAL_DATE_SURCHARGES[日期].blockDiscount)，只要後端這個日期有標記禁用折扣，就算沒有加價金額也視為特殊日期，客人端試算跟能不能用折扣碼的判斷才會跟後端consumeReservationDiscount_保持一致，避免試算階段看得到折扣、送出時卻被擋掉。對應後端gas.html v2.2.306。
