@@ -2016,7 +2016,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='TouchGo-UI-V5.46'; // V5.46：依使用者要求，預約送出後的文字改版＋修正文字常變成官方端送出：送出預約時就在addReservation payload帶clientWillSendFollowUpText(是否在LINE App內)，後端自動送卡片時就只送卡片，客人端自己用liff.sendMessages()送第一則「📋 預約資料」，送完呼叫新動作sendReservationExplainText由官方送第二則說明文字；客人端送失敗則請官方補送兩則。不再靠2秒競速。 V5.45：依使用者要求，航班編號旁邊新增「航廈」選單(第一航廈T1/第二航廈T2/不確定，幫我查詢)，只有選「桃園機場」才會出現且必選(沒選比照其他必填欄位的toast+聚焦提示)，來回預約的回程航班也同樣加；選了之後以「航班｜T1/T2/？」(例如CI108｜T2)接在航班編號後面一起送出，行事曆/卡片/司機畫面等後端與各畫面直接顯示這個字串。航班編號欄縮短、航廈選單文字不換行。 V5.44： V5.44：依使用者要求，「我的」頁「聯絡客服」那一列(電話號碼0955-311-306)原本只是純文字顯示、點了沒反應，改成<a href="tel:...">連結，點擊後直接開啟手機撥號畫面，不用再手動複製號碼。只改這一列的HTML標籤(div改成a並加tel:連結+樣式讓它看起來跟原本一樣，不是底線藍字的連結外觀)，版面/其他設定列完全沒有變動。V5.43：依使用者實測v5.42畫面後的回饋微調：①.discount-warn-box文字字級13px→11px調過頭，改回12px；②「選擇接送車型」畫面的提示框(#vehicleSpecialDateWarnBox)拿掉外框線，新增.discount-warn-box.no-border修飾類別(只套用在這一個位置，折扣碼畫面跟報價明細彈窗的提示框維持原本紅色外框不變)；③「專屬優惠與折扣」卡片在isSpecialDateBlocked時，折扣碼輸入框+套用鈕(#discountCodeApplyRow)跟「+再加一組折扣碼」整段(#additionalDiscountCodeSection，含展開後的第二組輸入框)一起隱藏，只留紅字提示，這些「填的格子」反正也不能用了不需要留著；「查詢我的專屬折扣碼」(#queryDiscountBtn)是查看客人自己已領到的券、不是這張單要套用的欄位，維持顯示不受影響。
+  const APP_VERSION='TouchGo-UI-V5.47'; // V5.47：依使用者要求，來回預約有加點時，回程的行程順序要跟去程相反(去程 起點→加點→機場，回程 機場→加點→起點)：回程那腿沒勾「與去程不同」(加點是自動從去程同步過來的)時，送給後端的主地址/加點對調(主地址放加點、加點放地址)，卡片/行事曆/中控台就會依「機場→加點→回到起點」顯示；客人自己勾了「與去程不同」、自己填回程加點的情況不動，維持客人填的順序；去程、單程、沒有加點的預約完全不受影響，距離加價費用算法沒動(兩點距離對稱)。配合gas.html v2.2.345。 V5.46：依使用者要求，預約送出後的文字改版＋修正文字常變成官方端送出：送出預約時就在addReservation payload帶clientWillSendFollowUpText(是否在LINE App內)，後端自動送卡片時就只送卡片，客人端自己用liff.sendMessages()送第一則「📋 預約資料」，送完呼叫新動作sendReservationExplainText由官方送第二則說明文字；客人端送失敗則請官方補送兩則。不再靠2秒競速。 V5.45：依使用者要求，航班編號旁邊新增「航廈」選單(第一航廈T1/第二航廈T2/不確定，幫我查詢)，只有選「桃園機場」才會出現且必選(沒選比照其他必填欄位的toast+聚焦提示)，來回預約的回程航班也同樣加；選了之後以「航班｜T1/T2/？」(例如CI108｜T2)接在航班編號後面一起送出，行事曆/卡片/司機畫面等後端與各畫面直接顯示這個字串。航班編號欄縮短、航廈選單文字不換行。 V5.44： V5.44：依使用者要求，「我的」頁「聯絡客服」那一列(電話號碼0955-311-306)原本只是純文字顯示、點了沒反應，改成<a href="tel:...">連結，點擊後直接開啟手機撥號畫面，不用再手動複製號碼。只改這一列的HTML標籤(div改成a並加tel:連結+樣式讓它看起來跟原本一樣，不是底線藍字的連結外觀)，版面/其他設定列完全沒有變動。V5.43：依使用者實測v5.42畫面後的回饋微調：①.discount-warn-box文字字級13px→11px調過頭，改回12px；②「選擇接送車型」畫面的提示框(#vehicleSpecialDateWarnBox)拿掉外框線，新增.discount-warn-box.no-border修飾類別(只套用在這一個位置，折扣碼畫面跟報價明細彈窗的提示框維持原本紅色外框不變)；③「專屬優惠與折扣」卡片在isSpecialDateBlocked時，折扣碼輸入框+套用鈕(#discountCodeApplyRow)跟「+再加一組折扣碼」整段(#additionalDiscountCodeSection，含展開後的第二組輸入框)一起隱藏，只留紅字提示，這些「填的格子」反正也不能用了不需要留著；「查詢我的專屬折扣碼」(#queryDiscountBtn)是查看客人自己已領到的券、不是這張單要套用的欄位，維持顯示不受影響。
   // V5.42：依使用者要求(先確認示意圖才動手)：①特殊節日恕無法使用折扣的警示文字內容改成「‼️ 農曆春節/連續假期恕無法使用任何折扣碼或優惠折抵。」(原本是「‼️ 特殊節日期間...」)，集中存成共用常數SPECIAL_DATE_DISCOUNT_WARN_TEXT，三處共用同一句、以後要再調整文字不用分開改；②.discount-warn-box文字字級縮小兩階(13px→11px)，避免新文字比較長換行成兩行；③這句警示原本只會顯示在「折扣碼」畫面(#discountWarnBox)，現在新增顯示在「選擇接送車型」畫面車型清單上方(#vehicleSpecialDateWarnBox，客人選車前就先看到)跟「報價明細」彈窗來回總額下面(#quoteSpecialDateWarnBox)，三處顯示時機都跟着isSpecialDateBlocked同步(update()裡統一控制)，客人不用點進折扣碼頁面才知道這天不能用折扣。只新增這兩個提示框跟改文字/字級，車型清單、金額計算、其他版面/邏輯完全沒有更動。
   // V5.41：🚨配合gas.html v2.2.307修正「來回預約只查回程日期，漏掉去程特殊日期」的折扣驗證漏洞。來回預約的折扣碼/早鳥優惠/預約來回優惠原本只掛在回程那一腿(discountCode/discountAmt只在ctx==='_R'送出)，後端consumeReservationDiscount_只看得到回程那天的日期，如果去程那天才是被擋的特殊日期、回程是普通日期，後端這關會漏放行(雖然客人端試算isAnyLegSpecialDate()本來就會同時看兩天、正常下單不會踩到，但後端這關是防止被繞過的最後防線，不該只靠前端)。修法：buildLegPayload()送回程資料(ctx==='_R'且有勾來回)時，新增欄位outboundRideDate=去程日期一併帶給後端查表，單程訂單不受影響。
   // V5.40：依使用者要求，「特殊日期」表新增G欄「禁用折扣」，讓某天可以只擋折扣、不用一定要順便加價(金額=0也能生效)。calcLegQuote()的isSpecialDate判斷加回blockDiscount(後端SPECIAL_DATE_SURCHARGES[日期].blockDiscount)，只要後端這個日期有標記禁用折扣，就算沒有加價金額也視為特殊日期，客人端試算跟能不能用折扣碼的判斷才會跟後端consumeReservationDiscount_保持一致，避免試算階段看得到折扣、送出時卻被擋掉。對應後端gas.html v2.2.306。
@@ -2078,6 +2078,12 @@
     const paxTitle=$('sameAsOrderer').checked?$('ordererTitle').value:$('paxTitle').value;
     const paxPhone=$('sameAsOrderer').checked?$('ordererPhone').value.trim():$('paxPhone').value.trim();
     const extraStopVal = ctx==='_R' ? ($('addStop_R').checked?$('stopAddress_R').value.trim():'') : ($('addStop').checked?$('stopAddress').value.trim():'');
+    // 來回預約的回程，加點是自動從去程同步過來的(沒勾「與去程不同」)：行程順序要跟去程相反，
+    // 去程「起點→加點→機場」，回程就是「機場→加點→回到起點」。系統欄位配置是「機場→主地址→加點」，
+    // 所以這裡把主地址跟加點對調再送給後端。客人自己勾「與去程不同」、親自填回程加點的情況不動。
+    const reverseReturnStop = ctx==='_R' && hasReturn && !!extraStopVal && !$('returnDifferent').checked;
+    const payloadMainLocation = reverseReturnStop ? extraStopVal : addrFull;
+    const payloadExtraLocation = reverseReturnStop ? addrFull : extraStopVal;
     const surchargeLabels=q.lines.filter(l=>!l[0].startsWith('基本車資')).map(l=>l[0]);
     const isMonthly=$('payment').value==='月結簽單(企業客戶)';
     // 🚨修正：舉牌服務(+$200)是在update()裡整趟預約算一次的加價(見「const sign=...」那行，
@@ -2124,8 +2130,8 @@
       serviceType: t(serviceType),
       airport: t(airport()),
       flightNumber: t(flightVal),
-      mainLocation: t(addrFull),
-      extraLocation: t(extraStopVal||'無'),
+      mainLocation: t(payloadMainLocation),
+      extraLocation: t(payloadExtraLocation||'無'),
       carType: t(v?v.name:''),
       paxCount: t(paxCountStr),
       luggageCount: t(luggageStr),
