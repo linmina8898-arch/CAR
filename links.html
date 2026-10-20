@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>安興租車｜內部入口</title>
+  <style>
+    :root {
+      --ink: #1a0b3d;
+      --purple: #574266;
+      --muted: #7a6a82;
+      --line: #e7dde8;
+      --soft: #faf7fb;
+      --pink: #d85c8f;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(87,66,102,0.12); }
+    body {
+      margin: 0;
+      background: #f6f3f7;
+      color: var(--ink);
+      font-family: "Noto Sans TC", "Microsoft JhengHei", Arial, sans-serif;
+      line-height: 1.5;
+    }
+    .wrap {
+      width: min(560px, 100%);
+      margin: 0 auto;
+      padding: 20px 18px 48px;
+    }
+    header {
+      margin-bottom: 6px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .sub {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12.5px;
+    }
+    .version {
+      margin-top: 8px;
+      display: inline-block;
+      color: var(--muted);
+      font-size: 11.5px;
+    }
+    .group {
+      margin-top: 26px;
+    }
+    .group-title {
+      margin: 0 0 8px 2px;
+      color: var(--pink);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    li + li {
+      border-top: 1px solid var(--line);
+    }
+    a.row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 16px 16px;
+      color: var(--ink);
+      text-decoration: none;
+      font-size: 16px;
+      font-weight: 500;
+      min-height: 26px;
+    }
+    a.row:active {
+      background: var(--soft);
+    }
+    a.row .arrow {
+      flex: 0 0 auto;
+      color: #c9bccf;
+      font-size: 18px;
+    }
+    a.row .tag {
+      flex: 0 0 auto;
+      color: var(--pink);
+      font-size: 11px;
+      font-weight: 700;
+      background: #fff5f9;
+      border: 1px solid #f2d6e2;
+      border-radius: 999px;
+      padding: 2px 8px;
+      margin-right: 4px;
+    }
+    a.row .name {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>安興租車｜內部入口</h1>
+      <div class="sub">點文字直接開啟連結・由上往下排列</div>
+      <div class="version">links-v2.0.1</div>
+    </header>
+
+    <div id="app"></div>
+  </div>
+
+  <script>
+    const LINKS = [
+      {
+        group: "後台管理",
+        items: [
+          { name: "中控台", tag: "管理", url: "https://script.google.com/macros/s/AKfycbz6wgk6T8ypEI1pW5ih7M3Bom54Tu7unv-sc_ldFtPSBWw4yAbahs70GErKGpsRqcG3/exec" }
+        ]
+      },
+      {
+        group: "客服工具",
+        items: [
+          { name: "客服快速預約", tag: "客服用", url: "https://booking.ansinglimo.com/manual-booking.html" },
+          { name: "快速報價", tag: "客服用", url: "https://booking.ansinglimo.com/quote.html" },
+          { name: "客人確認頁", tag: "需 token", url: "https://booking.ansinglimo.com/c.html" },
+          { name: "滿意度問卷", tag: "需 token", url: "https://booking.ansinglimo.com/survey.html" }
+        ]
+      },
+      {
+        group: "司機工具",
+        items: [
+          { name: "司機端", tag: "司機用", url: "https://booking.ansinglimo.com/driver.html" },
+          { name: "臨時司機", tag: "需 token", url: "https://booking.ansinglimo.com/temp-driver.html" },
+          { name: "派車回報查詢", tag: "內部查詢", url: "https://booking.ansinglimo.com/report-check.html" },
+          { name: "CAR 月檢視", tag: "行事曆", url: "https://booking.ansinglimo.com/calendar-month.html" }
+        ]
+      },
+      {
+        group: "客人入口",
+        items: [
+          { name: "AS 客人預約", tag: "客人用", url: "https://reserve.ansinglimo.com/?source=AS" },
+          { name: "AZ 客人預約", tag: "客人用", url: "https://reserve.ansinglimo.com/?source=AZ" },
+          { name: "AS LIFF 預約", tag: "LINE", url: "https://liff.line.me/2009922945-KmKUgqbg?source=AS" },
+          { name: "AZ LIFF 預約", tag: "LINE", url: "https://liff.line.me/2010218931-J293DdSb?source=AZ" }
+        ]
+      },
+      {
+        group: "維護與測試",
+        items: [
+          { name: "備用後台檔案", tag: "維護", url: "https://booking.ansinglimo.com/admin.html" },
+          { name: "booking 預約頁備用", tag: "測試", url: "https://booking.ansinglimo.com/index.html" },
+          { name: "UI 測試頁", tag: "測試", url: "https://booking.ansinglimo.com/customer-ui-flow-preview.html" }
+        ]
+      }
+    ];
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    const app = document.getElementById("app");
+    app.innerHTML = LINKS.map(section => `
+      <div class="group">
+        <div class="group-title">${escapeHtml(section.group)}</div>
+        <ul>
+          ${section.items.map(item => `
+            <li>
+              <a class="row" href="${escapeHtml(item.url)}" target="_blank" rel="noopener">
+                <span class="tag">${escapeHtml(item.tag)}</span>
+                <span class="name">${escapeHtml(item.name)}</span>
+                <span class="arrow">›</span>
+              </a>
+            </li>
+          `).join("")}
+        </ul>
+      </div>
+    `).join("");
+  </script>
+</body>
+</html>

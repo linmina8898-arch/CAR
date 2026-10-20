@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AS｜CAR 月檢視</title>
+  <style>
+    :root {
+      --ink: #1a0b3d;
+      --purple: #574266;
+      --purple-light: #f3eff5;
+      --muted: #7a6a82;
+      --line: #e7dde8;
+      --soft: #faf7fb;
+      --pink: #d85c8f;
+      --pink-soft: #fff0f6;
+      --shadow-sm: 0 2px 8px rgba(26, 11, 61, 0.04);
+      --shadow-md: 0 8px 24px rgba(26, 11, 61, 0.08);
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #f6f3f7;
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans TC", "Microsoft JhengHei", Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+    }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(246, 243, 247, 0.96);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .wrap {
+      width: min(1000px, 100%);
+      margin: 0 auto;
+      padding: 16px 12px;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    h1 {
+      margin: 0;
+      color: var(--ink);
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    h1::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 24px;
+      background: var(--pink);
+      border-radius: 3px;
+    }
+    .version {
+      color: var(--muted);
+      font-size: 11px;
+      background: var(--purple-light);
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    .controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 16px;
+    }
+    .month-selector {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 44px 1fr 44px;
+      gap: 4px;
+    }
+    button {
+      min-height: 42px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--purple);
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: var(--shadow-sm);
+    }
+    button:hover {
+      background: var(--soft);
+      border-color: var(--purple);
+      transform: translateY(-1px);
+    }
+    button:active {
+      transform: translateY(1px);
+    }
+    button.primary {
+      border-color: var(--purple);
+      background: var(--purple);
+      color: #fff;
+    }
+    button.primary:hover {
+      background: #443250;
+      border-color: #443250;
+    }
+    button.icon-btn {
+      width: 42px;
+      padding: 0;
+    }
+    .month-title {
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--ink);
+      font-size: 18px;
+      font-weight: 800;
+      box-shadow: var(--shadow-sm);
+    }
+    .hint {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .hint::before {
+      content: '💡';
+    }
+    main {
+      width: min(1000px, 100%);
+      margin: 0 auto;
+      padding: 8px 12px 48px;
+    }
+    .weekdays, .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      background: var(--line);
+      gap: 1px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+    }
+    .weekdays {
+      border-bottom: none;
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      background: #fff;
+    }
+    .weekday {
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      padding: 10px 0;
+      background: var(--soft);
+    }
+    .calendar {
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+    }
+    .day {
+      min-height: 128px;
+      background: #fff;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: background 0.15s ease;
+      position: relative;
+    }
+    .day.interactive {
+      cursor: pointer;
+    }
+    .day.interactive:hover {
+      background: var(--soft);
+    }
+    .day.muted {
+      background: #fcfbfd;
+      color: #ccc4d0;
+    }
+    .day.muted .date-num {
+      color: #b7adbd;
+      opacity: 0.6;
+    }
+    .day.today {
+      background: #fffbfd;
+    }
+    .day.today::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--pink);
+    }
+    .date-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      margin-bottom: 2px;
+    }
+    .date-num {
+      font-weight: 800;
+      color: var(--purple);
+      font-size: 18px;
+      line-height: 1;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .day.today .date-num {
+      background: var(--pink);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 14px;
+    }
+    .count {
+      color: var(--pink);
+      font-size: 11px;
+      font-weight: 700;
+      background: var(--pink-soft);
+      padding: 1px 6px;
+      border-radius: 10px;
+    }
+    .event-container {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      flex: 1;
+      overflow: hidden;
+    }
+    
+    /* 事件基礎樣式 (移除寫死的背景色與邊框) */
+    .event {
+      display: block;
+      width: 100%;
+      padding: 3px 6px;
+      font-size: 11px;
+      font-weight: 500;
+      line-height: 1.3;
+      text-align: left;
+      border-radius: 4px;
+      border-left-width: 3px;
+      border-left-style: solid;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: clip;
+      transition: all 0.15s ease;
+    }
+
+    /* === 自定義事件狀態顏色 (透過 JS 智慧判斷套用) === */
+    /* 預設行程 */
+    .ev-default {
+      background: rgba(87, 66, 102, 0.06);
+      border-left-color: var(--purple);
+      color: var(--ink);
+    }
+    /* 重要行程 (桃紅色) */
+    .ev-important {
+      background: #fce7f3;
+      border-left-color: #db2777;
+      color: #9d174d;
+      font-weight: 700;
+    }
+    /* 已完成行程 (藍色) */
+    .ev-completed {
+      background: #dbeafe;
+      border-left-color: #2563eb;
+      color: #1e3a8a;
+    }
+    /* 已取消行程 */
+    .ev-cancelled {
+      background: #f3f4f6;
+      border-left-color: #9ca3af;
+      color: #6b7280;
+      text-decoration: line-through;
+      opacity: 0.8;
+    }
+
+    /* 針對滑鼠懸停效果加深 */
+    .day.interactive:hover .ev-default { background: rgba(87, 66, 102, 0.12); }
+    .day.interactive:hover .ev-important { background: #fbcfe8; }
+    .day.interactive:hover .ev-completed { background: #bfdbfe; }
+    .day.interactive:hover .ev-cancelled { background: #e5e7eb; }
+
+    .more {
+      margin-top: auto;
+      color: var(--pink);
+      font-size: 11px;
+      font-weight: 700;
+      text-align: right;
+    }
+    
+    /* 載入狀態 */
+    .status-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 0;
+      text-align: center;
+    }
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--line);
+      border-top-color: var(--pink);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 12px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .status-text {
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    /* 骨架屏載入效果 */
+    .skeleton-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 1px;
+      background: var(--line);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .skeleton-day {
+      height: 128px;
+      background: #fff;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .skeleton-num {
+      width: 24px;
+      height: 24px;
+      background: #f0ebf2;
+      border-radius: 50%;
+      animation: pulse 1.5s infinite ease-in-out;
+    }
+    .skeleton-line {
+      height: 18px;
+      background: #f5f0f7;
+      border-radius: 4px;
+      animation: pulse 1.5s infinite ease-in-out;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+
+    /* 對話框樣式 */
+    dialog {
+      width: min(520px, calc(100% - 24px));
+      border: 0;
+      border-radius: 16px;
+      padding: 0;
+      box-shadow: 0 24px 60px rgba(26, 11, 61, 0.25);
+      animation: dialogScale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      overflow: hidden;
+    }
+    @keyframes dialogScale {
+      from { transform: scale(0.92); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    dialog::backdrop {
+      background: rgba(26, 11, 61, 0.45);
+      backdrop-filter: blur(4px);
+    }
+    .modal-head {
+      background: var(--purple);
+      color: #fff;
+      padding: 16px 20px;
+      font-weight: 800;
+      font-size: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-close-btn {
+      background: transparent;
+      border: none;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 24px;
+      width: 32px;
+      height: 32px;
+      min-height: auto;
+      padding: 0;
+      box-shadow: none;
+      border-radius: 50%;
+    }
+    .modal-close-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+    .modal-body {
+      padding: 8px 20px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .modal-event {
+      padding: 14px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .modal-event:last-child { border-bottom: 0; }
+    .modal-time {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--pink);
+      font-weight: 700;
+      font-size: 12px;
+      margin-bottom: 6px;
+      background: var(--pink-soft);
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+    /* 在 Dialog 中套用狀態顏色的輔助樣式 */
+    .modal-event-title {
+      font-weight: 700;
+      color: var(--ink);
+      font-size: 15px;
+      line-height: 1.4;
+      padding: 4px 8px;
+      border-radius: 4px;
+      border-left: 3px solid transparent;
+    }
+    
+    .modal-actions {
+      padding: 16px 20px;
+      background: var(--soft);
+      border-top: 1px solid var(--line);
+      text-align: right;
+    }
+
+    /* 極限空間壓榨與縮放黑科技：手機版 CSS */
+    @media (max-width: 640px) {
+      h1 { font-size: 18px; }
+      
+      /* 1. 消除所有邊界，讓行事曆 100% 貼齊手機螢幕邊緣 */
+      .wrap { padding: 12px 0; width: 100%; max-width: 100%; }
+      main { padding-left: 0; padding-right: 0; }
+      .weekdays, .calendar { border-left: 0; border-right: 0; border-radius: 0; }
+      
+      .weekday { font-size: 11px; padding: 4px 0; }
+      .day {
+        min-height: 85px;
+        padding: 0 0 1px 0;
+        gap: 0;
+      }
+      .date-row { margin-bottom: 1px; }
+      .date-num { 
+        font-size: 10px; 
+        width: 14px; 
+        height: 14px; 
+        margin-left: 2px;
+        margin-top: 1px;
+      }
+      .day.today .date-num { 
+        font-size: 9px; 
+      }
+      
+      .event-container {
+        gap: 0;
+        width: 100%;
+      }
+      
+      .event {
+        /* 2. 終極 CSS 縮放黑科技：進一步極限壓縮 (增加 2~3 個字元) */
+        font-size: 10px; /* 給予標準排版大小，避免瀏覽器誤判 */
+        width: 153.8%; /* 撐大 53.8% 的寬度來容納更多字 (100% / 0.65) */
+        transform: scale(0.65); /* 再將整個色塊視覺縮小到 65% 放回格子內 */
+        transform-origin: top left; /* 對齊左上角 */
+        margin-bottom: -3px; /* 扣除縮小後多出來的排版高度空隙 */
+        
+        letter-spacing: -0.3px; /* 進一步縮減字元間距 */
+        line-height: 1.15;
+        padding: 1px 2px 1px 2px;
+        border-left-width: 3px; /* 縮小後視覺約 1.95px */
+        border-radius: 2px;
+        
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: clip;
+        -webkit-text-size-adjust: none;
+      }
+      .count { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="topbar">
+        <h1>CAR 行事曆月檢視</h1>
+        <div class="version" id="versionText">calendar-month-v1.2.0</div>
+      </div>
+      <div class="controls">
+        <button type="button" class="icon-btn" onclick="goToToday()" title="回到今天">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        </button>
+        <button type="button" class="icon-btn" onclick="loadMonth()" title="重新整理">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+        </button>
+        <div class="month-selector">
+          <button type="button" onclick="moveMonth(-1)">‹</button>
+          <div class="month-title" id="monthTitle">--</div>
+          <button type="button" onclick="moveMonth(1)">›</button>
+        </div>
+      </div>
+      <div class="hint">直接顯示 Google CAR 每日行程，點擊有行程的日期可放大檢視詳情。</div>
+    </div>
+  </header>
+
+  <main>
+    <div class="weekdays">
+      <div class="weekday">一</div>
+      <div class="weekday">二</div>
+      <div class="weekday">三</div>
+      <div class="weekday">四</div>
+      <div class="weekday">五</div>
+      <div class="weekday">六</div>
+      <div class="weekday">日</div>
+    </div>
+    
+    <!-- 載入與行事曆容器 -->
+    <div id="calendarContainer">
+      <div id="status" class="status-container">
+        <div class="spinner"></div>
+        <div class="status-text">正在同步 Google 行事曆資料...</div>
+      </div>
+      <div id="calendar" class="calendar" style="display: none;"></div>
+    </div>
+  </main>
+
+  <!-- 行程詳細 Dialog -->
+  <dialog id="dayDialog">
+    <div class="modal-head">
+      <span id="dialogTitle">行程</span>
+      <button type="button" class="modal-close-btn" onclick="closeDialog()">&times;</button>
+    </div>
+    <div class="modal-body" id="dialogBody"></div>
+    <div class="modal-actions">
+      <button type="button" class="primary" onclick="closeDialog()">關閉</button>
+    </div>
+  </dialog>
+
+  <script>
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbz6wgk6T8ypEI1pW5ih7M3Bom54Tu7unv-sc_ldFtPSBWw4yAbahs70GErKGpsRqcG3/exec";
+
+    async function safeJsonParse(r) {
+      const text = await r.text();
+      try { return JSON.parse(text); }
+      catch (err) {
+        console.error("後端回應非 JSON 格式：", text.slice(0, 200));
+        throw new Error("系統忙碌中或連線異常，請稍後再試一次。");
+      }
+    }
+    const state = {
+      current: new Date(),
+      eventsByDate: {}
+    };
+
+    function pad(n) {
+      return String(n).padStart(2, "0");
+    }
+
+    function dateKey(date) {
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    }
+
+    function formatMonth(date) {
+      return `${date.getFullYear()}年 ${pad(date.getMonth() + 1)}月`;
+    }
+
+    // === 智慧判斷行程狀態顏色的邏輯 ===
+    function getEventStatusClass(title) {
+      if (!title) return 'ev-default';
+      const t = title.toLowerCase();
+      
+      // 取消狀態 (灰色、刪除線)
+      if (t.includes('取消') || t.includes('x取消') || t.includes('❌')) {
+        return 'ev-cancelled';
+      }
+      // 完成狀態 (藍色)
+      if (t.includes('完成') || t.includes('✅') || t.includes('done')) {
+        return 'ev-completed';
+      }
+      // 重要狀態 (桃紅色)
+      if (t.includes('重要') || t.includes('🔴') || t.includes('⚠️') || t.includes('!')) {
+        return 'ev-important';
+      }
+      // 預設狀態
+      return 'ev-default';
+    }
+
+    // 顯示骨架屏
+    function showSkeletons() {
+      const container = document.getElementById("calendarContainer");
+      document.getElementById("status").style.display = "flex";
+      document.getElementById("calendar").style.display = "none";
+      
+      let skeletonsHtml = `<div class="skeleton-grid">`;
+      for (let i = 0; i < 35; i++) {
+        skeletonsHtml += `
+          <div class="skeleton-day">
+            <div class="skeleton-num"></div>
+            <div class="skeleton-line" style="width: 80%"></div>
+            ${i % 3 === 0 ? `<div class="skeleton-line" style="width: 60%"></div>` : ''}
+          </div>`;
+      }
+      skeletonsHtml += `</div>`;
+      
+      // 更新狀態展示為骨架屏與載入文字的精緻組合
+      document.getElementById("status").innerHTML = `
+        <div class="spinner"></div>
+        <div class="status-text" style="margin-bottom: 24px;">正在自 Google 雲端同步行事曆...</div>
+        ${skeletonsHtml}
+      `;
+    }
+
+    async function loadMonth() {
+      const year = state.current.getFullYear();
+      const month = state.current.getMonth() + 1;
+      document.getElementById("monthTitle").textContent = formatMonth(state.current);
+      
+      showSkeletons();
+
+      try {
+        const url = `${GAS_URL}?action=getCalendarMonthEvents&year=${year}&month=${month}&t=${Date.now()}`;
+        const res = await fetch(url).then(r => safeJsonParse(r));
+        if (!res.success) throw new Error(res.error || "讀取失敗");
+        
+        state.eventsByDate = (res.events || []).reduce((acc, item) => {
+          if (!acc[item.date]) acc[item.date] = [];
+          acc[item.date].push(item);
+          return acc;
+        }, {});
+        
+        renderCalendar();
+        
+        // 隱藏載入，顯示行事曆
+        document.getElementById("status").style.display = "none";
+        document.getElementById("calendar").style.display = "grid";
+      } catch (err) {
+        document.getElementById("status").innerHTML = `
+          <div style="color: var(--pink); font-size: 28px; margin-bottom: 8px;">⚠️</div>
+          <div class="status-text" style="color: var(--pink)">無法讀取行事曆：${err.message || err}</div>
+          <button type="button" onclick="loadMonth()" style="margin-top: 16px;" class="primary">重新嘗試</button>
+        `;
+      }
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById("calendar");
+      const year = state.current.getFullYear();
+      const month = state.current.getMonth();
+      const first = new Date(year, month, 1);
+      const mondayOffset = (first.getDay() + 6) % 7;
+      const start = new Date(year, month, 1 - mondayOffset);
+      const today = dateKey(new Date());
+      const cells = [];
+
+      for (let i = 0; i < 42; i++) {
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        const key = dateKey(d);
+        const events = state.eventsByDate[key] || [];
+        const inMonth = d.getMonth() === month;
+        const hasEvents = events.length > 0;
+        
+        // 限制手機畫面與桌面畫面上最多呈現的行程筆數，調整為 10 筆
+        const limit = 10;
+        const visibleEvents = events.slice(0, limit);
+        const remaining = events.length - limit;
+
+        cells.push(`
+          <div class="day ${inMonth ? "" : "muted"} ${key === today ? "today" : ""} ${hasEvents ? "interactive" : ""}" 
+               ${hasEvents ? `onclick="openDay('${key}')"` : ""}>
+            <div class="date-row">
+              <span class="date-num">${d.getDate()}</span>
+              ${hasEvents ? `<span class="count">${events.length} 筆</span>` : ""}
+            </div>
+            <div class="event-container">
+              ${visibleEvents.map(ev => {
+                // 根據標題動態取得樣式 Class
+                const statusClass = getEventStatusClass(ev.title);
+                return `
+                  <div class="event ${statusClass}" title="${escapeHtml(ev.title)}">
+                    ${escapeHtml(ev.title)}
+                  </div>
+                `;
+              }).join("")}
+              ${remaining > 0 ? `<div class="more">+${remaining} 筆...</div>` : ""}
+            </div>
+          </div>
+        `);
+      }
+      grid.innerHTML = cells.join("");
+    }
+
+    function openDay(key) {
+      const events = state.eventsByDate[key] || [];
+      if (!events.length) return;
+      
+      // 格式化日期標題 (例如：2026-06-30 改成 2026年06月30日)
+      const parts = key.split('-');
+      const formattedTitle = `${parts[0]}年${parts[1]}月${parts[2]}日 行程`;
+
+      document.getElementById("dialogTitle").textContent = `${formattedTitle} (${events.length} 筆)`;
+      document.getElementById("dialogBody").innerHTML = events.map(ev => {
+        const timeDisplay = ev.time ? ev.time : "整天";
+        // 在彈出對話框中也套用相同的狀態顏色
+        const statusClass = getEventStatusClass(ev.title);
+        
+        return `
+          <div class="modal-event">
+            <div class="modal-time">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline; vertical-align:middle;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              <span>${escapeHtml(timeDisplay)}</span>
+            </div>
+            <div class="modal-event-title ${statusClass}">${escapeHtml(ev.title || "無標題")}</div>
+          </div>
+        `;
+      }).join("");
+      document.getElementById("dayDialog").showModal();
+    }
+
+    function closeDialog() {
+      document.getElementById("dayDialog").close();
+    }
+
+    function moveMonth(delta) {
+      state.current = new Date(state.current.getFullYear(), state.current.getMonth() + delta, 1);
+      loadMonth();
+    }
+
+    function goToToday() {
+      state.current = new Date();
+      loadMonth();
+    }
+
+    function escapeHtml(text) {
+      return String(text || "").replace(/[&<>"']/g, s => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      }[s]));
+    }
+
+    // 點擊 Modal 外部背景時自動關閉
+    document.getElementById("dayDialog").addEventListener("click", function(e) {
+      if (e.target === this) {
+        closeDialog();
+      }
+    });
+
+    // 初始化載入
+    state.current = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    loadMonth();
+  </script>
+</body>
+</html>
