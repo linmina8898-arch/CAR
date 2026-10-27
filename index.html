@@ -109,7 +109,30 @@
   #paxSheet .choice{margin-top:6px;min-height:36px}
   #paxSheet .hint{margin-top:2px;font-size:11px;line-height:1.45}
   #paxSheet .switch-row{padding-top:8px !important;margin-top:4px !important}
-  #paxSheet .pax-warn{background:#fff0f6;border:1px solid var(--pink);border-radius:10px;padding:7px 10px;margin:6px 0 2px;color:#b63c6b;font-weight:700;font-size:12px;line-height:1.5}
+  #paxSheet .pax-warn{background:#fff7fa;border:1px solid var(--pink);border-radius:10px;padding:7px 10px;margin:10px 0 0;color:#b63c6b;font-weight:600;font-size:11px;line-height:1.55}
+  #paxSheet .sheet-inner h2{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  #paxSheet .pax-steps{display:flex;gap:5px;font-size:12px;font-weight:700;flex:none}
+  #paxSheet .pax-steps span{padding:2px 10px;border-radius:10px;background:#eee;color:#9a8aa3}
+  #paxSheet .pax-steps span.on{background:var(--purple);color:#fff}
+  #paxSheet .pax-sum{display:flex;justify-content:space-between;align-items:center;gap:8px;background:#f5eef8;border-radius:10px;padding:7px 12px;font-size:13px;color:var(--purple);font-weight:700;margin:6px 0 2px}
+  #paxSheet .pax-sum button{border:0;background:none;color:#b63c6b;text-decoration:underline;font-size:12.5px;font-weight:700;cursor:pointer;padding:4px}
+  #paxSheet .ask-card{background:#fff5f8;border:1px solid #f4b6cf;border-radius:12px;padding:8px 12px 10px;margin:4px 0 2px}
+  #paxSheet .ask-q{font-weight:700;color:var(--purple);font-size:14px}
+  #paxSheet .ask-q small{color:#b63c6b;font-size:11.5px;margin-left:6px}
+  #paxSheet .yn-row{display:flex;gap:8px;margin-top:8px}
+  #paxSheet .yn-btn{flex:1;min-height:42px;border:1.5px solid #cdb9d6;border-radius:12px;background:#fff;color:var(--purple);font-weight:700;font-size:14px;cursor:pointer}
+  #paxSheet .yn-btn.on{background:var(--purple);border-color:var(--purple);color:#fff}
+  #paxSheet .fat-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px dashed #f0c3d6}
+  #paxSheet .fat-row .fn{font-size:12.5px;font-weight:700;color:var(--purple);width:50px;flex:none}
+  #paxSheet .fat-chip{min-height:36px;padding:0 12px;border-radius:18px;border:1.5px solid #cdb9d6;background:#fff;color:var(--purple);font-size:13px;font-weight:700;cursor:pointer}
+  #paxSheet .fat-chip.on{background:var(--purple);border-color:var(--purple);color:#fff}
+  #paxSheet .fat-chip.off{opacity:.35}
+  #paxSheet .bag-total{margin-top:10px;background:var(--purple);color:#fff;border-radius:12px;padding:8px 12px;font-size:13px;line-height:1.6}
+  #paxSheet .bag-total b{font-size:15px}
+  #paxSheet .bag-total .sub{opacity:.85;font-size:12px}
+  #paxSheet .cta-bar.two{display:flex;gap:8px}
+  #paxSheet .cta-bar.two .sheet-back{width:96px;flex:none;height:46px;border:1.5px solid var(--purple);background:#fff;color:var(--purple);border-radius:10px;font-weight:700;font-size:14px;cursor:pointer}
+  #paxSheet .cta-bar.two .sheet-cta{flex:1}
   #paxSheet .fold-row{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:48px;margin:8px 0 2px;padding:6px 12px;border-radius:12px;background:#faf7fb;border:1.5px dashed #cdb9d6;color:var(--purple);font-size:14px;font-weight:700;text-align:left;cursor:pointer}
   #paxSheet .fold-row.has{border-style:solid;border-color:var(--pink);background:#fff5f8}
   #paxSheet .fold-row .fold-chev{font-size:13px;transition:transform .2s}
@@ -347,7 +370,14 @@
   textarea{width:100%;border:1px solid #d9cee0;border-radius:9px;padding:10px 12px;background:#fff;color:#29212d;outline:none;resize:vertical;min-height:80px}
   textarea:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(87,66,102,.11)}
   /* V5.54：訂車進度列(4步) */
-  .stepper{display:flex;align-items:flex-start;margin:0 0 12px;padding:0 2px}
+  .stepper{display:flex;align-items:flex-start;margin:0 0 8px;padding:6px 2px 6px;position:sticky;top:0;z-index:20;background:#e4d8e9}
+  .slim-bar{display:flex;align-items:center;gap:8px;border-radius:10px;padding:6px 8px 6px 10px;margin-bottom:8px;font-size:12px;line-height:1.4}
+  .slim-bar .tx{flex:1;min-width:0}
+  .slim-bar .go{flex:none;border:0;border-radius:8px;padding:6px 11px;font-size:12px;font-weight:700;cursor:pointer;color:#fff}
+  .slim-bar .x{flex:none;border:0;background:none;color:#9a8aa3;font-size:15px;line-height:1;padding:4px 6px;cursor:pointer}
+  .month-link{text-align:center;margin:14px 0 4px}
+  .month-link button{border:0;background:none;color:#7b6a84;font-size:12.5px;text-decoration:underline;cursor:pointer;padding:6px 10px}
+  .auto-fee{background:#f5eef8;border-radius:10px;padding:8px 10px;font-size:12px;color:var(--purple);margin-top:8px;line-height:1.55}
   .stepper .st{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;font-size:11px;color:#a899b0;font-weight:600}
   .stepper .st .dot{width:24px;height:24px;border-radius:50%;background:#fff;border:2px solid #cfc2d6;color:#a899b0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;position:relative;z-index:1}
   .stepper .st::before{content:"";position:absolute;top:11px;left:-50%;width:100%;height:2px;background:#cfc2d6;z-index:0}
@@ -403,24 +433,18 @@
   <section id="tab-book" class="tabscreen show">
 
     <div id="webOpenBanner" class="hidden">
-      <div style="display:flex;align-items:flex-start;gap:10px;background:#fff7e6;border:1px solid #f2d9a6;border-radius:12px;padding:12px;margin-bottom:14px">
-        <div style="flex:0 0 auto;font-size:18px;line-height:1.2">⚠️</div>
-        <div style="flex:1">
-          <p style="margin:0;font-size:13px;font-weight:700;color:#7a5200">您目前不是從 LINE 開啟本頁</p>
-          <p style="margin:4px 0 8px;font-size:12px;color:#8a6a2a;line-height:1.55">系統無法辨識您的 LINE 身分，因此<b>無法綁定會員、帶出專屬折扣碼，也收不到預約明細卡片</b>。請回到 LINE 官方帳號的對話框，從選單點「預約」開啟；或點下方按鈕用 LINE 登入。</p>
-          <button type="button" id="webOpenLoginBtn" style="background:#06C755;color:#fff;border:0;border-radius:8px;padding:7px 14px;font-size:12.5px;font-weight:700;cursor:pointer">用 LINE 登入</button>
-        </div>
+      <div class="slim-bar" style="background:#fff7e6;border:1px solid #f2d9a6;color:#7a5200">
+        <span class="tx">⚠️ 目前不是從 LINE 開啟，無法綁定會員、帶出專屬折扣碼，也收不到預約卡片</span>
+        <button type="button" class="go" id="webOpenLoginBtn" style="background:#06C755">用 LINE 登入</button>
+        <button type="button" class="x" data-closebar="webOpenBanner" aria-label="關閉">✕</button>
       </div>
     </div>
 
     <div id="unboundNudgeBanner" class="hidden">
-      <div style="display:flex;align-items:flex-start;gap:10px;background:var(--soft);border:1px solid #e4d6ea;border-radius:12px;padding:12px;margin-bottom:14px">
-        <svg class="ic-svg" style="width:20px;height:20px;flex:0 0 auto;color:var(--purple)"><use href="#i-user"/></svg>
-        <div style="flex:1">
-          <p style="margin:0;font-size:13px;font-weight:700;color:var(--ink)">建議先完成會員綁定</p>
-          <p style="margin:4px 0 8px;font-size:12px;color:#75677b;line-height:1.5">先到「我的」頁綁定真實姓名＋手機號碼，訂車時姓名/電話會自動帶入，也才能自動帶出您的專屬折扣碼。</p>
-          <button type="button" id="unboundNudgeBtn" style="background:var(--purple);color:#fff;border:0;border-radius:8px;padding:7px 14px;font-size:12.5px;font-weight:700;cursor:pointer">前往綁定</button>
-        </div>
+      <div class="slim-bar" style="background:var(--soft);border:1px solid #e4d6ea;color:var(--ink)">
+        <span class="tx">尚未綁定會員，綁定後訂車資料自動帶入</span>
+        <button type="button" class="go" id="unboundNudgeBtn" style="background:var(--purple)">前往綁定</button>
+        <button type="button" class="x" data-closebar="unboundNudgeBanner" aria-label="關閉">✕</button>
       </div>
     </div>
 
@@ -436,19 +460,6 @@
       <p class="card-title" style="color:var(--pink)"><svg class="ic-svg"><use href="#i-user"/></svg> 客服快速查詢 <span style="display:inline-block;margin-left:6px;font-size:10px;font-weight:700;color:#fff;background:var(--pink);border-radius:10px;padding:2px 8px;vertical-align:middle">客服模式</span></p>
       <input id="adminLookupPhone" placeholder="輸入客人電話，自動帶入常用地址" inputmode="tel" autocomplete="off">
       <p class="hint" style="margin-top:6px">查到資料後會自動帶入下方地址欄位，進到下一頁也會順便帶入姓名/電話/Email。</p>
-    </div>
-    <!-- V5.83：月結企業客戶入口(第一頁)：開啟→輸入統編→查「企業客戶」工作表，查到才放行；放行後整個流程不顯示價格 -->
-    <div class="card" id="monthlyCard">
-      <div class="switch-row" style="padding:2px 0">
-        <span class="ic"><svg class="ic-svg" style="width:19px;height:19px"><use href="#i-card"/></svg></span>
-        <span class="txt"><strong>我是月結企業客戶／特約社區廠商</strong><span>輸入公司統編／特約代號，依簽約價結算</span></span>
-        <button class="swtoggle" id="monthlySw" type="button" aria-label="月結企業客戶"></button>
-      </div>
-      <div id="monthlyBody" class="addbox-body">
-        <label class="label" for="monthlyTaxId">公司統編／特約代號</label>
-        <input id="monthlyTaxId" type="text" inputmode="email" maxlength="20" placeholder="請輸入公司統編或特約代號" autocomplete="off" autocapitalize="characters" spellcheck="false">
-        <p id="monthlyStatus" class="hint" style="margin-top:6px;font-weight:700"></p>
-      </div>
     </div>
     <div class="trip trip-mode">
       <button id="sendBtn" class="active" type="button"><svg class="ic-svg" style="width:16px;height:16px"><use href="#i-send"/></svg> 送機</button>
@@ -540,6 +551,20 @@
       <div id="inquiryVehicleList" class="vehicle-list"></div>
       <p class="quote-note hidden" id="inquiryNote">基本車資已含夜間加成、急單費（接機另含接機服務費 $200）；舉牌、座椅等選填加價在後面步驟才選。</p>
       <div class="special-note"><b>特殊需求，敬請於預約時告知：</b>車型依預約類別派遣。如需指定車款、車色，或希望僅派小車、不升級車型，煩請於預約時在備註欄說明，經客服確認可配合後，方可為您接單；預約成立後才告知的需求，恕無法保證一定能配合。</div>
+    </div>
+    <div class="month-link" id="monthlyLinkWrap"><button type="button" id="monthlyLink">月結企業客戶請按此</button></div>
+    <!-- V5.83：月結企業客戶入口(第一頁)：開啟→輸入統編→查「企業客戶」工作表，查到才放行；放行後整個流程不顯示價格 -->
+    <div class="card hidden" id="monthlyCard">
+      <div class="switch-row" style="padding:2px 0">
+        <span class="ic"><svg class="ic-svg" style="width:19px;height:19px"><use href="#i-card"/></svg></span>
+        <span class="txt"><strong>我是月結企業客戶／特約社區廠商</strong><span>輸入公司統編／特約代號，依簽約價結算</span></span>
+        <button class="swtoggle" id="monthlySw" type="button" aria-label="月結企業客戶"></button>
+      </div>
+      <div id="monthlyBody" class="addbox-body">
+        <label class="label" for="monthlyTaxId">公司統編／特約代號</label>
+        <input id="monthlyTaxId" type="text" inputmode="email" maxlength="20" placeholder="請輸入公司統編或特約代號" autocomplete="off" autocapitalize="characters" spellcheck="false">
+        <p id="monthlyStatus" class="hint" style="margin-top:6px;font-weight:700"></p>
+      </div>
     </div>
     </div>
 
@@ -792,12 +817,12 @@
         <div id="signContentContainer" class="addbox-body">
           <input id="signContent" placeholder="請輸入舉牌姓名或內容" style="margin-top:10px">
         </div>
-        <label class="choice dim" id="lblNight"><input id="optNight" type="checkbox" disabled>夜間加成 23:00-05:00（+$200，系統依上車時間自動判斷）</label>
-        <label class="choice dim" id="lblUrgent"><input id="optUrgent" type="checkbox" disabled>24 小時內急單服務費（+$500，距上車時間 24 小時內自動加價）</label>
+        <label class="choice dim hidden" id="lblNight"><input id="optNight" type="checkbox" disabled>夜間加成 23:00-05:00（+$200，系統依上車時間自動判斷）</label>
+        <label class="choice dim hidden" id="lblUrgent"><input id="optUrgent" type="checkbox" disabled>24 小時內急單服務費（+$500，距上車時間 24 小時內自動加價）</label>
+        <div class="auto-fee hidden" id="autoFeeNote"></div>
 
-        <p class="label" style="margin-top:16px">其他備註</p>
-        <p class="hint" style="margin-bottom:8px">如攜帶紙箱、高爾夫球具、雪板、輪椅、腳踏車箱、大型樂器等，請務必告知；胖胖箱請於上一步的乘客與行李內註記。其他需要注意的事項也可在這說明。</p>
-        <div class="special-note" style="margin:0 0 10px"><b>特殊需求，敬請於預約時填寫：</b>例如地下室接送、指定車款或車色、希望不升級車型等。經客服確認可配合後，方可為您接單；預約成立後才提出的需求，恕無法保證能為您安排。</div>
+        <p class="label" style="margin-top:16px">其他備註（選填）</p>
+        <p class="hint" style="margin-bottom:8px">地下室接送、指定車款車色、希望不升級車型等，請於此填寫，經客服確認可配合後，方可為您接單；預約成立後才提出的需求，恕無法保證配合。</p>
         <textarea id="remarks" rows="3" placeholder="輸入其他特殊需求..." maxlength="200"></textarea>
       </div>
     </div>
@@ -960,9 +985,8 @@
 <div class="sheet" id="paxSheet">
   <div class="sheet-handle"></div>
   <div class="sheet-inner">
-    <h2 id="paxSheetTitle">乘客與行李</h2>
-    <div class="pax-warn">實際乘車人數及行李須與預約內容相符，若超出數量或車輛乘載限制，恕無法臨時更換車型，無法乘載部分請自行處理。該次服務仍視同已使用，已付費用恕不退還。</div>
-
+    <h2><span id="paxSheetTitle">乘客與行李</span><span class="pax-steps"><span id="paxStepPill1" class="on">① 人數</span><span id="paxStepPill2">② 行李</span></span></h2>
+    <div id="paxStep1">
     <div class="counter-row" data-counter data-target="adult" data-min="0" data-max="7">
       <div class="lbl"><strong>大人</strong></div>
       <div class="counter"><button class="minus" type="button">−</button><span class="val">0</span><button class="plus" type="button">＋</button></div>
@@ -997,8 +1021,13 @@
       <p class="hint" id="seatRule" style="margin-top:4px">幼童需對應安全座椅；兒童可依需求選擇增高墊。</p>
     </div>
 
+    <div class="pax-warn">實際乘車人數及行李須與預約內容相符，若超出數量或車輛乘載限制，恕無法臨時更換車型，無法乘載部分請自行處理。該次服務仍視同已使用，已付費用恕不退還。</div>
+    <div class="cta-bar"><button class="sheet-cta" id="paxNext" type="button">下一步：行李 ›</button></div>
+    </div>
+    <div id="paxStep2" class="hidden">
+    <div class="pax-sum"><span id="paxStripText"></span><button type="button" id="paxEditPeople">修改</button></div>
     <div class="lug-head"><p class="subgroup-title">行李</p><label class="lug-none"><input id="noLuggage" type="checkbox">我沒有行李</label></div>
-    <div class="counter-row" data-counter data-target="checked" data-min="0" data-max="7">
+    <div class="counter-row" data-counter data-target="bigBase" data-min="0" data-max="7">
       <div class="lbl"><strong>托運大型</strong><span>27-29 吋</span></div>
       <div class="counter"><button class="minus" type="button">−</button><span class="val">0</span><button class="plus" type="button">＋</button></div>
     </div>
@@ -1010,11 +1039,19 @@
       <div class="lbl"><strong>登機箱</strong><span>20 吋以下</span></div>
       <div class="counter"><button class="minus" type="button">−</button><span class="val">0</span><button class="plus" type="button">＋</button></div>
     </div>
-    <div class="counter-row" data-counter data-target="fatbox" data-min="0" data-max="7">
-      <div class="lbl"><strong>胖胖箱</strong><span>不分吋數</span></div>
-      <div class="counter"><button class="minus" type="button">−</button><span class="val">0</span><button class="plus" type="button">＋</button></div>
+    <div id="fatAsk" class="ask-card hidden">
+      <div class="ask-q"><span id="fatAskQ">這幾件托運行李裡，有胖胖箱嗎？</span><small>必選</small></div>
+      <div class="yn-row"><button type="button" class="yn-btn" data-fat="no">沒有</button><button type="button" class="yn-btn" data-fat="yes">有</button></div>
+      <div id="fatDetail" class="hidden">
+        <div class="counter-row" style="border-bottom:0">
+          <div class="lbl"><strong>有幾個胖胖箱？</strong></div>
+          <div class="counter"><button class="minus" type="button" id="fatMinus">−</button><span class="val" id="fatCountVal">0</span><button class="plus" type="button" id="fatPlus">＋</button></div>
+        </div>
+        <div id="fatRows"></div>
+        <p class="hint" style="margin-top:2px">胖胖箱已包含在上面的托運件數裡，不用另外再加。</p>
+      </div>
     </div>
-    <button type="button" class="fold-row" id="otherFold" aria-expanded="false"><span>＋ 嬰兒推車、球具、紙箱等<span id="otherFoldChips"></span></span><span class="fold-chev">▾</span></button>
+    <button type="button" class="fold-row" id="otherFold" aria-expanded="false"><span>＋ 嬰兒推車、球具、紙箱等<span id="otherFoldChips"></span><small style="display:block;font-weight:400;color:#8d8195;font-size:11.5px">每件另外算 1 件大型行李</small></span><span class="fold-chev">▾</span></button>
     <div id="otherBox" class="other-box hidden">
       <div class="counter-row" data-counter data-target="stroller" data-min="0" data-max="7">
         <div class="lbl"><strong>嬰兒推車</strong></div>
@@ -1044,7 +1081,10 @@
       <p class="hint">不確定行李尺寸，可提供行李照片給客服確認。</p>
     </details>
 
-    <div class="cta-bar"><button class="sheet-cta" id="confirmPax" type="button">確認人數與行李</button></div>
+    <div class="bag-total" id="bagTotalBar"></div>
+    <div class="pax-warn">實際乘車人數及行李須與預約內容相符，若超出數量或車輛乘載限制，恕無法臨時更換車型，無法乘載部分請自行處理。該次服務仍視同已使用，已付費用恕不退還。</div>
+    <div class="cta-bar two"><button class="sheet-back" id="paxBack" type="button">‹ 上一步</button><button class="sheet-cta" id="confirmPax" type="button">確認人數與行李</button></div>
+    </div>
   </div>
 </div>
 
@@ -1139,6 +1179,7 @@
   <select id="forwardSeat"></select>
   <select id="booster"></select>
   <select id="checked"></select>
+  <select id="bigBase"></select>
   <select id="carry"></select>
   <select id="medium"></select>
   <select id="stroller"></select>
@@ -1153,6 +1194,7 @@
   <select id="forwardSeat_R"></select>
   <select id="booster_R"></select>
   <select id="checked_R"></select>
+  <select id="bigBase_R"></select>
   <select id="carry_R"></select>
   <select id="medium_R"></select>
   <select id="stroller_R"></select>
@@ -1462,7 +1504,7 @@
   function fill(id,max=7){ // 隱藏 select 仍保留，作為唯一的資料來源（state store）
     $(id).innerHTML=[...Array(max+1)].map((_,i)=>`<option value="${i}">${i}</option>`).join('');
   }
-  ['adult','child','toddler','rearSeat','forwardSeat','booster','checked','carry','medium','stroller','fatbox','longItem','otherItem','adult_R','child_R','toddler_R','rearSeat_R','forwardSeat_R','booster_R','checked_R','carry_R','medium_R','stroller_R','fatbox_R','longItem_R','otherItem_R'].forEach(x=>fill(x));
+  ['adult','child','toddler','rearSeat','forwardSeat','booster','checked','bigBase','carry','medium','stroller','fatbox','longItem','otherItem','adult_R','child_R','toddler_R','rearSeat_R','forwardSeat_R','booster_R','checked_R','bigBase_R','carry_R','medium_R','stroller_R','fatbox_R','longItem_R','otherItem_R'].forEach(x=>fill(x));
 
   const today=new Date(); const todayStr=today.toISOString().slice(0,10);
   $('date').min=todayStr; // V5.50：不再預設「今天 09:00」，客人實際選過上車日期與時間才顯示車資(避免預設今天被算進24小時內急單費)
@@ -1491,12 +1533,43 @@
     return '';
   }
   function whatErrors_(ctx){ return ['long','other'].map(k=>whatError_(ctx,k)).filter(Boolean); }
-  function bagSub_(ctx){ ctx=ctx||''; return n('stroller'+ctx)+n('fatbox'+ctx)+n('longItem'+ctx)+n('otherItem'+ctx); }
+  // v5.94：胖胖箱＝「包含在」勾選的托運大型／中型內，勾完托運件數就問有沒有(必選)，有的話選幾個、逐個選中型/大型；
+  // 推車、長型物件、其他＝每件「另外加算」1 件托運大型。隱藏欄位 bigBase＝客人勾的托運大型，checked＝bigBase＋推車＋長型＋其他(＝送出去的「N大」，後面所有判斷/資料都讀 checked)。
+  const fatSt={ '':{ans:'',sizes:[]}, '_R':{ans:'',sizes:[]} };
+  function extras_(ctx){ ctx=ctx||''; return n('stroller'+ctx)+n('longItem'+ctx)+n('otherItem'+ctx); }
+  function trunkTotal_(ctx){ ctx=ctx||''; return n('bigBase'+ctx)+n('medium'+ctx); }
+  function fatText_(ctx){
+    const z=fatSt[ctx||''].sizes.filter(Boolean); const b=z.filter(x=>x==='大型').length, m=z.filter(x=>x==='中型').length;
+    const a=[]; if(b) a.push('大型'+b); if(m) a.push('中型'+m); return a.join('、');
+  }
+  function fatErrors_(ctx){
+    ctx=ctx||''; if(trunkTotal_(ctx)<=0) return [];
+    const st=fatSt[ctx];
+    if(!st.ans) return ['請回答「托運行李裡有沒有胖胖箱」'];
+    if(st.ans==='yes'){
+      if(!st.sizes.length) return ['請選擇胖胖箱有幾個'];
+      if(st.sizes.some(x=>!x)) return ['請選擇每個胖胖箱是中型還是大型'];
+    }
+    return [];
+  }
   function enforceBags(ctx){
     ctx=ctx||'';
-    const sub=bagSub_(ctx);
-    if(sub>n('checked'+ctx)) $('checked'+ctx).value=Math.min(7,sub);
-    if(n('fatbox'+ctx)===0) $('fatSize'+ctx).value='';
+    const st=fatSt[ctx];
+    $('checked'+ctx).value=Math.min(7,n('bigBase'+ctx)+extras_(ctx));
+    const t=trunkTotal_(ctx);
+    if(t<=0){ st.ans=''; st.sizes=[]; }
+    if(st.ans!=='yes') st.sizes=[];
+    if(st.sizes.length>t) st.sizes.length=t;
+    // 只有一種托運尺寸時，胖胖箱大小自動帶入；各尺寸的胖胖箱數不能超過上面勾的件數
+    let b=0,m=0;
+    st.sizes=st.sizes.map(x=>{
+      if(!x){ if(n('medium'+ctx)===0 && n('bigBase'+ctx)>0) x='大型'; else if(n('bigBase'+ctx)===0 && n('medium'+ctx)>0) x='中型'; }
+      if(x==='大型'){ if(b>=n('bigBase'+ctx)) return ''; b++; }
+      else if(x==='中型'){ if(m>=n('medium'+ctx)) return ''; m++; }
+      return x;
+    });
+    $('fatbox'+ctx).value=st.ans==='yes'?st.sizes.length:0;
+    $('fatSize'+ctx).value=st.ans==='yes'?fatText_(ctx):'';
     ['long','other'].forEach(k=>{ if(n(k+'Item'+ctx)===0){ whatSt[ctx][k]={chips:[],free:''}; } });
   }
   let otherFoldOpen=false;
@@ -1510,8 +1583,32 @@
     freeWrap.classList.toggle('hidden',!st.chips.includes(last));
     if(document.activeElement!==inp) inp.value=st.free;
   }
+  function renderFat_(ctx){
+    const t=trunkTotal_(ctx), st=fatSt[ctx];
+    $('fatAsk').classList.toggle('hidden',t<=0);
+    if(t<=0) return;
+    $('fatAskQ').textContent=`這 ${t} 件托運行李裡，有胖胖箱嗎？`;
+    document.querySelectorAll('#fatAsk [data-fat]').forEach(b=>b.classList.toggle('on',b.dataset.fat===st.ans));
+    $('fatDetail').classList.toggle('hidden',st.ans!=='yes');
+    if(st.ans!=='yes') return;
+    $('fatCountVal').textContent=st.sizes.length;
+    const usedB=st.sizes.filter(x=>x==='大型').length, usedM=st.sizes.filter(x=>x==='中型').length;
+    $('fatRows').innerHTML=st.sizes.map((z,i)=>{
+      const fullB=z!=='大型' && usedB>=n('bigBase'+ctx), fullM=z!=='中型' && usedM>=n('medium'+ctx);
+      return `<div class="fat-row"><span class="fn">第 ${i+1} 個</span><div class="what-chips"><button type="button" class="fat-chip${z==='中型'?' on':''}${fullM?' off':''}" data-fatidx="${i}" data-fatsize="中型">中型 21-26吋</button><button type="button" class="fat-chip${z==='大型'?' on':''}${fullB?' off':''}" data-fatidx="${i}" data-fatsize="大型">大型 27-29吋</button></div></div>`;
+    }).join('');
+  }
+  function bagTotalText_(ctx){
+    const big=n('checked'+ctx), mid=n('medium'+ctx), cr=n('carry'+ctx);
+    const ex=[]; if(n('stroller'+ctx)) ex.push(`推車 ${n('stroller'+ctx)}`); if(n('longItem'+ctx)) ex.push(`長型物件 ${n('longItem'+ctx)}`); if(n('otherItem'+ctx)) ex.push(`其他 ${n('otherItem'+ctx)}`);
+    let h=`合計：托運大型 <b>${big}</b>　托運中型 <b>${mid}</b>　登機箱 <b>${cr}</b>`;
+    if(ex.length) h+=`<div class="sub">大型 ${big} ＝ 你勾的 ${n('bigBase'+ctx)} ＋ ${ex.join(' ＋ ')}</div>`;
+    if(fatSt[ctx].ans==='yes' && fatSt[ctx].sizes.length) h+=`<div class="sub">（胖胖箱 ${fatSt[ctx].sizes.length} 個已包含在勾選的托運件數裡，不另外加）</div>`;
+    return h;
+  }
   function updateBagUI(){
     const ctx=paxCtx;
+    renderFat_(ctx);
     renderWhat_(ctx,'long'); renderWhat_(ctx,'other');
     $('otherBox').classList.toggle('hidden',!otherFoldOpen);
     const fold=$('otherFold'); fold.setAttribute('aria-expanded',otherFoldOpen?'true':'false');
@@ -1521,12 +1618,19 @@
     if(n('otherItem'+ctx)) chips.push(`${whatText_(ctx,'other')||'其他'} ${n('otherItem'+ctx)}`);
     fold.classList.toggle('has',chips.length>0);
     $('otherFoldChips').innerHTML=otherFoldOpen?'':chips.map(c=>`<span class="fold-chip">${c.replace(/[<>&"']/g,' ')}</span>`).join('');
+    $('bagTotalBar').innerHTML=bagTotalText_(ctx);
+    $('paxStripText').textContent=paxStripText_(ctx);
+  }
+  function paxStripText_(ctx){
+    ctx=ctx||''; const p=paxParts_(ctx); const sp=[];
+    if(n('rearSeat'+ctx)) sp.push(`後向座椅 ${n('rearSeat'+ctx)}`); if(n('forwardSeat'+ctx)) sp.push(`前向座椅 ${n('forwardSeat'+ctx)}`); if(n('booster'+ctx)) sp.push(`增高墊 ${n('booster'+ctx)}`);
+    return [p].concat(sp).filter(Boolean).join(' + ')||'尚未設定人數';
   }
   // 客人看到的行李文字：main=「登機 1 + 中型 1 + 大型 2」，detail=「含 推車 1 + 胖胖箱 1（29吋）」
   function luggageParts_(ctx){
     ctx=ctx||'';
     const p=[]; if(n('checked'+ctx)) p.push(`大型 ${n('checked'+ctx)}`); if(n('medium'+ctx)) p.push(`中型 ${n('medium'+ctx)}`); if(n('carry'+ctx)) p.push(`登機 ${n('carry'+ctx)}`);
-    const d=[]; if(n('stroller'+ctx)) d.push(`推車 ${n('stroller'+ctx)}`); if(n('fatbox'+ctx)) d.push(`胖胖箱 ${n('fatbox'+ctx)}`); if(n('longItem'+ctx)) d.push(`長型物件 ${n('longItem'+ctx)}${whatText_(ctx,'long')?`（${whatText_(ctx,'long')}）`:''}`); if(n('otherItem'+ctx)) d.push(`其他 ${n('otherItem'+ctx)}${whatText_(ctx,'other')?`（${whatText_(ctx,'other')}）`:''}`);
+    const d=[]; if(n('stroller'+ctx)) d.push(`推車 ${n('stroller'+ctx)}`); if(n('fatbox'+ctx)) d.push(`胖胖箱 ${n('fatbox'+ctx)}${fatText_(ctx)?`（${fatText_(ctx)}）`:''}`); if(n('longItem'+ctx)) d.push(`長型物件 ${n('longItem'+ctx)}${whatText_(ctx,'long')?`（${whatText_(ctx,'long')}）`:''}`); if(n('otherItem'+ctx)) d.push(`其他 ${n('otherItem'+ctx)}${whatText_(ctx,'other')?`（${whatText_(ctx,'other')}）`:''}`);
     return {main:p.join(' + '), detail:d.length?'含 '+d.join(' + '):''};
   }
   function paxParts_(ctx){
@@ -2403,7 +2507,7 @@
     // 行程路線卡預覽（原本的 startPreview/endPreview 概念，這裡直接反映在輸入框本身，故不需額外欄位）
     $('addStopBody').classList.toggle('show',$('addStop').checked);
     $('returnBox').classList.toggle('show',$('roundTrip').checked);
-    if($('noLuggage').checked){['checked','carry','medium','stroller','fatbox','longItem','otherItem'].forEach(id=>{$(id).value=0}); $('fatSize').value='';}
+    if($('noLuggage').checked){['checked','bigBase','carry','medium','stroller','fatbox','longItem','otherItem'].forEach(id=>{$(id).value=0}); $('fatSize').value=''; fatSt[''].ans=''; fatSt[''].sizes=[];}
     enforceBags('');
 
     syncCounterDisplays();
@@ -2411,8 +2515,9 @@
 
     // 回程未勾選「與去程不同」時，持續即時同步去程的人數/行李/座椅（比照正式系統 syncReturnTripFromOutbound）
     if($('roundTrip').checked && !$('returnDifferent').checked){
-      ['adult','child','toddler','rearSeat','forwardSeat','booster','checked','carry','medium','stroller','fatbox','longItem','otherItem','fatSize'].forEach(id=>{ $(id+'_R').value=$(id).value; });
+      ['adult','child','toddler','rearSeat','forwardSeat','booster','checked','bigBase','carry','medium','stroller','fatbox','longItem','otherItem','fatSize'].forEach(id=>{ $(id+'_R').value=$(id).value; });
       whatSt['_R']=JSON.parse(JSON.stringify(whatSt['']));
+      fatSt['_R']=JSON.parse(JSON.stringify(fatSt['']));
       // 加點原本沒有被同步到，客人明明去程有加點，回程還是要重打一次地址，
       // 而且因為addStop_R沒被連動勾上，回程加點距離費用(v5.20新增的calculateDistanceFeeReturn)
       // 也不會被觸發，等於這筆加點費用整個漏收。這裡補上跟其他欄位一致的同步邏輯。
@@ -2673,7 +2778,9 @@
     const addFee = ctx==='_R' ? ($('addStop_R').checked ? extraStopFeeReturn : 0) : ($('addStop').checked ? extraStopFee : 0);
     const seats=(n('rearSeat'+ctx)+n('forwardSeat'+ctx)+n('booster'+ctx))*200;
     const {nightFee,urgentFee,isPast}=computeTimeSurcharges(dateVal,timeVal);
-    if(ctx===''){ $('optNight').checked=nightFee>0; $('lblNight').classList.toggle('dim',nightFee<=0); $('optUrgent').checked=urgentFee>0; $('lblUrgent').classList.toggle('dim',urgentFee<=0); }
+    if(ctx===''){ $('optNight').checked=nightFee>0; $('lblNight').classList.toggle('dim',nightFee<=0); $('optUrgent').checked=urgentFee>0; $('lblUrgent').classList.toggle('dim',urgentFee<=0);
+      const af=[]; if(nightFee>0) af.push('夜間加成 23:00-05:00 +$'+nightFee); if(urgentFee>0) af.push('24 小時內急單服務費 +$'+urgentFee);
+      const afEl=$('autoFeeNote'); if(afEl){ afEl.textContent=af.length?('本趟系統自動加：'+af.join('、')):''; afEl.classList.toggle('hidden',!af.length); } }
     // 特殊節日加價：後台「特殊日期」表設定好日期/各車型金額/名稱，這裡查表比對上車日期+目前選的車型，
     // 系統自動套用，客服不用每次遇到連假手動加價，跟折扣碼一樣是自動比對機制。
     const specialDate = fare && dateVal ? SPECIAL_DATE_SURCHARGES[dateVal] : null;
@@ -2870,7 +2977,7 @@
    * generateOrderId() 單號格式、payload 欄位名稱、no-cors fire-and-forget 送出、
    * 20 秒輪詢確認、行事曆/LINE卡片檢查、逾時後二次確認避免重複送單，都是同一套邏輯。
    * ------------------------------------------------------------- */
-  const APP_VERSION='ANSING-UI-V5.93'; // V5.93：乘客與行李彈窗粉紅提醒改新文案(須與預約內容相符、無法臨時換車型、視同已使用不退費)；   V5.92：乘客與行李彈窗改版——胖胖箱固定在行李清單(不分吋數)；嬰兒推車／長型物件(球具雪板釣竿)／其他(紙箱輪椅腳踏車箱…)收進折疊列(預設收合，選了顯示小標籤)，長型物件與其他必須點選「是什麼」；標題下新增粉紅提醒(超出登記人數/行李無法乘載、視同服務已使用不退費)，拿掉重複的恕不退費句；四項都算在托運大型內(需gas v2.2.440)；   V5.91：乘客與行李彈窗手指好按——＋／－放大到44px、每列52px、數字放大；行李說明收成一行(其餘點開看)、「我沒有行李」移到行李標題旁；   V5.90：行李順序改「托運大型→托運中型→登機箱」(彈窗、摘要、確認頁一致)；  V5.89：乘客與行李彈窗高度上限70%→80%、每一列再縮矮(說明文字與標題併同一行、按鈕30→28px、列距縮小)，預設不用滑；  V5.88：修正客人預約確認連結(c.html→LIFF)上的行程方向寫反——送機應是「地址 → 機場」，接機是「機場 → 地址」(原本一律機場→地址)；  V5.87：客人預約確認頁的付款方式顯示「月結簽單(公司簡稱)」(需gas v2.2.401)；  V5.86：月結入口改「月結企業客戶／特約社區廠商」，輸入公司統編或特約代號其中一個就能對應公司(需gas v2.2.398)；  V5.85：數字欄位拿掉上下箭頭、滾輪不會改數字； V5.84：車型說明改固定兩行(人數：…／行李：…)，不再亂斷行； V5.83：月結企業客戶改從第一頁進入(安興租車、安興竹北都有)：「我是月結企業客戶」開關＋輸入公司統編，查「企業客戶」工作表，查到才放行(查不到不能往下)；啟用後所有車型/總額/費用條改顯示「依簽約價結算」、付款固定月結並自動帶入統編/公司名/月結代碼、折扣碼/乘車金/來回優惠不套用；第3頁一般付款下拉不再有月結選項； V5.82：航班編號欄位(去程/回程)手機鍵盤預設英文(inputmode=email＋自動大寫、關閉自動修正/拼字檢查)； V5.81：來回預約回程可選不同機場(回程資訊最上面新增「回程機場」，預設同去程)；去回程機場不同時各用自己機場的車資表報價(不再取兩腿較高者)、折扣照舊整趟合計一次；航廈T1/T2依各趟自己的機場決定要不要選；確認頁/卡片/送出資料回程帶回程機場(後端早已支援，不需改gas)； V5.80：行李分類改版——登機箱/托運中型(21-26吋)/托運大型(27-29吋)，托運大型選1以上展開「嬰幼兒推車」「胖胖箱(需填尺寸)」細項(包含在大型內、去程回程各自獨立)；小車限1登機+最多2件托運(大型最多1)，超過自動改大車並提示；確認頁行李分2行、人數行李統一用「 + 」；行李欄存「N大 N中 N登機」，細項欄存「推車 N；有 N件，尺寸」(需gas v2.2.390)； V5.79：送出預約時多帶「綁定手機」，修正訂車人電話跟綁定手機不同時，專屬折扣券被誤退回、來回預約的回程整筆沒寫入； V5.78：「加點聯絡人」「其他聯絡電話」展開了卻沒填就不能下一步(提醒填寫或點「收起」取消)，收起=取消，收起後殘留的字不會送出； V5.77：聯絡人電話限制比照訂車人電話(手機 0900-000-000 格式、10碼，亂填會擋)，要填市話／國際電話必須先勾「非手機號碼」(市話可加分機、國際電話以+國碼開頭)；「這一站有不同聯絡人？」改成標籤式按鈕「＋ 加點聯絡人」，「＋ 其他聯絡電話」同款； V5.76：聯絡人提示字拿掉「當日」(改成「僅供車趟聯絡使用」)； V5.75：聯絡人欄位(選填、預設收合)：「乘車人資訊」下面新增「＋ 新增其他聯絡電話」，加點下面新增「＋ 這一站有不同聯絡人？」，稱呼＋電話(手機/市話/分機)，格式不對會擋住；存成「地址（聯絡：王小姐 0933-111-222）」，客人收到的預約卡片/預約資料會完整顯示聯絡人＋電話，司機端只看得到電話圖示；沒點開的客人頁面完全不變(需gas v2.2.367)； V5.74：網頁版(不是從LINE開啟)處理：頁面一開先自動走一次LINE登入；還是沒有LINE身分就顯示提醒條、送出前再提醒一次，後端系統日誌記「客人用網頁版開啟(無LINE ID)」帶姓名電話裝置。 V5.73：預約時間戳記改成固定24小時制(不含中文「晚上/下午」)。 V5.72：預約頁的常規診斷日誌全部關掉(地圖狀態快照、建議清單結果、地圖初始化啟動、新版Places啟動檢查OK等)，只在真的出錯時才寫「系統日誌」(Google金鑰被拒、距離算不出來、Places不可用/逾時、函式庫未載入等)。 V5.71：單號改成「通路－預約日期yyyyMMdd＋乘車日期MMdd＋4個英文字母(大小寫混用，去掉I/l/O)」，送出前先查單號是否被用掉。 V5.70：地址所在區與客人選的縣市/鄉鎮區下拉不一致時，不自動改，改跳出視窗讓客人二選一並提示最終車資以客服確認為準；選維持時地址欄留提醒、訂單備註加註【客服核對】；距離費起點改用完整地址；手動改下拉也會重算加點費。 V5.69：依日誌發現客人手機上地圖初始化根本沒執行(只靠window load事件啟動)→改成不等load、1.5秒內一定啟動且只啟動一次；Google腳本改async(與檢測頁相同)；算距離時若Google腳本還在載入最多等5秒；後端距離失敗原因記到日誌；日誌補更多載入狀態。 V5.68：版本代稱統一改為ANSING；每筆地圖診斷日誌都附頁面版本與LINE名稱(之前舊版日誌看不出客人跑哪一版)。 V5.67：診斷加強(地圖狀態/新版Places回應/清單結果記到後端系統日誌，Google地圖腳本onload/onerror)；進舊版流程時若Google地圖尚未載入，立刻啟用備援建議，不再乾等30秒；已啟用自建清單就不再綁Google舊版小工具。 V5.66：依使用者影片(V5.65後仍沒有地址建議)：Google舊版地址建議小工具在客人手機上有載入卻不顯示清單(無法控制/偵測)→改優先用新版Places API(REST，map-test實測可用)查建議，清單由我們自己畫(下方放不下就放輸入框上方)，點選後再用placeId取Google標準完整地址(含縣市區)、重算加點距離費；啟動時先實測新版API可用才採用，不可用才退回舊版小工具。 V5.65：依使用者影片(Google金鑰網站限制修好後仍看不到地址建議)：建議清單畫在輸入框下方，但手機鍵盤彈出後輸入框貼在鍵盤上緣，清單被鍵盤蓋住→點進地址欄後自動把輸入框捲到畫面上方、鍵盤開著時多留底部空間才捲得動。 V5.64：查到Google公告舊版Places/Distance Matrix 2026/10/5起停售(與客人頁10/6起地址建議失效時間吻合)，舊版建議不可用時，先改試新版Places API(New，REST，同一支金鑰)提供建議，新版也不行才用後端地圖查詢；舊版正常時行為不變。 V5.63：依使用者影片回報(客服模式)：①打字時手機鍵盤彈出，底部「車資列+選單列」疊在鍵盤上把畫面擋成一小條→文字輸入框取得焦點時暫時收起這兩列、鍵盤收起就恢復；②Google地址建議整個失效又沒有錯誤時，載入後主動問Google一次判斷，不可用就記到後端系統日誌並改用後端地圖查詢提供備援建議清單(客人打字停0.7秒出現最多5筆，點選自動帶入並重算加點距離費)；Google正常時行為完全不變。 V5.62：地址自動完成原本只在頁面load當下綁一次，Google places函式庫晚載入就永遠綁不到(客人選不到Google建議)→改成沒綁到就每0.5秒重試(最多30秒)、點進地址欄也再試，仍失敗記錄到後端系統日誌。 V5.61：依使用者回報(客人預約頁選不到Google地址、算不出加點距離費)：①算加點距離改成Google失敗/沒回應(8秒)時自動改問後端(getDrivingDistance，用Apps Script內建地圖，不靠客人端Google金鑰)，兩邊都失敗才顯示無法計算；②客人只打門牌沒打縣市也沒點Google建議時，用地圖回傳的標準化地址判斷加點在哪個縣市區：同縣市/跨縣市費用不再誤判、「起點/加點兩區取基本車資較高者」也能生效；③Google金鑰被拒/載入失敗等錯誤會記到後端系統日誌方便查原因；④加點地址連續修改時，只採用最後一次的計算結果。距離費公式本身沒改。 V5.60：依使用者要求新增「詢價紀錄」：客人看到四種車型報價後(停留2.5秒)背景記一筆給後台，只記縣市+鄉鎮區、不記詳細地址，不影響客人操作。 V5.59：①常用地址「從常用地址選擇」第一次按常顯示尚未儲存(後端還沒載完就當沒有)→改為載入中/失敗可重試；②報價明細路線符號改為「→」。 V5.58：①報價明細頂部新增行程摘要(服務/日期時間/2行路線/航班)，第1頁詢價也可開啟(列四種車型單程車資)；②航班資訊卡移到上車時間卡上方，航班(桃園則含航廈)填完自動跳選上車時間；③第1頁進第2頁人數未設時自動開乘客與行李彈窗。 V5.57：依使用者要求(先確認過示意圖)：①折扣碼清單每一個折扣碼下多一行淺灰小字「效期至 yyyy/MM/dd」(無期限顯示「無期限」，7天內到期改粉紅「即將到期｜效期至…」)；②「農曆春節/連續假期恕無法使用折扣…」等折扣提示框拿掉底色、外框、句首「‼️」，改成11.5px單色粉紅小字、行距收緊(詢價頁/行程細節/折扣碼頁/費用明細彈窗同一個樣式)；③選航廈拿掉輸入航班後閃的粉紅外框光暈，改成「航廈」標籤旁淺粉小字「請選擇一個」，選了就消失。只改畫面樣式/文字，計價/驗證/送出沒動。 V5.56：依使用者回饋：①「乘客與行李」改回約2/3螢幕高的底部彈窗(整頁在LINE視窗裡容易跟右上角的X搞混)，行距收緊(每列上下間距、按鈕、標題、提示字都縮)，預設狀態不用滑，確認鈕仍固定在底部，拿掉V5.55的底部「返回上一頁」鈕(點彈窗外/手機返回鍵都能關)；②聯絡資訊頁底部按鈕文字補回「下一步，預約明細確認」，跟第1、2頁格式一致；③車型卡片右側車資放大加粗(16px→22px、粗體加重)，選取的車型外框加粗(2px→3px，內距同步減少避免卡片跳動)。詢價頁的車型卡片也同步。只改畫面樣式/文字，計價/驗證/送出沒動。 V5.55：依使用者回報：「乘客與行李」整頁左上角的「‹ 返回」緊鄰LINE右上角的「X」(那顆是LINE視窗自己的關閉鈕，網頁無法移除)，容易誤按X整個關閉。拿掉左上角的返回，改在最底部「確認人數與行李」大按鈕下方放一顆「返回上一頁」文字鈕，離X遠、不會混淆；手機返回鍵/側滑也一樣是關閉這一頁(V5.53返回鍵保護)。只改這一頁的按鈕位置，計價/驗證/送出沒動。 V5.54：依使用者要求(先確認過示意圖)：①訂車畫面上方新增4步進度列(① 詢價 ② 行程細節 ③ 聯絡付款 ④ 明細確認，目前步驟粉紅、完成的打勾深紫、未到的灰色，只顯示不能點)，客人一眼知道共幾頁、填到哪；②聯絡資訊頁底部大按鈕「下一步，確認送出」改成「預約明細確認」(下一頁就是明細確認，按鈕文字對得上)。只改畫面文字/樣式，計價、驗證、送出邏輯完全沒動。 V5.53：依使用者要求：①「乘客與行李」由半版彈窗改成整頁(多一顆「‹ 返回」，間距收緊讓預設狀態一頁放得下，確認鈕仍固定在底部)；②航班編號輸入後按選航廈三顆按鈕，會順便把鍵盤收起來(原本鍵盤一直擋在畫面上)；③新增返回鍵保護：手機按返回/側滑時，有彈窗先關彈窗、不在訂車分頁先回訂車、在第2~4步回上一步、第1步已填寫資料時第一次只跳提示(再按一次才離開)，不再一按返回就整個退出預約畫面、已填的資料全部消失。計價、驗證、送出邏輯完全沒動。 V5.52：依使用者要求：①航班資訊的航廈(去程/回程)由下拉選單改成三顆按鈕(T1 第一航廈／T2 第二航廈／不確定 幫我查詢)，原select移到畫面外繼續當資料來源，驗證、送出、卡片/行事曆顯示完全沒動；輸入完航班編號(按完成/Enter或點到別處)且是桃園機場還沒選航廈時，自動捲到航廈按鈕並閃一下提示；②「乘客與行李」彈窗的「確認人數與行李」鈕固定貼在彈窗底部，不用再往下滑。 V5.51：依使用者要求，首頁標語「機場接送｜商務用車｜包車旅遊」與「我的」頁會員統計(共訂購N趟｜累計｜上次搭乘)的「・」改成「｜」，只改文字。 V5.50：依使用者要求(第二批，示意圖v10已確認)：訂車流程由3步改4步。①第一頁改為「詢價頁」：送機/接機、路線、上車日期時間、航班資訊(航班獨立成卡片)填好後，立刻列出四種車型的基本車資(已含夜間+200、24小時內急單+500、特殊節日、接機服務費+200、加點)，每台下方顯示人數與行李上限，僅供參考；日期時間不再預設「今天09:00」，客人實際選過才顯示車資；②第二頁為「行程細節」：乘客與行李、加值服務(回程)、確認車型，車型卡片車資與詢價頁相同(回程開啟時底部顯示來回總額)，「系統建議」標籤待填完人數才出現；③聯絡資訊與付款、確認送出與免責兩頁內容不動。新增quoteForVehicleOut_/vehicleFareNumber_/vehiclePriceText_/renderInquiry_/updateBarForStep_，沿用calcLegQuote原計算不改動；送出前驗證依頁面拆分，送出時的備援檢查會跳回對應頁面。計價/送出payload/gas.html完全沒動。 V5.49：依使用者要求，選車型區塊下方的特殊需求提醒結尾補上「預約成立後才告知的需求，恕無法保證一定能配合」，跟另外兩處(備註欄、免責聲明)的說法一致，只改這一句文字。 V5.48：依使用者要求(第一批，先確認示意圖才動手)：①訂車頁三處新增「特殊需求」提醒(粉紅左線提示框.special-note)：選車型區塊下方、其他備註上方、「確認送出前請閱讀」的詳細說明新增一條，語氣統一用敬語，原則是預約當下就要告知、客服確認可配合後才接單；②送機/接機切換鈕改小圓角(只套用.trip-mode，行程頁篩選鈕不變)；③頁面背景由淺紫加深一階(#e4d8e9)，切換鈕軌道同步加深；④乘客與行李摘要、機場標籤等「・」改成「｜」。只改文字/樣式，計價、驗證、送出邏輯完全沒動。 V5.47：依使用者要求，來回預約有加點時，回程的行程順序要跟去程相反(去程 起點→加點→機場，回程 機場→加點→起點)：回程那腿沒勾「與去程不同」(加點是自動從去程同步過來的)時，送給後端的主地址/加點對調(主地址放加點、加點放地址)，卡片/行事曆/中控台就會依「機場→加點→回到起點」顯示；客人自己勾了「與去程不同」、自己填回程加點的情況不動，維持客人填的順序；去程、單程、沒有加點的預約完全不受影響，距離加價費用算法沒動(兩點距離對稱)。配合gas.html v2.2.345。 V5.46：依使用者要求，預約送出後的文字改版＋修正文字常變成官方端送出：送出預約時就在addReservation payload帶clientWillSendFollowUpText(是否在LINE App內)，後端自動送卡片時就只送卡片，客人端自己用liff.sendMessages()送第一則「📋 預約資料」，送完呼叫新動作sendReservationExplainText由官方送第二則說明文字；客人端送失敗則請官方補送兩則。不再靠2秒競速。 V5.45：依使用者要求，航班編號旁邊新增「航廈」選單(第一航廈T1/第二航廈T2/不確定，幫我查詢)，只有選「桃園機場」才會出現且必選(沒選比照其他必填欄位的toast+聚焦提示)，來回預約的回程航班也同樣加；選了之後以「航班｜T1/T2/？」(例如CI108｜T2)接在航班編號後面一起送出，行事曆/卡片/司機畫面等後端與各畫面直接顯示這個字串。航班編號欄縮短、航廈選單文字不換行。 V5.44： V5.44：依使用者要求，「我的」頁「聯絡客服」那一列(電話號碼0955-311-306)原本只是純文字顯示、點了沒反應，改成<a href="tel:...">連結，點擊後直接開啟手機撥號畫面，不用再手動複製號碼。只改這一列的HTML標籤(div改成a並加tel:連結+樣式讓它看起來跟原本一樣，不是底線藍字的連結外觀)，版面/其他設定列完全沒有變動。V5.43：依使用者實測v5.42畫面後的回饋微調：①.discount-warn-box文字字級13px→11px調過頭，改回12px；②「選擇接送車型」畫面的提示框(#vehicleSpecialDateWarnBox)拿掉外框線，新增.discount-warn-box.no-border修飾類別(只套用在這一個位置，折扣碼畫面跟報價明細彈窗的提示框維持原本紅色外框不變)；③「專屬優惠與折扣」卡片在isSpecialDateBlocked時，折扣碼輸入框+套用鈕(#discountCodeApplyRow)跟「+再加一組折扣碼」整段(#additionalDiscountCodeSection，含展開後的第二組輸入框)一起隱藏，只留紅字提示，這些「填的格子」反正也不能用了不需要留著；「查詢我的專屬折扣碼」(#queryDiscountBtn)是查看客人自己已領到的券、不是這張單要套用的欄位，維持顯示不受影響。
+  const APP_VERSION='ANSING-UI-V5.94'; // V5.94：第1頁精簡(未綁定／網頁版提醒縮成一行細條可關閉、月結改頁尾小連結、進度列捲動時固定在上方)；第3頁精簡(夜間／急單不再灰掉勾選框，改成「本趟系統自動加…」一行，沒適用就不顯示；備註說明只留一段，刪除過時的「胖胖箱請於上一步註記」)；乘客與行李彈窗拆兩步(①人數→②行李)；胖胖箱回到「包含在勾選的托運大型/中型內」，勾完托運件數馬上問有沒有(必選)、有的話選幾個並逐個選中型/大型(不能超過上面件數)；推車/長型物件/其他每件另外加算1件大型行李；行李頁最下面即時合計；提醒框改放在按鈕正上方(需gas v2.2.440)；   V5.93：乘客與行李彈窗粉紅提醒改新文案(須與預約內容相符、無法臨時換車型、視同已使用不退費)；   V5.92：乘客與行李彈窗改版——胖胖箱固定在行李清單(不分吋數)；嬰兒推車／長型物件(球具雪板釣竿)／其他(紙箱輪椅腳踏車箱…)收進折疊列(預設收合，選了顯示小標籤)，長型物件與其他必須點選「是什麼」；標題下新增粉紅提醒(超出登記人數/行李無法乘載、視同服務已使用不退費)，拿掉重複的恕不退費句；四項都算在托運大型內(需gas v2.2.440)；   V5.91：乘客與行李彈窗手指好按——＋／－放大到44px、每列52px、數字放大；行李說明收成一行(其餘點開看)、「我沒有行李」移到行李標題旁；   V5.90：行李順序改「托運大型→托運中型→登機箱」(彈窗、摘要、確認頁一致)；  V5.89：乘客與行李彈窗高度上限70%→80%、每一列再縮矮(說明文字與標題併同一行、按鈕30→28px、列距縮小)，預設不用滑；  V5.88：修正客人預約確認連結(c.html→LIFF)上的行程方向寫反——送機應是「地址 → 機場」，接機是「機場 → 地址」(原本一律機場→地址)；  V5.87：客人預約確認頁的付款方式顯示「月結簽單(公司簡稱)」(需gas v2.2.401)；  V5.86：月結入口改「月結企業客戶／特約社區廠商」，輸入公司統編或特約代號其中一個就能對應公司(需gas v2.2.398)；  V5.85：數字欄位拿掉上下箭頭、滾輪不會改數字； V5.84：車型說明改固定兩行(人數：…／行李：…)，不再亂斷行； V5.83：月結企業客戶改從第一頁進入(安興租車、安興竹北都有)：「我是月結企業客戶」開關＋輸入公司統編，查「企業客戶」工作表，查到才放行(查不到不能往下)；啟用後所有車型/總額/費用條改顯示「依簽約價結算」、付款固定月結並自動帶入統編/公司名/月結代碼、折扣碼/乘車金/來回優惠不套用；第3頁一般付款下拉不再有月結選項； V5.82：航班編號欄位(去程/回程)手機鍵盤預設英文(inputmode=email＋自動大寫、關閉自動修正/拼字檢查)； V5.81：來回預約回程可選不同機場(回程資訊最上面新增「回程機場」，預設同去程)；去回程機場不同時各用自己機場的車資表報價(不再取兩腿較高者)、折扣照舊整趟合計一次；航廈T1/T2依各趟自己的機場決定要不要選；確認頁/卡片/送出資料回程帶回程機場(後端早已支援，不需改gas)； V5.80：行李分類改版——登機箱/托運中型(21-26吋)/托運大型(27-29吋)，托運大型選1以上展開「嬰幼兒推車」「胖胖箱(需填尺寸)」細項(包含在大型內、去程回程各自獨立)；小車限1登機+最多2件托運(大型最多1)，超過自動改大車並提示；確認頁行李分2行、人數行李統一用「 + 」；行李欄存「N大 N中 N登機」，細項欄存「推車 N；有 N件，尺寸」(需gas v2.2.390)； V5.79：送出預約時多帶「綁定手機」，修正訂車人電話跟綁定手機不同時，專屬折扣券被誤退回、來回預約的回程整筆沒寫入； V5.78：「加點聯絡人」「其他聯絡電話」展開了卻沒填就不能下一步(提醒填寫或點「收起」取消)，收起=取消，收起後殘留的字不會送出； V5.77：聯絡人電話限制比照訂車人電話(手機 0900-000-000 格式、10碼，亂填會擋)，要填市話／國際電話必須先勾「非手機號碼」(市話可加分機、國際電話以+國碼開頭)；「這一站有不同聯絡人？」改成標籤式按鈕「＋ 加點聯絡人」，「＋ 其他聯絡電話」同款； V5.76：聯絡人提示字拿掉「當日」(改成「僅供車趟聯絡使用」)； V5.75：聯絡人欄位(選填、預設收合)：「乘車人資訊」下面新增「＋ 新增其他聯絡電話」，加點下面新增「＋ 這一站有不同聯絡人？」，稱呼＋電話(手機/市話/分機)，格式不對會擋住；存成「地址（聯絡：王小姐 0933-111-222）」，客人收到的預約卡片/預約資料會完整顯示聯絡人＋電話，司機端只看得到電話圖示；沒點開的客人頁面完全不變(需gas v2.2.367)； V5.74：網頁版(不是從LINE開啟)處理：頁面一開先自動走一次LINE登入；還是沒有LINE身分就顯示提醒條、送出前再提醒一次，後端系統日誌記「客人用網頁版開啟(無LINE ID)」帶姓名電話裝置。 V5.73：預約時間戳記改成固定24小時制(不含中文「晚上/下午」)。 V5.72：預約頁的常規診斷日誌全部關掉(地圖狀態快照、建議清單結果、地圖初始化啟動、新版Places啟動檢查OK等)，只在真的出錯時才寫「系統日誌」(Google金鑰被拒、距離算不出來、Places不可用/逾時、函式庫未載入等)。 V5.71：單號改成「通路－預約日期yyyyMMdd＋乘車日期MMdd＋4個英文字母(大小寫混用，去掉I/l/O)」，送出前先查單號是否被用掉。 V5.70：地址所在區與客人選的縣市/鄉鎮區下拉不一致時，不自動改，改跳出視窗讓客人二選一並提示最終車資以客服確認為準；選維持時地址欄留提醒、訂單備註加註【客服核對】；距離費起點改用完整地址；手動改下拉也會重算加點費。 V5.69：依日誌發現客人手機上地圖初始化根本沒執行(只靠window load事件啟動)→改成不等load、1.5秒內一定啟動且只啟動一次；Google腳本改async(與檢測頁相同)；算距離時若Google腳本還在載入最多等5秒；後端距離失敗原因記到日誌；日誌補更多載入狀態。 V5.68：版本代稱統一改為ANSING；每筆地圖診斷日誌都附頁面版本與LINE名稱(之前舊版日誌看不出客人跑哪一版)。 V5.67：診斷加強(地圖狀態/新版Places回應/清單結果記到後端系統日誌，Google地圖腳本onload/onerror)；進舊版流程時若Google地圖尚未載入，立刻啟用備援建議，不再乾等30秒；已啟用自建清單就不再綁Google舊版小工具。 V5.66：依使用者影片(V5.65後仍沒有地址建議)：Google舊版地址建議小工具在客人手機上有載入卻不顯示清單(無法控制/偵測)→改優先用新版Places API(REST，map-test實測可用)查建議，清單由我們自己畫(下方放不下就放輸入框上方)，點選後再用placeId取Google標準完整地址(含縣市區)、重算加點距離費；啟動時先實測新版API可用才採用，不可用才退回舊版小工具。 V5.65：依使用者影片(Google金鑰網站限制修好後仍看不到地址建議)：建議清單畫在輸入框下方，但手機鍵盤彈出後輸入框貼在鍵盤上緣，清單被鍵盤蓋住→點進地址欄後自動把輸入框捲到畫面上方、鍵盤開著時多留底部空間才捲得動。 V5.64：查到Google公告舊版Places/Distance Matrix 2026/10/5起停售(與客人頁10/6起地址建議失效時間吻合)，舊版建議不可用時，先改試新版Places API(New，REST，同一支金鑰)提供建議，新版也不行才用後端地圖查詢；舊版正常時行為不變。 V5.63：依使用者影片回報(客服模式)：①打字時手機鍵盤彈出，底部「車資列+選單列」疊在鍵盤上把畫面擋成一小條→文字輸入框取得焦點時暫時收起這兩列、鍵盤收起就恢復；②Google地址建議整個失效又沒有錯誤時，載入後主動問Google一次判斷，不可用就記到後端系統日誌並改用後端地圖查詢提供備援建議清單(客人打字停0.7秒出現最多5筆，點選自動帶入並重算加點距離費)；Google正常時行為完全不變。 V5.62：地址自動完成原本只在頁面load當下綁一次，Google places函式庫晚載入就永遠綁不到(客人選不到Google建議)→改成沒綁到就每0.5秒重試(最多30秒)、點進地址欄也再試，仍失敗記錄到後端系統日誌。 V5.61：依使用者回報(客人預約頁選不到Google地址、算不出加點距離費)：①算加點距離改成Google失敗/沒回應(8秒)時自動改問後端(getDrivingDistance，用Apps Script內建地圖，不靠客人端Google金鑰)，兩邊都失敗才顯示無法計算；②客人只打門牌沒打縣市也沒點Google建議時，用地圖回傳的標準化地址判斷加點在哪個縣市區：同縣市/跨縣市費用不再誤判、「起點/加點兩區取基本車資較高者」也能生效；③Google金鑰被拒/載入失敗等錯誤會記到後端系統日誌方便查原因；④加點地址連續修改時，只採用最後一次的計算結果。距離費公式本身沒改。 V5.60：依使用者要求新增「詢價紀錄」：客人看到四種車型報價後(停留2.5秒)背景記一筆給後台，只記縣市+鄉鎮區、不記詳細地址，不影響客人操作。 V5.59：①常用地址「從常用地址選擇」第一次按常顯示尚未儲存(後端還沒載完就當沒有)→改為載入中/失敗可重試；②報價明細路線符號改為「→」。 V5.58：①報價明細頂部新增行程摘要(服務/日期時間/2行路線/航班)，第1頁詢價也可開啟(列四種車型單程車資)；②航班資訊卡移到上車時間卡上方，航班(桃園則含航廈)填完自動跳選上車時間；③第1頁進第2頁人數未設時自動開乘客與行李彈窗。 V5.57：依使用者要求(先確認過示意圖)：①折扣碼清單每一個折扣碼下多一行淺灰小字「效期至 yyyy/MM/dd」(無期限顯示「無期限」，7天內到期改粉紅「即將到期｜效期至…」)；②「農曆春節/連續假期恕無法使用折扣…」等折扣提示框拿掉底色、外框、句首「‼️」，改成11.5px單色粉紅小字、行距收緊(詢價頁/行程細節/折扣碼頁/費用明細彈窗同一個樣式)；③選航廈拿掉輸入航班後閃的粉紅外框光暈，改成「航廈」標籤旁淺粉小字「請選擇一個」，選了就消失。只改畫面樣式/文字，計價/驗證/送出沒動。 V5.56：依使用者回饋：①「乘客與行李」改回約2/3螢幕高的底部彈窗(整頁在LINE視窗裡容易跟右上角的X搞混)，行距收緊(每列上下間距、按鈕、標題、提示字都縮)，預設狀態不用滑，確認鈕仍固定在底部，拿掉V5.55的底部「返回上一頁」鈕(點彈窗外/手機返回鍵都能關)；②聯絡資訊頁底部按鈕文字補回「下一步，預約明細確認」，跟第1、2頁格式一致；③車型卡片右側車資放大加粗(16px→22px、粗體加重)，選取的車型外框加粗(2px→3px，內距同步減少避免卡片跳動)。詢價頁的車型卡片也同步。只改畫面樣式/文字，計價/驗證/送出沒動。 V5.55：依使用者回報：「乘客與行李」整頁左上角的「‹ 返回」緊鄰LINE右上角的「X」(那顆是LINE視窗自己的關閉鈕，網頁無法移除)，容易誤按X整個關閉。拿掉左上角的返回，改在最底部「確認人數與行李」大按鈕下方放一顆「返回上一頁」文字鈕，離X遠、不會混淆；手機返回鍵/側滑也一樣是關閉這一頁(V5.53返回鍵保護)。只改這一頁的按鈕位置，計價/驗證/送出沒動。 V5.54：依使用者要求(先確認過示意圖)：①訂車畫面上方新增4步進度列(① 詢價 ② 行程細節 ③ 聯絡付款 ④ 明細確認，目前步驟粉紅、完成的打勾深紫、未到的灰色，只顯示不能點)，客人一眼知道共幾頁、填到哪；②聯絡資訊頁底部大按鈕「下一步，確認送出」改成「預約明細確認」(下一頁就是明細確認，按鈕文字對得上)。只改畫面文字/樣式，計價、驗證、送出邏輯完全沒動。 V5.53：依使用者要求：①「乘客與行李」由半版彈窗改成整頁(多一顆「‹ 返回」，間距收緊讓預設狀態一頁放得下，確認鈕仍固定在底部)；②航班編號輸入後按選航廈三顆按鈕，會順便把鍵盤收起來(原本鍵盤一直擋在畫面上)；③新增返回鍵保護：手機按返回/側滑時，有彈窗先關彈窗、不在訂車分頁先回訂車、在第2~4步回上一步、第1步已填寫資料時第一次只跳提示(再按一次才離開)，不再一按返回就整個退出預約畫面、已填的資料全部消失。計價、驗證、送出邏輯完全沒動。 V5.52：依使用者要求：①航班資訊的航廈(去程/回程)由下拉選單改成三顆按鈕(T1 第一航廈／T2 第二航廈／不確定 幫我查詢)，原select移到畫面外繼續當資料來源，驗證、送出、卡片/行事曆顯示完全沒動；輸入完航班編號(按完成/Enter或點到別處)且是桃園機場還沒選航廈時，自動捲到航廈按鈕並閃一下提示；②「乘客與行李」彈窗的「確認人數與行李」鈕固定貼在彈窗底部，不用再往下滑。 V5.51：依使用者要求，首頁標語「機場接送｜商務用車｜包車旅遊」與「我的」頁會員統計(共訂購N趟｜累計｜上次搭乘)的「・」改成「｜」，只改文字。 V5.50：依使用者要求(第二批，示意圖v10已確認)：訂車流程由3步改4步。①第一頁改為「詢價頁」：送機/接機、路線、上車日期時間、航班資訊(航班獨立成卡片)填好後，立刻列出四種車型的基本車資(已含夜間+200、24小時內急單+500、特殊節日、接機服務費+200、加點)，每台下方顯示人數與行李上限，僅供參考；日期時間不再預設「今天09:00」，客人實際選過才顯示車資；②第二頁為「行程細節」：乘客與行李、加值服務(回程)、確認車型，車型卡片車資與詢價頁相同(回程開啟時底部顯示來回總額)，「系統建議」標籤待填完人數才出現；③聯絡資訊與付款、確認送出與免責兩頁內容不動。新增quoteForVehicleOut_/vehicleFareNumber_/vehiclePriceText_/renderInquiry_/updateBarForStep_，沿用calcLegQuote原計算不改動；送出前驗證依頁面拆分，送出時的備援檢查會跳回對應頁面。計價/送出payload/gas.html完全沒動。 V5.49：依使用者要求，選車型區塊下方的特殊需求提醒結尾補上「預約成立後才告知的需求，恕無法保證一定能配合」，跟另外兩處(備註欄、免責聲明)的說法一致，只改這一句文字。 V5.48：依使用者要求(第一批，先確認示意圖才動手)：①訂車頁三處新增「特殊需求」提醒(粉紅左線提示框.special-note)：選車型區塊下方、其他備註上方、「確認送出前請閱讀」的詳細說明新增一條，語氣統一用敬語，原則是預約當下就要告知、客服確認可配合後才接單；②送機/接機切換鈕改小圓角(只套用.trip-mode，行程頁篩選鈕不變)；③頁面背景由淺紫加深一階(#e4d8e9)，切換鈕軌道同步加深；④乘客與行李摘要、機場標籤等「・」改成「｜」。只改文字/樣式，計價、驗證、送出邏輯完全沒動。 V5.47：依使用者要求，來回預約有加點時，回程的行程順序要跟去程相反(去程 起點→加點→機場，回程 機場→加點→起點)：回程那腿沒勾「與去程不同」(加點是自動從去程同步過來的)時，送給後端的主地址/加點對調(主地址放加點、加點放地址)，卡片/行事曆/中控台就會依「機場→加點→回到起點」顯示；客人自己勾了「與去程不同」、自己填回程加點的情況不動，維持客人填的順序；去程、單程、沒有加點的預約完全不受影響，距離加價費用算法沒動(兩點距離對稱)。配合gas.html v2.2.345。 V5.46：依使用者要求，預約送出後的文字改版＋修正文字常變成官方端送出：送出預約時就在addReservation payload帶clientWillSendFollowUpText(是否在LINE App內)，後端自動送卡片時就只送卡片，客人端自己用liff.sendMessages()送第一則「📋 預約資料」，送完呼叫新動作sendReservationExplainText由官方送第二則說明文字；客人端送失敗則請官方補送兩則。不再靠2秒競速。 V5.45：依使用者要求，航班編號旁邊新增「航廈」選單(第一航廈T1/第二航廈T2/不確定，幫我查詢)，只有選「桃園機場」才會出現且必選(沒選比照其他必填欄位的toast+聚焦提示)，來回預約的回程航班也同樣加；選了之後以「航班｜T1/T2/？」(例如CI108｜T2)接在航班編號後面一起送出，行事曆/卡片/司機畫面等後端與各畫面直接顯示這個字串。航班編號欄縮短、航廈選單文字不換行。 V5.44： V5.44：依使用者要求，「我的」頁「聯絡客服」那一列(電話號碼0955-311-306)原本只是純文字顯示、點了沒反應，改成<a href="tel:...">連結，點擊後直接開啟手機撥號畫面，不用再手動複製號碼。只改這一列的HTML標籤(div改成a並加tel:連結+樣式讓它看起來跟原本一樣，不是底線藍字的連結外觀)，版面/其他設定列完全沒有變動。V5.43：依使用者實測v5.42畫面後的回饋微調：①.discount-warn-box文字字級13px→11px調過頭，改回12px；②「選擇接送車型」畫面的提示框(#vehicleSpecialDateWarnBox)拿掉外框線，新增.discount-warn-box.no-border修飾類別(只套用在這一個位置，折扣碼畫面跟報價明細彈窗的提示框維持原本紅色外框不變)；③「專屬優惠與折扣」卡片在isSpecialDateBlocked時，折扣碼輸入框+套用鈕(#discountCodeApplyRow)跟「+再加一組折扣碼」整段(#additionalDiscountCodeSection，含展開後的第二組輸入框)一起隱藏，只留紅字提示，這些「填的格子」反正也不能用了不需要留著；「查詢我的專屬折扣碼」(#queryDiscountBtn)是查看客人自己已領到的券、不是這張單要套用的欄位，維持顯示不受影響。
   // V5.42：依使用者要求(先確認示意圖才動手)：①特殊節日恕無法使用折扣的警示文字內容改成「‼️ 農曆春節/連續假期恕無法使用任何折扣碼或優惠折抵。」(原本是「‼️ 特殊節日期間...」)，集中存成共用常數SPECIAL_DATE_DISCOUNT_WARN_TEXT，三處共用同一句、以後要再調整文字不用分開改；②.discount-warn-box文字字級縮小兩階(13px→11px)，避免新文字比較長換行成兩行；③這句警示原本只會顯示在「折扣碼」畫面(#discountWarnBox)，現在新增顯示在「選擇接送車型」畫面車型清單上方(#vehicleSpecialDateWarnBox，客人選車前就先看到)跟「報價明細」彈窗來回總額下面(#quoteSpecialDateWarnBox)，三處顯示時機都跟着isSpecialDateBlocked同步(update()裡統一控制)，客人不用點進折扣碼頁面才知道這天不能用折扣。只新增這兩個提示框跟改文字/字級，車型清單、金額計算、其他版面/邏輯完全沒有更動。
   // V5.41：🚨配合gas.html v2.2.307修正「來回預約只查回程日期，漏掉去程特殊日期」的折扣驗證漏洞。來回預約的折扣碼/早鳥優惠/預約來回優惠原本只掛在回程那一腿(discountCode/discountAmt只在ctx==='_R'送出)，後端consumeReservationDiscount_只看得到回程那天的日期，如果去程那天才是被擋的特殊日期、回程是普通日期，後端這關會漏放行(雖然客人端試算isAnyLegSpecialDate()本來就會同時看兩天、正常下單不會踩到，但後端這關是防止被繞過的最後防線，不該只靠前端)。修法：buildLegPayload()送回程資料(ctx==='_R'且有勾來回)時，新增欄位outboundRideDate=去程日期一併帶給後端查表，單程訂單不受影響。
   // V5.40：依使用者要求，「特殊日期」表新增G欄「禁用折扣」，讓某天可以只擋折扣、不用一定要順便加價(金額=0也能生效)。calcLegQuote()的isSpecialDate判斷加回blockDiscount(後端SPECIAL_DATE_SURCHARGES[日期].blockDiscount)，只要後端這個日期有標記禁用折扣，就算沒有加價金額也視為特殊日期，客人端試算跟能不能用折扣碼的判斷才會跟後端consumeReservationDiscount_保持一致，避免試算階段看得到折扣、送出時卻被擋掉。對應後端gas.html v2.2.306。
@@ -3032,7 +3139,7 @@
     const seatStr=seatParts.length?seatParts.join(', '):'無';
     const detailArr=[];
     if(n('stroller'+ctx)>0) detailArr.push(`推車 ${n('stroller'+ctx)}`);
-    if(n('fatbox'+ctx)>0) detailArr.push(`有 ${n('fatbox'+ctx)}件`);
+    if(n('fatbox'+ctx)>0) detailArr.push(`有 ${n('fatbox'+ctx)}件${fatText_(ctx)?`，${fatText_(ctx)}`:''}`);
     if(n('longItem'+ctx)>0) detailArr.push(`長型 ${n('longItem'+ctx)}${whatText_(ctx,'long')?`（${whatText_(ctx,'long')}）`:''}`);
     if(n('otherItem'+ctx)>0) detailArr.push(`其他 ${n('otherItem'+ctx)}${whatText_(ctx,'other')?`（${whatText_(ctx,'other')}）`:''}`);
     const sportStr=detailArr.length?detailArr.join('；'):'無';
@@ -3372,7 +3479,7 @@
     }catch(err){ console.warn('老客戶查詢失敗：',err); }
   });
 
-  ['address','airport','date','time','flight','addStop','stopAddress','roundTrip','returnDate','returnTime','returnFlight','adult','child','toddler','rearSeat','forwardSeat','booster','checked','carry','medium','stroller','fatbox','longItem','otherItem','noLuggage','optSign']
+  ['address','airport','date','time','flight','addStop','stopAddress','roundTrip','returnDate','returnTime','returnFlight','adult','child','toddler','rearSeat','forwardSeat','booster','checked','bigBase','carry','medium','stroller','fatbox','longItem','otherItem','noLuggage','optSign']
     .forEach(id=>$(id).addEventListener('input',update));
   $('noLuggage').addEventListener('change',update);
   ['flightTerminal','returnFlightTerminal'].forEach(id=>$(id).addEventListener('change',update));
@@ -3445,7 +3552,8 @@
     if(base==='rearSeat') return Math.max(0, n('toddler'+ctx)-n('forwardSeat'+ctx));
     if(base==='forwardSeat') return Math.max(0, n('toddler'+ctx)-n('rearSeat'+ctx));
     if(base==='booster') return n('child'+ctx);
-    if(base==='stroller'||base==='fatbox'||base==='longItem'||base==='otherItem') return Math.max(0, 7-(bagSub_(ctx)-n(target)));
+    if(base==='bigBase') return Math.max(0, 7-extras_(ctx));
+    if(base==='stroller'||base==='longItem'||base==='otherItem') return Math.max(0, 7-n('bigBase'+ctx)-(extras_(ctx)-n(target)));
     return staticMax;
   }
   function refreshReturnPaxSheet(){
@@ -3455,7 +3563,6 @@
     const baseId=row.dataset.target, min=Number(row.dataset.min||0), staticMax=Number(row.dataset.max||7);
     row.querySelector('.minus').onclick=()=>{
       const target=baseId+paxCtx; const v=n(target);
-      if(baseId==='checked' && v-1<bagSub_(paxCtx)){ toast('胖胖箱、推車、長型物件、其他都算在托運大型內，請先減少它們'); return; }
       if(v>min){
         $(target).value=v-1;
         if(paxCtx==='_R'){ refreshReturnPaxSheet(); } else { $(target).dispatchEvent(new Event('input',{bubbles:true})); }
@@ -3465,12 +3572,12 @@
       const target=baseId+paxCtx; const v=n(target); const max=dynamicMax(target,staticMax);
       if(v<max){
         $(target).value=v+1;
-        if(['stroller','fatbox','longItem','otherItem'].includes(baseId)) enforceBags(paxCtx);
+        enforceBags(paxCtx);
         if(paxCtx==='_R'){ refreshReturnPaxSheet(); } else { $(target).dispatchEvent(new Event('input',{bubbles:true})); }
       }
       else if(baseId==='rearSeat'||baseId==='forwardSeat') toast('後向＋前向安全座椅總數不能超過幼童人數');
       else if(baseId==='booster') toast('增高墊數量不能超過兒童人數');
-      else if(baseId==='stroller'||baseId==='fatbox'||baseId==='longItem'||baseId==='otherItem') toast('胖胖箱、推車、長型物件、其他合計最多 7 件');
+      else if(baseId==='bigBase'||baseId==='stroller'||baseId==='longItem'||baseId==='otherItem') toast('托運大型（含推車、長型物件、其他）合計最多 7 件');
     };
   });
 
@@ -3486,27 +3593,70 @@
     afterBagChange_();
   });
   ['long','other'].forEach(k=>{ $(k+'FreeInput').addEventListener('input',()=>{ whatSt[paxCtx][k].free=cleanFree_($(k+'FreeInput').value.replace(/\s+$/,' ')); afterBagChange_(); }); });
-  $('openPax').onclick=()=>{
-    paxCtx=''; otherFoldOpen=false;
-    $('paxSheetTitle').textContent='乘客與行李';
-    syncCounterDisplays(''); updateSeatVisibility(''); updateBagUI();
+  let paxStep=1;
+  function showPaxStep(k){
+    paxStep=k;
+    $('paxStep1').classList.toggle('hidden',k!==1); $('paxStep2').classList.toggle('hidden',k!==2);
+    $('paxStepPill1').classList.toggle('on',k===1); $('paxStepPill2').classList.toggle('on',k===2);
+    if(k===2) updateBagUI();
+    try{ document.querySelector('#paxSheet .sheet-inner').scrollTop=0; }catch(e){}
+  }
+  function openPaxSheet_(ctx){
+    paxCtx=ctx; otherFoldOpen=false;
+    $('paxSheetTitle').textContent=ctx==='_R'?'回程乘客與行李':'乘客與行李';
+    if(ctx==='_R'){ refreshReturnPaxSheet(); } else { syncCounterDisplays(''); updateSeatVisibility(''); updateBagUI(); }
+    // 第一次開(還沒設人數)從「① 人數」開始；已設過人數就直接進「② 行李」，要改人數按上面的「修改」
+    const people=n('adult'+ctx)+n('child'+ctx)+n('toddler'+ctx);
+    showPaxStep(people>0?2:1);
     openSheet('paxSheet');
-  };
-  $('openPaxReturn').onclick=()=>{
-    paxCtx='_R'; otherFoldOpen=false;
-    $('paxSheetTitle').textContent='回程乘客與行李';
-    refreshReturnPaxSheet();
-    openSheet('paxSheet');
-  };
-  $('confirmPax').onclick=()=>{
-    const ctx=paxCtx;
+  }
+  $('openPax').onclick=()=>openPaxSheet_('');
+  $('openPaxReturn').onclick=()=>openPaxSheet_('_R');
+  $('paxEditPeople').onclick=()=>showPaxStep(1);
+  $('paxBack').onclick=()=>showPaxStep(1);
+  function paxPeopleErrors_(ctx){
     const errs=[];
+    if(n('adult'+ctx)+n('child'+ctx)+n('toddler'+ctx)===0) errs.push(['請先選擇乘客人數','adult'+ctx]);
     if(n('toddler'+ctx)>0 && (n('rearSeat'+ctx)+n('forwardSeat'+ctx)+n('booster'+ctx))<n('toddler'+ctx)){
       errs.push(['幼童依法須使用安全座椅，數量需 ≥ 幼童人數','rearSeat'+ctx]);
     }
+    return errs;
+  }
+  $('paxNext').onclick=()=>{
+    const errs=paxPeopleErrors_(paxCtx);
+    if(errs.length){ toast(errs[0][0]); return; }
+    showPaxStep(2);
+  };
+  document.addEventListener('click',e=>{
+    const yn=e.target.closest&&e.target.closest('#fatAsk [data-fat]');
+    if(yn){
+      const st=fatSt[paxCtx]; st.ans=yn.dataset.fat; st.sizes=st.ans==='yes'?(st.sizes.length?st.sizes:['']):[];
+      afterBagChange_(); return;
+    }
+    const chip=e.target.closest&&e.target.closest('.fat-chip');
+    if(chip){
+      const st=fatSt[paxCtx], i=Number(chip.dataset.fatidx), z=chip.dataset.fatsize;
+      if(chip.classList.contains('off')){ toast(z==='大型'?'胖胖箱的大型數不能超過上面的托運大型件數':'胖胖箱的中型數不能超過上面的托運中型件數'); return; }
+      st.sizes[i]=st.sizes[i]===z?'':z; afterBagChange_();
+    }
+  });
+  $('fatPlus').onclick=()=>{
+    const st=fatSt[paxCtx];
+    if(st.sizes.length>=trunkTotal_(paxCtx)){ toast('胖胖箱不能超過上面的托運件數'); return; }
+    st.sizes.push(''); afterBagChange_();
+  };
+  $('fatMinus').onclick=()=>{
+    const st=fatSt[paxCtx];
+    if(st.sizes.length>1){ st.sizes.pop(); afterBagChange_(); }
+  };
+  $('confirmPax').onclick=()=>{
+    const ctx=paxCtx;
+    const errs=paxPeopleErrors_(ctx);
+    if(errs.length){ showPaxStep(1); toast(errs[0][0]); return; }
     if(ctx===''){
       if(!$('noLuggage').checked && bagTotal_('')===0) errs.push(['請確認行李件數，若沒有行李請勾選「我沒有行李」','noLuggage']);
     }
+    fatErrors_(ctx).forEach(m=>errs.push([m,'fatAsk']));
     whatErrors_(ctx).forEach(m=>errs.push([m,'otherFold']));
     if(errs.length){ toast(errs[0][0]); focusField(errs[0][1]); return; }
     closeSheet('paxSheet');
@@ -3770,8 +3920,9 @@
       if(n('toddler')>0 && (n('rearSeat')+n('forwardSeat')+n('booster'))<n('toddler')){ errs.push(['幼童依法須使用安全座椅，數量需 ≥ 幼童人數','openPax']); needPaxSheet=true; }
       // 行李件數若都是0，一定要勾選「我沒有行李」，不能就這樣跳過（比照正式系統 isLuggageConfirmed）
       if(!$('noLuggage').checked && bagTotal_('')===0){ errs.push(['請確認行李件數，若沒有行李請勾選「我沒有行李」','openPax']); needPaxSheet=true; }
+      fatErrors_('').forEach(m=>{ errs.push([m,'openPax']); needPaxSheet=true; });
       whatErrors_('').forEach(m=>{ errs.push([m,'openPax']); needPaxSheet=true; });
-      if($('roundTrip').checked) whatErrors_('_R').forEach(m=>errs.push(['回程：'+m,'openPaxReturn']));
+      if($('roundTrip').checked){ fatErrors_('_R').forEach(m=>errs.push(['回程：'+m,'openPaxReturn'])); whatErrors_('_R').forEach(m=>errs.push(['回程：'+m,'openPaxReturn'])); }
       // V5.75：加點聯絡人(選填)：有填就要格式正確
       if($('addStop').checked){ const ce=contactErrorC_('stopContactName','stopContactPhone'); if(ce){ if(!$('stopContactBody').classList.contains('show')) $('stopContactToggle').click(); errs.push([ce,'stopContactPhone']); } }
       if($('roundTrip').checked && $('returnDifferent').checked && $('addStop_R').checked){ const ce=contactErrorC_('stopContactName_R','stopContactPhone_R'); if(ce){ if(!$('stopContactBody_R').classList.contains('show')) $('stopContactToggle_R').click(); errs.push([ce,'stopContactPhone_R']); } }
@@ -4013,6 +4164,16 @@
       setMonthlyStatus_('查詢失敗，請確認網路連線後重試。',true);
     }
   }
+  $('monthlyLink').onclick=()=>{
+    $('monthlyCard').classList.remove('hidden'); $('monthlyLinkWrap').classList.add('hidden');
+    if(!monthlyOn){ try{ $('monthlySw').click(); }catch(e){} }
+    setTimeout(()=>{ try{ $('monthlyCard').scrollIntoView({behavior:'smooth',block:'center'}); $('monthlyTaxId').focus(); }catch(e){} },80);
+  };
+  document.querySelectorAll('[data-closebar]').forEach(b=>b.addEventListener('click',()=>{
+    const id=b.dataset.closebar; const bar=b.closest('.slim-bar'); if(bar) bar.style.display='none';
+    try{ sessionStorage.setItem('ansingBarClosed_'+id,'1'); }catch(e){}
+  }));
+  ['webOpenBanner','unboundNudgeBanner'].forEach(id=>{ try{ if(sessionStorage.getItem('ansingBarClosed_'+id)==='1'){ const bar=$(id).querySelector('.slim-bar'); if(bar) bar.style.display='none'; } }catch(e){} });
   $('monthlySw').onclick=()=>{
     monthlyOn=!monthlyOn;
     $('monthlySw').classList.toggle('on',monthlyOn);
