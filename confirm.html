@@ -2,6 +2,18 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
+<script>/* 2026-11-18 後端保險：Google後端冷啟動時，讀取超過5秒顯示「系統啟動中，請稍候…」；讀取(GET)遇到連線失敗或500自動重試2次(送出資料POST不重試，避免重複送出) */
+(function(){if(window.__gasRetry)return;window.__gasRetry=1;var of=window.fetch;if(!of)return;var busy=0,el=null,tm=null;
+function show(){if(!document.body)return;if(!el){el=document.createElement('div');el.textContent='⏳ 系統處理中，請稍候…';el.style.cssText='position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:2147483647;background:#553F62;color:#fff;font-size:13px;font-weight:700;padding:8px 16px;border-radius:999px;box-shadow:0 4px 14px rgba(0,0,0,.18);white-space:nowrap;font-family:-apple-system,"PingFang TC","Noto Sans TC",sans-serif';}if(!el.parentNode)document.body.appendChild(el);}
+function hide(){if(el&&el.parentNode)el.parentNode.removeChild(el);}
+function wait(ms){return new Promise(function(r){setTimeout(r,ms);});}
+window.fetch=function(input,init){var url=typeof input==='string'?input:(input&&input.url)||'';if(url.indexOf('script.google.com/macros/')===-1)return of.apply(this,arguments);
+var method=String((init&&init.method)||(input&&input.method)||'GET').toUpperCase();var tries=method==='GET'?3:1;var self=this;busy++;if(!tm)tm=setTimeout(show,5000);
+var run=function(i){return of.call(self,input,init).then(function(r){if(r.status>=500&&i<tries-1)return wait(1500*(i+1)).then(function(){return run(i+1);});return r;},function(e){if(i<tries-1)return wait(1500*(i+1)).then(function(){return run(i+1);});throw e;});};
+return run(0).then(function(r){done();return r;},function(e){done();throw e;});
+function done(){busy--;if(busy<=0){busy=0;clearTimeout(tm);tm=null;hide();}}};})();
+</script>
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>行程確認</title>
@@ -21,7 +33,7 @@
   .day { font-weight:900; color:var(--bd); font-size:13px; margin:14px 16px 0; }
   /* v1.0.2：X3版型——每一筆白卡、最上面紫色標題列；卡片內全白，行程和費用中間一條細線 */
   .trip { background:#fff; margin:0 12px 14px; border-radius:10px; overflow:hidden; border:1px solid #E5E2EA; line-height:1.65; font-size:13px; }
-  .trip .th { background:var(--p); color:#fff; padding:8px 16px; display:flex; justify-content:space-between; gap:8px; font-weight:700; }
+  .trip .th { background:var(--p); color:#fff; min-height:36px; padding:6px 16px; display:flex; justify-content:space-between; align-items:center; gap:8px; font-weight:700; }
   .trip .tb { padding:10px 16px 12px; }
   .trip table { width:100%; border-collapse:collapse; } .trip td { vertical-align:top; padding:1px 0; } .trip td.k { width:52px; color:var(--g); }
   .trip .fee { border-top:1px solid #ECEAEF; margin-top:8px; padding-top:8px; }
@@ -52,7 +64,7 @@
 <div class="wrap" id="app"><div class="msg">讀取中…</div></div>
 <script>
   const GAS_URL = "https://script.google.com/macros/s/AKfycbz6wgk6T8ypEI1pW5ih7M3Bom54Tu7unv-sc_ldFtPSBWw4yAbahs70GErKGpsRqcG3/exec";
-  const APP_VERSION = "v1.0.2"; // v1.0.2：X3版型； // v1.0.1：沒填聯絡窗口時寫「客服電話：」
+  const APP_VERSION = "v1.0.3"; // v1.0.3：標題列文字上下置中、冷啟動提示＋讀取自動重試； // v1.0.2：X3版型； // v1.0.1：沒填聯絡窗口時寫「客服電話：」
   const k = new URLSearchParams(location.search).get("k") || "";
   const app = document.getElementById("app");
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
