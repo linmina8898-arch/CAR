@@ -19,7 +19,12 @@
   .sum b { font-size:18px; color:var(--p); }
   .sum .r { display:flex; justify-content:space-between; color:#5F5868; margin-top:3px; font-size:13px; }
   .day { font-weight:900; color:var(--bd); font-size:13px; margin:14px 16px 0; }
-  .trip { background:#fff; margin:6px 12px 0; border-radius:14px; padding:11px 13px; line-height:1.6; font-size:13px; }
+  /* v1.0.2：X3版型——每一筆白卡、最上面紫色標題列；卡片內全白，行程和費用中間一條細線 */
+  .trip { background:#fff; margin:0 12px 14px; border-radius:10px; overflow:hidden; border:1px solid #E5E2EA; line-height:1.65; font-size:13px; }
+  .trip .th { background:var(--p); color:#fff; padding:8px 16px; display:flex; justify-content:space-between; gap:8px; font-weight:700; }
+  .trip .tb { padding:10px 16px 12px; }
+  .trip table { width:100%; border-collapse:collapse; } .trip td { vertical-align:top; padding:1px 0; } .trip td.k { width:52px; color:var(--g); }
+  .trip .fee { border-top:1px solid #ECEAEF; margin-top:8px; padding-top:8px; }
   .trip.x { opacity:.5; }
   .tt { display:flex; justify-content:space-between; align-items:center; gap:8px; }
   .tm { font-size:17px; font-weight:900; color:var(--p); }
@@ -47,7 +52,7 @@
 <div class="wrap" id="app"><div class="msg">讀取中…</div></div>
 <script>
   const GAS_URL = "https://script.google.com/macros/s/AKfycbz6wgk6T8ypEI1pW5ih7M3Bom54Tu7unv-sc_ldFtPSBWw4yAbahs70GErKGpsRqcG3/exec";
-  const APP_VERSION = "v1.0.0";
+  const APP_VERSION = "v1.0.2"; // v1.0.2：X3版型； // v1.0.1：沒填聯絡窗口時寫「客服電話：」
   const k = new URLSearchParams(location.search).get("k") || "";
   const app = document.getElementById("app");
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -76,7 +81,7 @@
     const ct = [b.contact, b.phone].filter(Boolean).join(" ");
     if (!ct && !b.lineId) return "";
     const tel = b.phone ? `<a href="tel:${esc(String(b.phone).replace(/[^\d+]/g, ""))}" style="color:var(--p);font-weight:800">${esc(b.phone)}</a>` : "";
-    return `<div class="ft">聯絡窗口：${esc(b.contact || "")} ${tel}${b.lineId ? "｜LINE ID " + esc(b.lineId) : ""}</div>`;
+    return `<div class="ft">${b.contact ? "聯絡窗口：" + esc(b.contact) + " " : "客服電話："}${tel}${b.lineId ? "｜LINE ID " + esc(b.lineId) : ""}</div>`;
   }
   function render() {
     if (!data || !data.success) { app.innerHTML = (data && data.brand ? head() : "") + `<div class="msg">${esc((data && data.error) || "讀取失敗，請稍後重新整理。")}</div>` + (data && data.brand ? foot() : ""); return; }
@@ -84,26 +89,22 @@
     const live = trips.filter(o => !o.cancelled);
     const total = live.reduce((s, o) => s + (Number(o.amount) || 0), 0);
     const pays = [...new Set(live.map(o => String(o.payment || "").trim()))];
-    const payRows = pays.length === 1 ? `<div class="r"><span>付款方式</span><span>${esc(pays[0] || "—")}</span></div>`
-      : pays.map(pm => { const g = live.filter(o => String(o.payment || "").trim() === pm); return `<div class="r"><span>${esc(pm || "未填")} ${g.length}趟</span><span>${money(g.reduce((s, o) => s + (Number(o.amount) || 0), 0))}</span></div>`; }).join("");
+    const payRows = pays.map(pm => { const g = live.filter(o => String(o.payment || "").trim() === pm); return `<div class="r"><span>${esc(pm || "未填")} ${g.length}趟</span><span>${money(g.reduce((s, o) => s + (Number(o.amount) || 0), 0))}</span></div>`; }).join("");
     // 同時間、同行程、同車型、同金額的多台車合併
     const groups = [];
     trips.forEach(o => { const key = [o.date, o.time, o.type, o.route, o.car, o.amount, o.payment, o.flight, o.paxName, signOf(o), o.remarks, o.cancelled, o.updated].join("|"); const g = groups.find(x => x.key === key); if (g) g.items.push(o); else groups.push({ key, items: [o] }); });
-    let lastDate = "";
-    const tripsHtml = groups.map(g => {
+    const row = (k2, v, bold) => v ? `<tr><td class="k">${k2}</td><td${bold ? ' style="font-weight:700"' : ''}>${v}</td></tr>` : "";
+    const tripsHtml = groups.map((g, gi) => {
       const o = g.items[0], n = g.items.length;
-      const dh = o.date !== lastDate ? `<div class="day">${esc(md(o.date))}${esc(wk(o.date))}</div>` : "";
-      lastDate = o.date;
       const f = fl(o.flight);
-      const kv = (t, v) => v ? `<div class="kv">${t} <b>${esc(v)}</b></div>` : "";
-      const tags = (o.cancelled ? '<span class="tag t3">已取消</span> ' : "") + (o.updated && !o.cancelled ? '<span class="tag t2">已更新</span> ' : "") + `<span class="tag t1">${esc(o.type)}</span>`;
-      const ids = g.items.map(x => x.orderId);
-      return `${dh}<div class="trip${o.cancelled ? " x" : ""}"><div class="tt"><span class="tm">${esc(o.time)}</span><span>${tags}</span></div>
-        <div class="rt">${esc(String(o.route || "").replace(/\s*→\s*/g, " → "))}</div>
-        ${f ? `<div class="kv">${/^航廈/.test(f) ? esc(f) : "航班 " + esc(f)}</div>` : ""}
-        ${kv("乘車人", o.paxName)}${kv("舉牌", signOf(o))}${kv("備註", o.remarks)}
-        <div class="car"><span>${esc(o.car || "")}${n > 1 ? "×" + n + "台" : ""}</span><span>${n > 1 ? "每台" : ""}${money(o.amount)}${pays.length > 1 && o.payment ? `｜<span class="pay">${esc(o.payment)}</span>` : ""}</span></div>
-        <div class="id">${esc(ids.join("、"))}</div></div>`;
+      const ids = g.items.map(x => x.orderId); const pre = ids[0].replace(/-C\d+$/, "");
+      const idTxt = n > 1 && ids.every(id => /-C\d+$/.test(id) && id.replace(/-C\d+$/, "") === pre) ? pre + "-" + ids.map(id => id.match(/C\d+$/)[0]).join("、") : ids.join("、");
+      const tags = (o.cancelled ? '<span class="tag t3">已取消</span> ' : "") + (o.updated && !o.cancelled ? '<span class="tag t2">已更新</span> ' : "");
+      return `<div class="trip${o.cancelled ? " x" : ""}"><div class="th"><span>${gi + 1}. ${esc(md(o.date))}${esc(wk(o.date))} ${esc(o.time)}</span><span>${tags}${esc(o.type)}</span></div>
+        <div class="tb"><div style="margin-bottom:6px">${esc(String(o.route || "").replace(/\s*→\s*/g, " → "))}</div>
+        <table>${row("航班", f ? esc(f) : "")}${row("乘車人", esc(o.paxName || ""))}${row("舉牌", esc(signOf(o)))}${row("備註", esc(o.remarks || ""))}</table>
+        <div class="fee"><table>${row("車型", esc((o.car || "") + (n > 1 ? "×" + n + "台" : "")))}${row("車資", n > 1 ? `${money(o.amount)}×${n}台＝${money(o.amount * n)}` : money(o.amount), true)}${row("付款", esc(o.payment || ""))}</table></div>
+        <div class="id">單號 ${esc(idTxt)}</div></div></div>`;
     }).join("");
     const anyUpdated = trips.some(o => o.updated && !o.cancelled);
     let stateHtml = "";
@@ -115,7 +116,7 @@
       ? `<div class="box"><b style="color:var(--p)">請寫要修改的內容</b><textarea id="note" rows="4" placeholder="例如：12/03 15:05 那趟改成 15:30"></textarea></div>
          <button class="btn p" id="sendChg">送出修改需求</button><button class="btn o" id="back">返回</button>`
       : `<button class="btn p" id="ok">✅ 確認無誤</button><button class="btn o" id="chg">✏️ 需要修改</button>`) : "";
-    app.innerHTML = head() + stateHtml + `<div class="box sum"><b>共${live.length}趟｜合計${money(total)}</b>${payRows}</div>` + tripsHtml + btns + '<div class="err" id="err"></div>' + foot();
+    app.innerHTML = head() + stateHtml + `<div class="box sum" style="margin-bottom:14px"><b>共${live.length}趟　合計 ${money(total)}</b>${payRows}</div>` + tripsHtml + btns + '<div class="err" id="err"></div>' + foot();
     const on = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
     on("ok", () => submit("confirm", ""));
     on("chg", () => { showChange = true; render(); });
