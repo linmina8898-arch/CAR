@@ -64,7 +64,7 @@ function done(){busy--;if(busy<=0){busy=0;clearTimeout(tm);tm=null;hide();}}};})
 <div class="wrap" id="app"><div class="msg">讀取中…</div></div>
 <script>
   const GAS_URL = "https://script.google.com/macros/s/AKfycbz6wgk6T8ypEI1pW5ih7M3Bom54Tu7unv-sc_ldFtPSBWw4yAbahs70GErKGpsRqcG3/exec";
-  const APP_VERSION = "v1.0.3"; // v1.0.3：標題列文字上下置中、冷啟動提示＋讀取自動重試； // v1.0.2：X3版型； // v1.0.1：沒填聯絡窗口時寫「客服電話：」
+  const APP_VERSION = "v1.0.4"; // v1.0.4：包車顯示用車時數／超時和行程內容； v1.0.3：標題列文字上下置中、冷啟動提示＋讀取自動重試； // v1.0.2：X3版型； // v1.0.1：沒填聯絡窗口時寫「客服電話：」
   const k = new URLSearchParams(location.search).get("k") || "";
   const app = document.getElementById("app");
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -104,7 +104,7 @@ function done(){busy--;if(busy<=0){busy=0;clearTimeout(tm);tm=null;hide();}}};})
     const payRows = pays.map(pm => { const g = live.filter(o => String(o.payment || "").trim() === pm); return `<div class="r"><span>${esc(pm || "未填")} ${g.length}趟</span><span>${money(g.reduce((s, o) => s + (Number(o.amount) || 0), 0))}</span></div>`; }).join("");
     // 同時間、同行程、同車型、同金額的多台車合併
     const groups = [];
-    trips.forEach(o => { const key = [o.date, o.time, o.type, o.route, o.car, o.amount, o.payment, o.flight, o.paxName, signOf(o), o.remarks, o.cancelled, o.updated].join("|"); const g = groups.find(x => x.key === key); if (g) g.items.push(o); else groups.push({ key, items: [o] }); });
+    trips.forEach(o => { const key = [o.date, o.time, o.type, o.route, o.car, o.amount, o.payment, o.flight, o.paxName, signOf(o), o.remarks, o.charter, o.itinerary, o.cancelled, o.updated].join("|"); const g = groups.find(x => x.key === key); if (g) g.items.push(o); else groups.push({ key, items: [o] }); });
     const row = (k2, v, bold) => v ? `<tr><td class="k">${k2}</td><td${bold ? ' style="font-weight:700"' : ''}>${v}</td></tr>` : "";
     const tripsHtml = groups.map((g, gi) => {
       const o = g.items[0], n = g.items.length;
@@ -114,7 +114,7 @@ function done(){busy--;if(busy<=0){busy=0;clearTimeout(tm);tm=null;hide();}}};})
       const tags = (o.cancelled ? '<span class="tag t3">已取消</span> ' : "") + (o.updated && !o.cancelled ? '<span class="tag t2">已更新</span> ' : "");
       return `<div class="trip${o.cancelled ? " x" : ""}"><div class="th"><span>${gi + 1}. ${esc(md(o.date))}${esc(wk(o.date))} ${esc(o.time)}</span><span>${tags}${esc(o.type)}</span></div>
         <div class="tb"><div style="margin-bottom:6px">${esc(String(o.route || "").replace(/\s*→\s*/g, " → "))}</div>
-        <table>${row("航班", f ? esc(f) : "")}${row("乘車人", esc(o.paxName || ""))}${row("舉牌", esc(signOf(o)))}${row("備註", esc(o.remarks || ""))}</table>
+        <table>${row("航班", f ? esc(f) : "")}${row("包車", esc(o.charter || ""))}${row("行程", esc(o.itinerary || ""))}${row("乘車人", esc(o.paxName || ""))}${row("舉牌", esc(signOf(o)))}${row("備註", esc(o.remarks || ""))}</table>
         <div class="fee"><table>${row("車型", esc((o.car || "") + (n > 1 ? "×" + n + "台" : "")))}${row("車資", n > 1 ? `${money(o.amount)}×${n}台＝${money(o.amount * n)}` : money(o.amount), true)}${row("付款", esc(o.payment || ""))}</table></div>
         <div class="id">單號 ${esc(idTxt)}</div></div></div>`;
     }).join("");
